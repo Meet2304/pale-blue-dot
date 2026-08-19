@@ -169,9 +169,9 @@ export function NightHorizon({
     let glitterSeeds = new Float32Array(0);
     const t0 = performance.now();
 
-    /* The pale blue dot: not one of the stars, but its own object. Planets shine
-       steady where stars scintillate, so it barely twinkles — which is exactly
-       what makes it read as a dot rather than as another star. It is also the
+    /* The pale blue dot: not one of the stars, but its own object — larger,
+       bluer, and twinkling on a slower clock than anything around it. That
+       difference in tempo is what separates it from the field, and it is the
        thing the warp flies into. */
     const dot = { x: 0, y: 0, r: 2.1, phase: 0 };
 
@@ -699,9 +699,21 @@ export function NightHorizon({
       /* --- The pale blue dot ---------------------------------------------------- */
       {
         const appear = clamp01(starsIn * 1.4);
-        /* Barely any twinkle: it is a planet, not a star. That steadiness is
-           what picks it out of the field. */
-        const tw = reduce ? 1 : 0.9 + 0.1 * Math.sin(t * 0.8 + dot.phase);
+
+        /* The dot always twinkles, and it does it on its own terms.
+           Two frequencies rather than one, so it never settles into an obvious
+           metronome, and both are slower than anything in the star field — the
+           stars scintillate, this breathes. That difference in tempo is what
+           keeps it legible as the one thing in the sky worth going to, now that
+           it is no longer picked out by being the only steady point. */
+        const pulse = 0.5 + 0.5 * Math.sin(t * 1.05 + dot.phase);
+        const shimmer = 0.5 + 0.5 * Math.sin(t * 2.6 + dot.phase * 1.9);
+        const tw = reduce ? 1 : 0.62 + 0.28 * pulse + 0.1 * shimmer;
+
+        /* The halo breathes with it. At this size a pure alpha change is barely
+           readable; letting the glow swell a little is what the eye actually
+           catches. */
+        const breathe = 1 + 0.2 * ((tw - 0.62) / 0.38);
 
         /* Approach, not a zoom: the halo opens steadily while the hard core
            dissolves into it. A white disc scaling to fill the frame is the part
@@ -714,9 +726,12 @@ export function NightHorizon({
            feel unprepared. It now starts just under halfway and builds. */
         const reach = Math.hypot(w, h);
         const arrive = clamp01((warp - 0.45) / 0.55);
-        const halo = Math.max(dot.r * 5, 9) + Math.pow(arrive, 1.7) * reach * 1.25;
+        /* Only the resting halo breathes — the warp's opening term is left
+           alone, so the arrival is not pulsing while it swallows the frame. */
+        const halo =
+          Math.max(dot.r * 5, 9) * breathe + Math.pow(arrive, 1.7) * reach * 1.25;
         const coreAlpha = 1 - clamp01((warp - 0.25) / 0.4);
-        const r = dot.r * (1 + warp * 2.5);
+        const r = dot.r * breathe * (1 + warp * 2.5);
 
         const g = ctx!.createRadialGradient(vpx, vpy, 0, vpx, vpy, halo);
         g.addColorStop(0, "rgba(255,255,255,1)");

@@ -321,7 +321,7 @@ function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
         position: "absolute",
         left: 0,
         right: 0,
-        bottom: "var(--space-6)",
+        bottom: "var(--space-7)",
         pointerEvents: "none",
       }}
     >
@@ -332,19 +332,36 @@ function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: "var(--space-3)",
-            "--hz-delay": "2100ms",
+            gap: "var(--space-4)",
+            "--hz-delay": "2400ms",
           } as React.CSSProperties
         }
       >
-        <span className="hz-eyebrow">Scroll</span>
+        {/* "Look up", not "Scroll". The system's rule for labels is to name the
+            act rather than the mechanism, and the act here is not scrolling —
+            it is going up into the night. It also quietly tells you what the
+            warp is about to do, so the flight arrives as something you asked
+            for. The line still points down, which is the honest instruction;
+            the tension between the two resolves the moment you move. */}
+        <span
+          className="hz-eyebrow"
+          style={{
+            fontSize: "var(--text-micro)",
+            letterSpacing: "0.24em",
+            opacity: 0.62,
+          }}
+        >
+          Look up
+        </span>
+        {/* A thread of the horizon's light let down into the dark. It does not
+            loop — in this system only the scene is allowed to move on its own. */}
         <span
           style={{
             display: "block",
             width: 1,
-            height: 40,
+            height: 72,
             background:
-              "linear-gradient(to bottom, var(--line-soft), rgba(255,255,255,0))",
+              "linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0) 100%)",
           }}
         />
       </div>
