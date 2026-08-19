@@ -1,0 +1,61 @@
+/* Horizon design system — colour. Ported verbatim from the design project. */
+:root {
+  /* Night — the primary: shades of black, faintly warm-neutral. Not grey, not navy. */
+  --night-1000: #000000;
+  --night-900: #060607;
+  --night-800: #0d0e10;
+  --night-700: #16191b;
+  --night-600: #1f2427;
+  --night-500: #2b3134;
+
+  /* Ultramarine — the horizon glow and the only accent. Bright, wet, unmistakable. */
+  --blue-700: #0053c9;
+  --blue-600: #0068e6;
+  --blue-500: #0d7bff;
+  --blue-400: #3f9bff;
+  --blue-300: #79bbff;
+  --blue-200: #bcdcff;
+  --blue-100: #e8f4ff;
+
+  /* Water — below the horizon */
+  --water-900: #000000;
+  --water-800: #070809;
+  --water-700: #101416;
+
+  /* Ink — neutral with the faintest aqua cast; four text levels only */
+  --ink-100: #f6fdfc;
+  --ink-200: #d3dcda;
+  --ink-300: #98a5a3;
+  --ink-400: #64706e;
+  --ink-500: #3b4442;
+  --ink-700: #171b1b;
+
+  /* Signals — state only */
+  --signal-positive: #3ad07f;
+  --signal-caution: #e0b341;
+  --signal-critical: #f0555b;
+  --signal-info: var(--blue-400);
+
+  /* Aliases — use these */
+  --bg-page: var(--night-1000);
+  --bg-deep: var(--night-900);
+  --surface-1: var(--night-900);
+  --surface-2: var(--night-800);
+  --surface-inset: rgba(255, 255, 255, 0.025);
+  --surface-hover: rgba(255, 255, 255, 0.04);
+  --text-strong: var(--ink-100);
+  --text-body: var(--ink-200);
+  --text-muted: var(--ink-300);
+  --text-faint: var(--ink-400);
+  --text-on-accent: #f7f8ff;
+  --line-hairline: rgba(255, 255, 255, 0.09);
+  --line-soft: rgba(255, 255, 255, 0.16);
+  --line-accent: var(--blue-500);
+  --accent: var(--blue-500);
+  --accent-hover: var(--blue-400);
+  --accent-press: var(--blue-600);
+  --accent-wash: rgba(13, 123, 255, 0.12);
+  --horizon-core: #f0f9ff;
+  --horizon-mid: var(--blue-500);
+  --horizon-far: var(--night-600);
+}

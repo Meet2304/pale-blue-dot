@@ -1,0 +1,37 @@
+/* Horizon design system — effects. Two shadows, both barely there. */
+:root {
+  --shadow-lift: 0 14px 32px -22px rgba(0, 0, 0, 0.9);
+  --shadow-panel: 0 24px 60px -40px rgba(0, 0, 0, 1);
+
+  /* Bloom belongs to the horizon alone — never to a button, card or icon. */
+  --bloom-horizon: 0 0 140px rgba(13, 123, 255, 0.22);
+  --bloom-hairline: 0 0 10px rgba(13, 123, 255, 0.3);
+
+  --ring-focus: 0 0 0 1px var(--blue-400);
+
+  /* Frosted noise — the horizon's texture, the one texture in the system */
+  --noise-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  --noise-opacity: 0.11;
+
+  /* The same generator at a coarser scale, for the glow. Lower frequency and
+     fewer octaves give the chunkier grain that reads on a soft gradient — at
+     0.9 the texture is finer than the gradient it sits on and just looks like
+     screen noise. Same fractal turbulence, so it is one texture, not two.
+
+     The feColorMatrix is what makes it usable. feTurbulence writes noise into
+     all four channels, alpha included, so the raw output is a semi-transparent
+     mush that loses most of its contrast before it ever reaches the blend. The
+     matrix flattens RGB to luminance and pins alpha to 1, giving opaque grey
+     grain — roughly four times the effective contrast of the raw filter, which
+     is the difference between visible and not on a scene this dark. */
+  --noise-url-coarse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Protection gradients — laid under text on imagery. No capsules, no chips. */
+  --veil-bottom: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.94),
+    rgba(0, 0, 0, 0.5) 45%,
+    transparent
+  );
+  --veil-top: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
+}

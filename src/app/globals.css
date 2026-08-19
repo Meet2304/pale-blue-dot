@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Horizon design system. Imported after shadcn so Horizon's tokens win any
+   name collision (--radius-sm, --space-*) — Horizon is the source of truth. */
+@import "../styles/horizon/colors.css";
+@import "../styles/horizon/typography.css";
+@import "../styles/horizon/spacing.css";
+@import "../styles/horizon/effects.css";
+@import "../styles/horizon/motion.css";
+@import "../styles/horizon/base.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Bridge Horizon into Tailwind so utilities speak the system's vocabulary.
+   Font stacks live here rather than in typography.css so that `font-display`
+   works as a utility and `var(--font-display)` works in plain CSS. */
+@theme inline {
+  --font-display: var(--font-marcellus), ui-serif, "Palatino Linotype", Georgia, serif;
+  --font-text: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-text);
+
+  --color-night-1000: var(--night-1000);
+  --color-night-900: var(--night-900);
+  --color-night-800: var(--night-800);
+  --color-night-700: var(--night-700);
+  --color-night-600: var(--night-600);
+  --color-night-500: var(--night-500);
+
+  --color-blue-700: var(--blue-700);
+  --color-blue-600: var(--blue-600);
+  --color-blue-500: var(--blue-500);
+  --color-blue-400: var(--blue-400);
+  --color-blue-300: var(--blue-300);
+  --color-blue-200: var(--blue-200);
+  --color-blue-100: var(--blue-100);
+
+  --color-accent: var(--accent);
+  --color-strong: var(--text-strong);
+  --color-body: var(--text-body);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-hairline: var(--line-hairline);
+}
+
+/* shadcn primitives, remapped onto Horizon. Kept so any shadcn component
+   dropped in later inherits the system instead of neutral greys. */
+.dark {
+  --background: var(--bg-page);
+  --foreground: var(--text-body);
+  --card: var(--surface-1);
+  --card-foreground: var(--text-body);
+  --popover: var(--surface-1);
+  --popover-foreground: var(--text-body);
+  --primary: var(--accent);
+  --primary-foreground: var(--text-on-accent);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text-strong);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --accent-foreground: var(--text-on-accent);
+  --destructive: var(--signal-critical);
+  --border: var(--line-hairline);
+  --input: var(--line-soft);
+  --ring: var(--blue-400);
+}
+
+/* Entrances: fade and rise 10px. The only entrance in the system. */
+.hz-rise {
+  animation: horizon-rise var(--dur-cinematic) var(--ease-out-soft) var(--hz-delay, 0ms)
+    both;
+}
+
+/* An interrupted load collapses any in-flight entrance to its end state. */
+[data-hero="skipped"] .hz-rise {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* The arrival section holds its entrance until it is actually in view. */
+.hz-arrive {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+[data-arrived="true"] .hz-arrive {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-cinematic) var(--ease-out-soft),
+    transform var(--dur-cinematic) var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .hz-arrive {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Gradient noise across the glow — grain that belongs to the light rather than
+   to the screen. The mask is keyed to --hz-horizon, which the scene's render
+   loop updates as the horizon moves, so the grain travels with the glow through
+   both the load sequence and the warp.
+
+   Two things make this read as gradient noise rather than an overlay:
+
+   soft-light does most of its work in the midtones and almost none at either
+   extreme, so the grain is strongest through the middle of the ramp and thins
+   out into the black sky above and the bright line below. That falloff is the
+   whole character of the effect.
+
+   The mask spans the full height of the sky wash, and peaks just above the
+   horizon rather than on it — the brightest part of a gradient carries the
+   least visible grain, so sitting the peak in the mid-tones is what stops it
+   looking like a band of fizz laid over the light. */
+.hz-noise-glow {
+  position: absolute;
+  inset: 0;
+  background-image: var(--noise-url-coarse);
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  --hz-mask: linear-gradient(
+    to bottom,
+    transparent calc(var(--hz-horizon, 76%) - 52%),
+    rgba(0, 0, 0, 0.35) calc(var(--hz-horizon, 76%) - 34%),
+    rgba(0, 0, 0, 0.85) calc(var(--hz-horizon, 76%) - 18%),
+    #000 calc(var(--hz-horizon, 76%) - 7%),
+    rgba(0, 0, 0, 0.8) var(--hz-horizon, 76%),
+    rgba(0, 0, 0, 0.35) calc(var(--hz-horizon, 76%) + 8%),
+    transparent calc(var(--hz-horizon, 76%) + 18%)
+  );
+  -webkit-mask-image: var(--hz-mask);
+  mask-image: var(--hz-mask);
+}

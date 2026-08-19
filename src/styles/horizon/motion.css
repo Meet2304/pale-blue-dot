@@ -1,0 +1,50 @@
+/* Horizon design system — motion. Nothing loops on its own except the scene. */
+:root {
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+  --dur-cinematic: 1100ms;
+
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-calm: cubic-bezier(0.45, 0, 0.25, 1);
+
+  --transition-control:
+    color var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
+  --transition-glyph:
+    transform var(--dur-base) var(--ease-out-soft),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+@keyframes horizon-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes horizon-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-cinematic: 0ms;
+  }
+}
