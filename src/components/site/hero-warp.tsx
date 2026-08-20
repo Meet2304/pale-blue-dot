@@ -288,8 +288,8 @@ export function HeroWarp() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
+              alignItems: typeSet.align === "left" ? "flex-start" : "center",
+              textAlign: typeSet.align,
               /* Weighted below the centre of the sky box. Dead centre in three
                  quarters of empty sky read as floating; sitting lower gives the
                  line somewhere to be. Still far clear of the horizon. */
@@ -301,18 +301,20 @@ export function HeroWarp() {
               className="hz-rise"
               style={
                 {
-                  fontSize: `calc(var(--text-display-xl) * ${typeSet.scale})`,
                   margin: 0,
-                  maxWidth: "18ch",
+                  ...typeSet.frame,
                   "--hz-delay": "800ms",
                 } as React.CSSProperties
               }
             >
-              {/* Two clauses with a turn between them, so each candidate set is
-                  free to treat them as two voices. The accent colour still comes
-                  from the system's own h1 em rule, never a colour override. */}
-              <span style={typeSet.lead}>What&rsquo;s missing,</span>{" "}
-              <em style={typeSet.accent}>I make.</em>
+              {/* Both clauses are blocks, so every set stacks them and the
+                  second answers the first rather than continuing it. The accent
+                  colour still comes from the system's own h1 em rule, never a
+                  colour override. */}
+              <span style={{ display: "block", ...typeSet.lead }}>
+                What&rsquo;s missing,
+              </span>
+              <em style={{ display: "block", ...typeSet.accent }}>I make.</em>
             </h1>
           </div>
         </NightHorizon>

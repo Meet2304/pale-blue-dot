@@ -1,27 +1,29 @@
 import {
-  Cormorant_Garamond,
-  Fraunces,
+  Archivo,
+  Bricolage_Grotesque,
   Hanken_Grotesk,
-  Instrument_Serif,
   Marcellus,
-  Space_Grotesk,
+  Martian_Mono,
   Space_Mono,
+  Syne,
+  Unbounded,
 } from "next/font/google";
 
 /**
  * Every face the hero type sets can call on.
  *
- * This is deliberately more than the site needs. The hero pairing is being
- * chosen from five candidates (see `hero-type.ts`), so all of them have to be
- * loadable at once — once one is picked, everything it does not use should come
- * out of here, because seven families is far more weight than a hero that
- * budgets 1.8s to first paint can justify carrying.
+ * Deliberately more than the site needs. The hero treatment is being chosen
+ * from five candidates (see `hero-type.ts`), so all of them have to be loadable
+ * at once — once one is picked, everything it does not use should come out of
+ * here, because eight families is far more weight than a hero that reaches
+ * first paint in 1.4s can justify carrying.
  *
- * Only the three the design system specifies are preloaded. The candidates load
- * on demand so the default experience is not paying for the comparison.
+ * Only Horizon's own three are preloaded; they are what the tokens point at and
+ * what the rest of the page sets in. The candidates load on demand, so the
+ * default path is not paying for the comparison.
  */
 
-/* --- Horizon's own three ------------------------------------------------- */
+/* --- Horizon's three: the tokens, and everything outside the hero ---------- */
 
 export const marcellus = Marcellus({
   variable: "--font-marcellus",
@@ -43,37 +45,42 @@ export const spaceMono = Space_Mono({
   display: "swap",
 });
 
-/* --- Candidates ----------------------------------------------------------- */
+/* --- Candidates ------------------------------------------------------------
+   Chosen to be genuinely unalike rather than five shades of display serif: a
+   neutral grotesque that only becomes a display face when stretched, a wide
+   quirky monospace, a geometric with an enormous weight range, a variable
+   grotesque built to be imperfect, and an art-school geometric. */
 
-export const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument",
+export const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
   display: "swap",
   preload: false,
 });
 
-export const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+export const martianMono = Martian_Mono({
+  variable: "--font-martian",
   subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
   display: "swap",
   preload: false,
 });
 
-export const fraunces = Fraunces({
-  variable: "--font-fraunces",
+export const unbounded = Unbounded({
+  variable: "--font-unbounded",
   subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
   display: "swap",
   preload: false,
 });
 
-export const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+export const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+});
+
+export const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
   display: "swap",
   preload: false,
@@ -84,8 +91,9 @@ export const fontVariables = [
   marcellus.variable,
   hanken.variable,
   spaceMono.variable,
-  instrumentSerif.variable,
-  cormorant.variable,
-  fraunces.variable,
-  spaceGrotesk.variable,
+  archivo.variable,
+  martianMono.variable,
+  unbounded.variable,
+  bricolage.variable,
+  syne.variable,
 ].join(" ");

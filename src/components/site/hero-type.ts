@@ -1,137 +1,131 @@
 import type { CSSProperties } from "react";
 
 /**
- * Five candidate type treatments for the hero line.
+ * Five candidate treatments for the hero line.
  *
- * Pick one with `?type=1` … `?type=5`. The active set's name is printed in the
- * corner while a `type` param is present, so the five can be told apart at a
- * glance; without the param the page renders set 1 and shows nothing.
+ * Pick one with `?type=1` … `?type=5`. The active set is named in the corner
+ * while a `type` param is present.
  *
- * The line is "What's missing, I make." — two clauses with a turn between them,
- * so each set is free to treat them as two voices rather than one. Where a set
- * shifts face or style at the comma, that is the point of it: the sentence
- * changes speaker halfway through, and the type can say so.
+ * The first attempt at this changed only the typeface and kept one centred
+ * mixed-case line throughout, which is why all five read the same. These change
+ * the composition too — alignment, stacking, case, the size relationship
+ * between the two clauses — because that is where most of a treatment's
+ * character actually lives.
  *
- * `scale` multiplies the display size, because these faces have very different
- * optical sizes at the same nominal point size — Cormorant sets small and light,
- * Instrument Serif sets large.
+ * The line is "What's missing, I make." Two clauses with a turn between them,
+ * so every set here puts them on separate lines and lets the second answer the
+ * first in a different voice.
  *
- * Sets 2–5 depart from Horizon, which specifies Marcellus / Hanken Grotesk /
- * Space Mono. Set 1 is the system as written, kept as the control.
+ * All five depart from Horizon, which specifies Marcellus / Hanken Grotesk /
+ * Space Mono. That is the point of the exercise, but it is a real divergence
+ * from the system and worth deciding deliberately.
  */
 
 export type HeroTypeSet = {
   id: number;
   name: string;
   note: string;
-  /** Multiplies --text-display-xl. */
-  scale: number;
+  /** Whole-block alignment inside the sky. */
+  align: "center" | "left";
+  /** Applied to the h1 — size, leading, case. */
+  frame: CSSProperties;
   /** "What's missing," */
   lead: CSSProperties;
   /** "I make." — the accent clause. Colour comes from the h1 em rule. */
   accent: CSSProperties;
-  /** The scroll cue, so the pairing is judged as a pairing. */
+  /** The scroll cue, so each pairing is judged as a pairing. */
   eyebrow: CSSProperties;
 };
+
+const ARCHIVO = "var(--font-archivo), system-ui, sans-serif";
+const MARTIAN = "var(--font-martian), ui-monospace, monospace";
+const UNBOUNDED = "var(--font-unbounded), system-ui, sans-serif";
+const BRICOLAGE = "var(--font-bricolage), system-ui, sans-serif";
+const SYNE = "var(--font-syne), system-ui, sans-serif";
 
 export const HERO_TYPE_SETS: HeroTypeSet[] = [
   {
     id: 1,
-    name: "Horizon",
-    note: "Marcellus · Hanken Grotesk — the design system as written",
-    scale: 1,
-    lead: {
-      fontFamily: "var(--font-display)",
-      letterSpacing: "0.005em",
+    name: "Title card",
+    note: "Archivo ExtraLight, uppercase, tracked to 0.44em — small and wide, like a film title over the sea rather than a headline",
+    align: "center",
+    frame: {
+      fontSize: "clamp(0.9rem, 2.05vw, 1.6rem)",
+      lineHeight: 2.5,
+      textTransform: "uppercase",
+      /* Letter-spacing adds a trailing gap to every line, which drags centred
+         text left by half of it. The indent puts it back. */
+      textIndent: "0.44em",
+      maxWidth: "30ch",
     },
-    accent: {
-      fontFamily: "var(--font-display)",
-      letterSpacing: "0.005em",
-    },
-    eyebrow: { letterSpacing: "0.22em" },
+    lead: { fontFamily: ARCHIVO, fontWeight: 200, letterSpacing: "0.44em" },
+    accent: { fontFamily: ARCHIVO, fontWeight: 300, letterSpacing: "0.44em" },
+    eyebrow: { fontFamily: ARCHIVO, fontWeight: 400, letterSpacing: "0.3em" },
   },
   {
     id: 2,
-    name: "Editorial",
-    note: "Instrument Serif, roman turning italic · Space Mono cue",
-    scale: 1.12,
-    lead: {
-      fontFamily: "var(--font-instrument), Georgia, serif",
-      letterSpacing: "-0.012em",
+    name: "Ship's log",
+    note: "Martian Mono, small and left-aligned with the answer indented — a readout, not a headline",
+    align: "left",
+    frame: {
+      fontSize: "clamp(0.95rem, 2.1vw, 1.6rem)",
+      lineHeight: 2,
+      letterSpacing: "-0.02em",
+      maxWidth: "26ch",
     },
-    accent: {
-      fontFamily: "var(--font-instrument), Georgia, serif",
-      fontStyle: "italic",
-      letterSpacing: "-0.008em",
-    },
-    eyebrow: {
-      fontFamily: "var(--font-mono)",
-      letterSpacing: "0.3em",
-      fontSize: "var(--text-micro)",
-    },
+    lead: { fontFamily: MARTIAN, fontWeight: 300 },
+    accent: { fontFamily: MARTIAN, fontWeight: 500, paddingLeft: "3.2em" },
+    eyebrow: { fontFamily: MARTIAN, fontWeight: 400, letterSpacing: "0.24em" },
   },
   {
     id: 3,
-    name: "Star chart",
-    note: "Cormorant Garamond light, roman turning italic · wide sans cue",
-    scale: 1.3,
-    lead: {
-      fontFamily: "var(--font-cormorant), Georgia, serif",
-      fontWeight: 300,
-      letterSpacing: "0.012em",
+    name: "Weight break",
+    note: "Unbounded at 200 answered by Unbounded at 800 — one family, the whole statement carried by the jump in weight",
+    align: "center",
+    frame: {
+      fontSize: "clamp(2.1rem, 6.2vw, 5.2rem)",
+      lineHeight: 1.04,
+      maxWidth: "16ch",
     },
-    accent: {
-      fontFamily: "var(--font-cormorant), Georgia, serif",
-      fontWeight: 300,
-      fontStyle: "italic",
-      letterSpacing: "0.012em",
-    },
-    eyebrow: {
-      fontFamily: "var(--font-text)",
-      letterSpacing: "0.38em",
-      fontSize: "var(--text-micro)",
-    },
+    lead: { fontFamily: UNBOUNDED, fontWeight: 200, letterSpacing: "-0.03em" },
+    accent: { fontFamily: UNBOUNDED, fontWeight: 800, letterSpacing: "-0.05em" },
+    eyebrow: { fontFamily: UNBOUNDED, fontWeight: 300, letterSpacing: "0.22em" },
   },
   {
     id: 4,
-    name: "Two voices",
-    note: "Fraunces serif answered by Space Grotesk — the face changes at the comma",
-    scale: 1.02,
+    name: "Scale jump",
+    note: "Bricolage Grotesque — the first clause shrunk to a wide label, the second at full display size beneath it",
+    align: "left",
+    frame: {
+      fontSize: "clamp(2.6rem, 8vw, 6.4rem)",
+      lineHeight: 1.02,
+      maxWidth: "14ch",
+    },
     lead: {
-      fontFamily: "var(--font-fraunces), Georgia, serif",
-      fontWeight: 300,
-      letterSpacing: "-0.005em",
+      fontFamily: BRICOLAGE,
+      fontWeight: 500,
+      fontSize: "0.26em",
+      letterSpacing: "0.2em",
+      textTransform: "uppercase",
+      paddingBottom: "0.9em",
     },
-    accent: {
-      fontFamily: "var(--font-space-grotesk), system-ui, sans-serif",
-      fontWeight: 300,
-      letterSpacing: "-0.028em",
-    },
-    eyebrow: {
-      fontFamily: "var(--font-space-grotesk), system-ui, sans-serif",
-      letterSpacing: "0.26em",
-    },
+    accent: { fontFamily: BRICOLAGE, fontWeight: 700, letterSpacing: "-0.04em" },
+    eyebrow: { fontFamily: BRICOLAGE, fontWeight: 500, letterSpacing: "0.24em" },
   },
   {
     id: 5,
-    name: "Readout",
-    note: "Space Grotesk with the answer set in Space Mono — cold and engineered",
-    scale: 0.92,
-    lead: {
-      fontFamily: "var(--font-space-grotesk), system-ui, sans-serif",
-      fontWeight: 300,
-      letterSpacing: "-0.028em",
+    name: "Inverted",
+    note: "Syne, lowercase and very tight, with the weight dropping on the answer instead of rising — the quiet half is the loud one",
+    align: "left",
+    frame: {
+      fontSize: "clamp(2.7rem, 8.4vw, 6.8rem)",
+      lineHeight: 0.94,
+      textTransform: "lowercase",
+      maxWidth: "13ch",
     },
-    accent: {
-      fontFamily: "var(--font-mono)",
-      fontWeight: 400,
-      letterSpacing: "-0.03em",
-    },
-    eyebrow: {
-      fontFamily: "var(--font-mono)",
-      letterSpacing: "0.32em",
-      fontSize: "var(--text-micro)",
-    },
+    lead: { fontFamily: SYNE, fontWeight: 700, letterSpacing: "-0.045em" },
+    accent: { fontFamily: SYNE, fontWeight: 400, letterSpacing: "-0.025em" },
+    eyebrow: { fontFamily: SYNE, fontWeight: 600, letterSpacing: "0.26em" },
   },
 ];
 
