@@ -228,10 +228,17 @@ export function NightHorizon({
 
     function resize() {
       const r = host!.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = r.width;
       h = r.height;
       lowPower = w < 760 || (window.navigator.hardwareConcurrency ?? 8) <= 4;
+
+      /* This scene is fill-rate bound — a full-screen gradient, a stack of
+         reflection rows and a few hundred small fills, every frame. Phones
+         report device ratios of 3 and 4, and honouring those means shading
+         nine to sixteen times the pixels for detail nobody can resolve at
+         arm-s length. Capping at 1.5 is the single largest thing that keeps a
+         handset at its refresh rate. */
+      const dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
       canvas!.width = Math.floor(w * dpr);
       canvas!.height = Math.floor(h * dpr);
       canvas!.style.width = `${w}px`;
@@ -240,10 +247,15 @@ export function NightHorizon({
 
       const hy = h * horizon;
 
+      /* Fewer stars on a small screen. The field is scaled to the frame, not
+         to the device, so the same count in a quarter of the area reads as
+         clutter as well as costing more per pixel than it is worth. */
+      const count = w < 640 ? Math.round(starCount * 0.62) : starCount;
+
       /* Stars fill the sky rather than crowding its top — a mild exponent keeps
          them spread down toward the horizon, where `fade` thins them out as the
          glow washes them away. */
-      stars = new Array(starCount).fill(0).map(() => {
+      stars = new Array(count).fill(0).map(() => {
         const rel = Math.pow(Math.random(), 1.12);
         const y = rel * hy * 0.98;
         return {
@@ -814,7 +826,9 @@ export function NightHorizon({
           masked onto the glow and fading up into the sky, so the light reads as
           frosted rather than as a clean gradient. */}
       <div className="hz-noise" style={{ opacity: 0.04 }} />
-      <div className="hz-noise-glow" />
+      <div className="hz-noise-glow">
+        <div />
+      </div>
       <div style={{ position: "relative", height: "100%" }}>{children}</div>
     </div>
   );

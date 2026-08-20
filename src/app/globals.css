@@ -112,7 +112,6 @@
 .hz-noise-glow {
   position: absolute;
   inset: 0;
-  background-image: var(--noise-url-specks);
   opacity: 0.1;
   pointer-events: none;
   /* Screen, not soft-light. Soft-light scales with whatever is behind it, so
@@ -134,4 +133,46 @@
   );
   -webkit-mask-image: var(--hz-mask);
   mask-image: var(--hz-mask);
+}
+
+/* The grain itself, on its own layer inside the mask.
+   Separating them is what lets it move: animating the masked element would
+   drag its vertical ramp along with it, and the ramp has to stay pinned to the
+   horizon. The inner layer is oversized so the drift never exposes an edge, and
+   it animates transform alone, which the compositor can handle without
+   repainting a full-screen blended surface every frame.
+
+   Slow and small on purpose — about 30px of travel over four seconds. Not
+   readable as movement while you are looking at it, but enough that the light
+   stops looking like a photograph of light. */
+.hz-noise-glow > * {
+  position: absolute;
+  inset: -10%;
+  background-image: var(--noise-url-specks);
+  will-change: transform;
+  animation: hz-grain-drift 18s linear infinite;
+}
+
+@keyframes hz-grain-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-3.5%, 2.2%, 0);
+  }
+  50% {
+    transform: translate3d(2.6%, 3.4%, 0);
+  }
+  75% {
+    transform: translate3d(3.2%, -2.8%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-noise-glow > * {
+    animation: none;
+  }
 }

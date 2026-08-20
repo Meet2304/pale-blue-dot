@@ -113,7 +113,9 @@ const HERO_LEAD: CSSProperties = {
   display: "block",
   fontFamily: "var(--font-archivo), system-ui, sans-serif",
   fontWeight: 200,
-  fontSize: "clamp(0.75rem, 1.4vw, 1.25rem)",
+  /* The floor is what a phone gets: vw sizing bottoms out around 5px at
+     375px wide, and the label had been sitting at the 12px minimum. */
+  fontSize: "clamp(0.95rem, 1.4vw, 1.25rem)",
   letterSpacing: "0.44em",
   textTransform: "uppercase",
   color: "var(--text-muted)",
@@ -134,7 +136,9 @@ const HERO_ACCENT: CSSProperties = {
      alternatives were and still clear the viewport at 375px. */
   fontFamily: "var(--font-anton), system-ui, sans-serif",
   fontWeight: 400,
-  fontSize: "clamp(3.4rem, 13.5vw, 12rem)",
+  /* Likewise: 13.5vw is only 51px on a 375px screen, so the floor decides,
+     and at 54px the word was using barely half the width available to it. */
+  fontSize: "clamp(5.25rem, 13.5vw, 12rem)",
   letterSpacing: "-0.015em",
   lineHeight: 1,
 };
@@ -335,7 +339,7 @@ export function HeroWarp() {
               /* Weighted below the centre of the sky box. Dead centre in three
                  quarters of empty sky read as floating; sitting lower gives the
                  line somewhere to be. Still far clear of the horizon. */
-              padding: "var(--space-8) var(--space-6) 0",
+              padding: "var(--space-8) clamp(var(--space-4), 5vw, var(--space-6)) 0",
               willChange: "opacity, transform",
             }}
           >
