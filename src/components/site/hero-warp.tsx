@@ -38,8 +38,17 @@ import {
  */
 const REVEAL_MS = 1400;
 
-/** Scroll runway height, in viewport units. The sticky pane is 1 of these. */
-const RUNWAY_VH = 420;
+/**
+ * Scroll runway height, in viewport units. The sticky pane is 1 of these, so
+ * the warp costs `RUNWAY_VH - 100` of actual scrolling.
+ *
+ * At 420 that was 320svh — around 29 wheel notches to get past the hero, which
+ * makes the transition a toll booth rather than a flourish. The page exists to
+ * show the work, and nothing here is worth making someone grind through it.
+ * 240 costs 140svh, roughly 13 notches: still long enough to read as a flight
+ * you are steering, short enough that nobody has to commit to it.
+ */
+const RUNWAY_VH = 240;
 
 /** Fraction of the runway spent at rest before the warp starts. */
 const DEAD_ZONE = 0.06;
@@ -48,18 +57,22 @@ const DEAD_ZONE = 0.06;
  * How the runway is spent after the dead zone. One sprung scalar, `progress`,
  * runs 0..1 across it, and each stage reads its own window:
  *
- *   0.00 – 0.78   the flight, ending with the dot's light filling the frame
- *   0.78 – 0.92   the light gives way to black
- *   0.92 – 1.00   held black, before the section below rises into view
+ *   0.00 – 0.72   the flight, ending with the dot's light filling the frame
+ *   0.72 – 0.89   the light gives way to black
+ *   0.89 – 1.00   held black, before the section below rises into view
  *
- * The last two windows are the fix for an arrival that used to land in a
- * tenth of the range — and worse, finished at the exact scroll position where
- * the sticky pane releases. Because the spring lags the scroll, the curtain was
+ * The last two windows are the fix for an arrival that used to land in a tenth
+ * of the range — and worse, finished at the exact scroll position where the
+ * sticky pane releases. Because the spring lags the scroll, the curtain was
  * still mid-fade at that point, so the streaks could be seen sliding away as
  * the next section came up. There is now a real beat of darkness in between.
+ *
+ * When the runway was shortened these two grew as a share of it. The flight is
+ * the repetitive part and takes the cut; the ending is the payoff and would go
+ * straight back to feeling abrupt if it were scaled down in proportion.
  */
-const FLIGHT_END = 0.78;
-const CURTAIN_SPAN = 0.14;
+const FLIGHT_END = 0.72;
+const CURTAIN_SPAN = 0.17;
 
 /**
  * Spring constants for the scroll follower.
