@@ -1,0 +1,28 @@
+/* Horizon design system — type scale. Fonts are supplied by next/font in layout.tsx. */
+:root {
+  --text-display-xl: clamp(3.25rem, 7.5vw, 6.5rem);
+  --text-display-l: clamp(2.5rem, 5vw, 4.25rem);
+  --text-display-m: 2.625rem;
+  --text-title-l: 1.875rem;
+  --text-title-m: 1.4375rem;
+  --text-title-s: 1.1875rem;
+  --text-body-l: 1.0625rem;
+  --text-body-m: 0.9375rem;
+  --text-body-s: 0.875rem;
+  --text-caption: 0.75rem;
+  --text-micro: 0.6875rem;
+
+  --leading-display: 1.1;
+  --leading-title: 1.25;
+  --leading-body: 1.6;
+  --leading-tight: 1.35;
+
+  --tracking-display: 0.005em;
+  --tracking-title: 0.01em;
+  --tracking-body: 0.003em;
+  --tracking-eyebrow: 0.16em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+}

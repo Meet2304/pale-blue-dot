@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* Horizon design system — the source of truth for every token below. */
+@import "../styles/horizon/colors.css";
+@import "../styles/horizon/typography.css";
+@import "../styles/horizon/spacing.css";
+@import "../styles/horizon/effects.css";
+@import "../styles/horizon/motion.css";
+@import "../styles/horizon/base.css";
+
+/* Dark-only. In Horizon the night is the canvas, not a preference. */
+:root {
+  color-scheme: dark;
+}
+
+/* Bridge Horizon into Tailwind so utilities speak the system's vocabulary.
+   Font stacks live here rather than in typography.css so that `font-display`
+   works as a utility and `var(--font-display)` works in plain CSS.
+
+   Nothing on the page uses a Tailwind utility yet — the components style
+   inline against the tokens — but `@theme inline` emits no CSS of its own, so
+   this costs nothing and keeps the vocabulary available to later sections. */
+@theme inline {
+  --font-display: var(--font-marcellus), ui-serif, "Palatino Linotype", Georgia, serif;
+  --font-text: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  /* No webfont: nothing on the page sets mono. Restore Space Mono here when
+     something does — Horizon specifies it. */
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-text);
+
+  --color-night-1000: var(--night-1000);
+  --color-night-900: var(--night-900);
+  --color-night-800: var(--night-800);
+  --color-night-700: var(--night-700);
+  --color-night-600: var(--night-600);
+  --color-night-500: var(--night-500);
+
+  --color-blue-700: var(--blue-700);
+  --color-blue-600: var(--blue-600);
+  --color-blue-500: var(--blue-500);
+  --color-blue-400: var(--blue-400);
+  --color-blue-300: var(--blue-300);
+  --color-blue-200: var(--blue-200);
+  --color-blue-100: var(--blue-100);
+
+  --color-accent: var(--accent);
+  --color-strong: var(--text-strong);
+  --color-body: var(--text-body);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-hairline: var(--line-hairline);
+}
+
+/* Entrances: fade and rise 10px. The only entrance in the system.
+
+   Duration is overridable so an element that has to wait its turn can still
+   arrive promptly once it does — the hero copy holds until the horizon has
+   finished moving, and then has no time left to spend on a 1100ms fade. */
+.hz-rise {
+  animation: horizon-rise var(--hz-dur, var(--dur-cinematic)) var(--ease-out-soft)
+    var(--hz-delay, 0ms) both;
+}
+
+/* An interrupted load collapses any in-flight entrance to its end state. */
+[data-hero="skipped"] .hz-rise {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* The arrival section holds its entrance until it is actually in view. */
+.hz-arrive {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+[data-arrived="true"] .hz-arrive {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-cinematic) var(--ease-out-soft),
+    transform var(--dur-cinematic) var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .hz-arrive {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Gradient noise across the glow — grain that belongs to the light rather than
+   to the screen. The mask is keyed to --hz-horizon, which the scene's render
+   loop updates as the horizon moves, so the grain travels with the glow through
+   both the load sequence and the warp.
+
+   The distribution is purely the mask's: a straight ramp from nothing at the
+   top of the sky wash to full at the waterline. See the blend note below for
+   why that needed a change of blend mode and not just a change of mask.
+
+   It stops dead at the waterline. This grain belongs to the air the light is
+   shining through, and there is no air below the horizon; the sea has its own
+   texture in the crests and the glitter path, and laying screen grain over the
+   top of those just muddies them. The last stop lands a fraction above the
+   line so nothing bleeds across it. */
+.hz-noise-glow {
+  position: absolute;
+  inset: 0;
+  background-image: var(--noise-url-specks);
+  opacity: 0.1;
+  pointer-events: none;
+  /* Screen, not soft-light. Soft-light scales with whatever is behind it, so
+     the grain was densest wherever the lobed glow was brightest and traced its
+     radial shape — the mask was always a vertical linear gradient, but the
+     blend was undoing it. Screen adds the source more or less directly on a
+     dark backdrop, so the distribution is the mask's and nothing else's. */
+  mix-blend-mode: screen;
+  /* A true linear ramp: nothing at the top of the wash, full at the waterline,
+     with the midpoint stop sitting exactly halfway so the interpolation stays
+     straight rather than bowing. The last two stops cut it dead just above the
+     horizon so none of it reaches the sea. */
+  --hz-mask: linear-gradient(
+    to bottom,
+    transparent calc(var(--hz-horizon, 76%) - 52%),
+    rgba(0, 0, 0, 0.5) calc(var(--hz-horizon, 76%) - 26.5%),
+    #000 calc(var(--hz-horizon, 76%) - 1%),
+    transparent calc(var(--hz-horizon, 76%) - 0.2%)
+  );
+  -webkit-mask-image: var(--hz-mask);
+  mask-image: var(--hz-mask);
+}
