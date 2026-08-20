@@ -1,24 +1,22 @@
 import {
   Anton,
   Archivo,
+  Bebas_Neue,
   Bricolage_Grotesque,
   Hanken_Grotesk,
   Instrument_Serif,
   Marcellus,
+  Martian_Mono,
+  Playfair_Display,
   Space_Mono,
-  Syne,
-  Unbounded,
 } from "next/font/google";
 
 /**
  * The site's faces.
  *
  * Horizon specifies Marcellus / Hanken Grotesk / Space Mono, and those still
- * back the tokens and everything outside the hero. The hero line itself is set
- * in Archivo and Syne, which is a deliberate divergence from the system — see
- * the treatment in `hero-warp.tsx`.
- *
- * Everything here is preloaded, because everything here is used above the fold.
+ * back the tokens and everything outside the hero. The hero's label is Archivo,
+ * which is a deliberate divergence from the system.
  */
 
 export const marcellus = Marcellus({
@@ -45,22 +43,15 @@ export const spaceMono = Space_Mono({
 export const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],
-  weight: ["200", "400", "900"],
+  weight: ["200", "400"],
   display: "swap",
 });
 
 /* --- Candidates for the answering clause -----------------------------------
-   Temporary. "I make." is being chosen from these with `?f=1..6`; once one
-   lands, delete the rest and drop them from the list below. None are
-   preloaded, so the default path is not paying for the comparison. */
-
-export const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["700"],
-  display: "swap",
-  preload: false,
-});
+   Temporary, chosen with `?f=1..6`. Deliberately spread across four different
+   kinds of face — two condensed, two serif, a grotesque and a monospace —
+   rather than six variations on one idea, since the geometric direction has
+   already been ruled out twice. None are preloaded. */
 
 export const anton = Anton({
   variable: "--font-anton",
@@ -70,10 +61,10 @@ export const anton = Anton({
   preload: false,
 });
 
-export const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
+export const bebas = Bebas_Neue({
+  variable: "--font-bebas",
   subsets: ["latin"],
-  weight: ["800"],
+  weight: "400",
   display: "swap",
   preload: false,
 });
@@ -87,10 +78,26 @@ export const instrumentSerif = Instrument_Serif({
   preload: false,
 });
 
-export const unbounded = Unbounded({
-  variable: "--font-unbounded",
+export const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["900"],
+  display: "swap",
+  preload: false,
+});
+
+export const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   weight: ["800"],
+  display: "swap",
+  preload: false,
+});
+
+export const martianMono = Martian_Mono({
+  variable: "--font-martian",
+  subsets: ["latin"],
+  weight: ["700"],
   display: "swap",
   preload: false,
 });
@@ -101,9 +108,10 @@ export const fontVariables = [
   hanken.variable,
   spaceMono.variable,
   archivo.variable,
-  syne.variable,
   anton.variable,
-  bricolage.variable,
+  bebas.variable,
   instrumentSerif.variable,
-  unbounded.variable,
+  playfair.variable,
+  bricolage.variable,
+  martianMono.variable,
 ].join(" ");

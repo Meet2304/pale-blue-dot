@@ -95,20 +95,22 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
  * This departs from Horizon, which specifies Marcellus for display.
  */
 const HERO_LEAD: CSSProperties = {
+  /* Its own line. Sharing one with the accent meant the two competed for the
+     same width, which capped how large the accent could go and wrapped on
+     anything under ~430px. Stacked, each is free to size for itself. */
   display: "block",
   fontFamily: "var(--font-archivo), system-ui, sans-serif",
   fontWeight: 200,
-  fontSize: "clamp(0.72rem, 1.5vw, 1.15rem)",
+  fontSize: "clamp(0.75rem, 1.4vw, 1.25rem)",
   letterSpacing: "0.44em",
   textTransform: "uppercase",
   color: "var(--text-muted)",
-  /* One line, always. At this size it is ~290px wide, which fits the narrowest
-     viewport, and broken across two lines the tracking makes it read as two
-     unrelated fragments rather than one label. */
+  /* The label never breaks. Split across lines its tracking makes it read as
+     two loose fragments rather than one label. */
   whiteSpace: "nowrap",
   /* Tracking leaves a gap after the final letter, and centring counts that gap
-     as part of the line — so the text sits half of it left of true centre. The
-     indent puts it back. */
+     as part of the line — so the label sits half of it left of true centre
+     against the word below. The indent puts it back. */
   textIndent: "0.44em",
   marginBottom: "var(--space-6)",
 };
@@ -125,69 +127,68 @@ const HERO_LEAD: CSSProperties = {
 const ACCENT_FACES = [
   {
     id: 1,
-    name: "Archivo Black",
-    note: "the label's own family at its heaviest — one family, maximum weight break",
+    name: "Anton",
+    note: "ultra-condensed display — packs the most letterform into the width, so it can go the largest",
     style: {
-      fontFamily: "var(--font-archivo), system-ui, sans-serif",
-      fontWeight: 900,
-      fontSize: "clamp(2.7rem, 8vw, 6.4rem)",
-      letterSpacing: "-0.035em",
+      fontFamily: "var(--font-anton), system-ui, sans-serif",
+      fontWeight: 400,
+      fontSize: "clamp(3.4rem, 13.5vw, 12rem)",
+      letterSpacing: "-0.015em",
     },
   },
   {
     id: 2,
-    name: "Anton",
-    note: "ultra-condensed display — tall, packed, the most physical of the six",
+    name: "Bebas Neue",
+    note: "condensed poster caps — has no lowercase at all, so it sets as I MAKE.",
     style: {
-      fontFamily: "var(--font-anton), system-ui, sans-serif",
+      fontFamily: "var(--font-bebas), system-ui, sans-serif",
       fontWeight: 400,
-      fontSize: "clamp(3.4rem, 10.5vw, 8.6rem)",
-      letterSpacing: "-0.01em",
+      fontSize: "clamp(3.4rem, 13.5vw, 12rem)",
+      letterSpacing: "0.005em",
     },
   },
   {
     id: 3,
-    name: "Bricolage Grotesque",
-    note: "grotesque built to be slightly imperfect — warmer than a geometric",
+    name: "Instrument Serif",
+    note: "high-contrast serif against a hairline sans label — the sharpest clash of the six",
     style: {
-      fontFamily: "var(--font-bricolage), system-ui, sans-serif",
-      fontWeight: 800,
-      fontSize: "clamp(2.8rem, 8.4vw, 6.8rem)",
-      letterSpacing: "-0.04em",
+      fontFamily: "var(--font-instrument), Georgia, serif",
+      fontWeight: 400,
+      fontSize: "clamp(3.2rem, 12.5vw, 11rem)",
+      letterSpacing: "-0.02em",
     },
   },
   {
     id: 4,
-    name: "Instrument Serif",
-    note: "high-contrast serif against a hairline sans label — the sharpest clash",
+    name: "Playfair Display Black",
+    note: "didone weight and thick–thin drama, the most theatrical option",
     style: {
-      fontFamily: "var(--font-instrument), Georgia, serif",
-      fontWeight: 400,
-      fontSize: "clamp(3.2rem, 9.8vw, 8rem)",
-      letterSpacing: "-0.02em",
+      fontFamily: "var(--font-playfair), Georgia, serif",
+      fontWeight: 900,
+      fontSize: "clamp(2.8rem, 10.5vw, 9rem)",
+      letterSpacing: "-0.025em",
     },
   },
   {
     id: 5,
-    name: "Instrument Serif Italic",
-    note: "the same face leaning — the answer sounds spoken rather than stated",
+    name: "Bricolage Grotesque",
+    note: "grotesque built to be slightly imperfect — warmer and less machined",
     style: {
-      fontFamily: "var(--font-instrument), Georgia, serif",
-      fontWeight: 400,
-      fontStyle: "italic" as const,
-      fontSize: "clamp(3.2rem, 9.8vw, 8rem)",
-      letterSpacing: "-0.02em",
+      fontFamily: "var(--font-bricolage), system-ui, sans-serif",
+      fontWeight: 800,
+      fontSize: "clamp(2.8rem, 10.5vw, 9rem)",
+      letterSpacing: "-0.045em",
     },
   },
   {
     id: 6,
-    name: "Unbounded",
-    note: "geometric display with unusual curves — closest to Syne, but wider and odder",
+    name: "Martian Mono",
+    note: "bold monospace at display size — wide, engineered, the least expected",
     style: {
-      fontFamily: "var(--font-unbounded), system-ui, sans-serif",
-      fontWeight: 800,
-      fontSize: "clamp(2.3rem, 6.8vw, 5.6rem)",
-      letterSpacing: "-0.045em",
+      fontFamily: "var(--font-martian), ui-monospace, monospace",
+      fontWeight: 700,
+      fontSize: "clamp(2rem, 7.2vw, 6.2rem)",
+      letterSpacing: "-0.05em",
     },
   },
 ];
@@ -420,17 +421,18 @@ export function HeroWarp() {
               style={
                 {
                   margin: 0,
-                  /* No max-width here. `ch` resolves against this element's own
-                     font — Marcellus at the UA default size — not against the
-                     faces the spans actually set, so 16ch came out around 240px
-                     and wrapped both clauses onto two lines each. The clamped
-                     sizes below already keep the line inside any viewport. */
+                  /* Leading is pinned here because the line box is sized by the
+                     accent, which is the tallest thing on it. No max-width:
+                     `ch` would resolve against this element's own font rather
+                     than the faces the spans set, which is what wrapped the
+                     line into four before. */
+                  lineHeight: 1,
                   "--hz-delay": "800ms",
                 } as React.CSSProperties
               }
             >
-              {/* The accent colour still comes from the system's own h1 em
-                  rule, never a colour override. */}
+              {/* One line, one baseline. The accent colour still comes from
+                  the system's own h1 em rule, never a colour override. */}
               <span style={HERO_LEAD}>What&rsquo;s missing,</span>
               <em style={{ ...HERO_ACCENT, ...face.style }}>I make.</em>
             </h1>
