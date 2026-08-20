@@ -67,10 +67,14 @@
   --ring: var(--blue-400);
 }
 
-/* Entrances: fade and rise 10px. The only entrance in the system. */
+/* Entrances: fade and rise 10px. The only entrance in the system.
+
+   Duration is overridable so an element that has to wait its turn can still
+   arrive promptly once it does — the hero copy holds until the horizon has
+   finished moving, and then has no time left to spend on a 1100ms fade. */
 .hz-rise {
-  animation: horizon-rise var(--dur-cinematic) var(--ease-out-soft) var(--hz-delay, 0ms)
-    both;
+  animation: horizon-rise var(--hz-dur, var(--dur-cinematic)) var(--ease-out-soft)
+    var(--hz-delay, 0ms) both;
 }
 
 /* An interrupted load collapses any in-flight entrance to its end state. */

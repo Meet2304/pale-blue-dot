@@ -548,7 +548,12 @@ export function NightHorizon({
       ctx!.clearRect(0, 0, w, h);
 
       const lineDraw = clamp01(reveal / 0.45);
-      const settle = clamp01((reveal - 0.4) / 0.6);
+      /* The descent finishes at 0.85 of the reveal rather than riding it all
+         the way to the end. Everything else — stars, water — can keep arriving
+         afterwards without anyone noticing, but the horizon moving is the one
+         thing the copy cannot enter on top of, so it has to be over first and
+         the sequence has to leave room for it to be. */
+      const settle = clamp01((reveal - 0.35) / 0.5);
       const starsIn = clamp01((reveal - 0.5) / 0.5);
       const waterIn = clamp01((reveal - 0.62) / 0.38);
 

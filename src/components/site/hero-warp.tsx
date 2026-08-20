@@ -427,7 +427,11 @@ export function HeroWarp() {
                      than the faces the spans set, which is what wrapped the
                      line into four before. */
                   lineHeight: 1,
-                  "--hz-delay": "800ms",
+                  /* Held until the horizon has stopped moving at ~1150ms, with a
+                     beat after it, then a short entrance so the wait costs
+                     nothing. Landing on a travelling line was the problem. */
+                  "--hz-delay": "1250ms",
+                  "--hz-dur": "700ms",
                 } as React.CSSProperties
               }
             >
@@ -507,7 +511,8 @@ function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
             flexDirection: "column",
             alignItems: "center",
             gap: "var(--space-4)",
-            "--hz-delay": "1250ms",
+            "--hz-delay": "1800ms",
+            "--hz-dur": "600ms",
           } as React.CSSProperties
         }
       >
