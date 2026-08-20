@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";
 
 import {
   HORIZON,
@@ -87,9 +87,10 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
  *
  * "What's missing," is a hairline Archivo, small and held open by tracking —
  * it reads as a caption to the thing underneath rather than as half a sentence.
- * "I make." is Syne at 700, several times the size and close-set. Face, weight,
- * size, case and colour all break at once across the comma, which is what makes
- * the second clause land as a reply instead of a continuation.
+ * "I make." is several times the size, close-set, and set in whichever face is
+ * chosen below. Face, weight, size, case and colour all break at once across
+ * the comma, which is what makes the second clause land as a reply instead of
+ * a continuation.
  *
  * This departs from Horizon, which specifies Marcellus for display.
  */
@@ -101,6 +102,10 @@ const HERO_LEAD: CSSProperties = {
   letterSpacing: "0.44em",
   textTransform: "uppercase",
   color: "var(--text-muted)",
+  /* One line, always. At this size it is ~290px wide, which fits the narrowest
+     viewport, and broken across two lines the tracking makes it read as two
+     unrelated fragments rather than one label. */
+  whiteSpace: "nowrap",
   /* Tracking leaves a gap after the final letter, and centring counts that gap
      as part of the line — so the text sits half of it left of true centre. The
      indent puts it back. */
@@ -108,12 +113,87 @@ const HERO_LEAD: CSSProperties = {
   marginBottom: "var(--space-6)",
 };
 
+/**
+ * Candidates for the answering clause. Temporary — pick one with `?f=1..6` and
+ * then inline the winner here, deleting the rest along with the unused faces in
+ * `fonts.ts`.
+ *
+ * Sizes differ per face because these have very different optical sizes and
+ * widths at the same nominal point size: Anton is condensed and sets small,
+ * Instrument Serif sets large.
+ */
+const ACCENT_FACES = [
+  {
+    id: 1,
+    name: "Archivo Black",
+    note: "the label's own family at its heaviest — one family, maximum weight break",
+    style: {
+      fontFamily: "var(--font-archivo), system-ui, sans-serif",
+      fontWeight: 900,
+      fontSize: "clamp(2.7rem, 8vw, 6.4rem)",
+      letterSpacing: "-0.035em",
+    },
+  },
+  {
+    id: 2,
+    name: "Anton",
+    note: "ultra-condensed display — tall, packed, the most physical of the six",
+    style: {
+      fontFamily: "var(--font-anton), system-ui, sans-serif",
+      fontWeight: 400,
+      fontSize: "clamp(3.4rem, 10.5vw, 8.6rem)",
+      letterSpacing: "-0.01em",
+    },
+  },
+  {
+    id: 3,
+    name: "Bricolage Grotesque",
+    note: "grotesque built to be slightly imperfect — warmer than a geometric",
+    style: {
+      fontFamily: "var(--font-bricolage), system-ui, sans-serif",
+      fontWeight: 800,
+      fontSize: "clamp(2.8rem, 8.4vw, 6.8rem)",
+      letterSpacing: "-0.04em",
+    },
+  },
+  {
+    id: 4,
+    name: "Instrument Serif",
+    note: "high-contrast serif against a hairline sans label — the sharpest clash",
+    style: {
+      fontFamily: "var(--font-instrument), Georgia, serif",
+      fontWeight: 400,
+      fontSize: "clamp(3.2rem, 9.8vw, 8rem)",
+      letterSpacing: "-0.02em",
+    },
+  },
+  {
+    id: 5,
+    name: "Instrument Serif Italic",
+    note: "the same face leaning — the answer sounds spoken rather than stated",
+    style: {
+      fontFamily: "var(--font-instrument), Georgia, serif",
+      fontWeight: 400,
+      fontStyle: "italic" as const,
+      fontSize: "clamp(3.2rem, 9.8vw, 8rem)",
+      letterSpacing: "-0.02em",
+    },
+  },
+  {
+    id: 6,
+    name: "Unbounded",
+    note: "geometric display with unusual curves — closest to Syne, but wider and odder",
+    style: {
+      fontFamily: "var(--font-unbounded), system-ui, sans-serif",
+      fontWeight: 800,
+      fontSize: "clamp(2.3rem, 6.8vw, 5.6rem)",
+      letterSpacing: "-0.045em",
+    },
+  },
+];
+
 const HERO_ACCENT: CSSProperties = {
   display: "block",
-  fontFamily: "var(--font-syne), system-ui, sans-serif",
-  fontWeight: 700,
-  fontSize: "clamp(2.8rem, 8.4vw, 6.8rem)",
-  letterSpacing: "-0.03em",
   lineHeight: 1,
 };
 
@@ -124,12 +204,30 @@ const HERO_CUE: CSSProperties = {
   letterSpacing: "0.3em",
 };
 
+/* Temporary, for the accent-face comparison. Empty on the server and on the
+   first client render so hydration stays consistent, real thereafter. */
+const noStoreChanges = () => () => {};
+function useAccentFace() {
+  const search = useSyncExternalStore(
+    noStoreChanges,
+    () => window.location.search,
+    () => "",
+  );
+  const id = Number(new URLSearchParams(search).get("f"));
+  return {
+    face: ACCENT_FACES.find((f) => f.id === id) ?? ACCENT_FACES[0],
+    chosen: new URLSearchParams(search).has("f"),
+  };
+}
+
 export function HeroWarp() {
   const runwayRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const curtainRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
+
+  const { face, chosen } = useAccentFace();
 
   const drivers = useRef<SceneDrivers>({ reveal: 0, warp: 0 });
 
@@ -322,7 +420,11 @@ export function HeroWarp() {
               style={
                 {
                   margin: 0,
-                  maxWidth: "16ch",
+                  /* No max-width here. `ch` resolves against this element's own
+                     font — Marcellus at the UA default size — not against the
+                     faces the spans actually set, so 16ch came out around 240px
+                     and wrapped both clauses onto two lines each. The clamped
+                     sizes below already keep the line inside any viewport. */
                   "--hz-delay": "800ms",
                 } as React.CSSProperties
               }
@@ -330,12 +432,32 @@ export function HeroWarp() {
               {/* The accent colour still comes from the system's own h1 em
                   rule, never a colour override. */}
               <span style={HERO_LEAD}>What&rsquo;s missing,</span>
-              <em style={HERO_ACCENT}>I make.</em>
+              <em style={{ ...HERO_ACCENT, ...face.style }}>I make.</em>
             </h1>
           </div>
         </NightHorizon>
 
         <ScrollCue ref={cueRef} />
+        {chosen && (
+          <div
+            style={{
+              position: "absolute",
+              left: "var(--space-6)",
+              bottom: "var(--space-6)",
+              maxWidth: "38ch",
+              pointerEvents: "none",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-micro)",
+              lineHeight: 1.6,
+              color: "var(--text-muted)",
+            }}
+          >
+            <div style={{ color: "var(--text-strong)" }}>
+              {face.id} / {ACCENT_FACES.length} · {face.name}
+            </div>
+            <div>{face.note}</div>
+          </div>
+        )}
 
         {/* The handover to black, so the section below rises out of the dark
             rather than out of a white flash. */}

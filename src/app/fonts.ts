@@ -1,4 +1,14 @@
-import { Archivo, Hanken_Grotesk, Marcellus, Space_Mono, Syne } from "next/font/google";
+import {
+  Anton,
+  Archivo,
+  Bricolage_Grotesque,
+  Hanken_Grotesk,
+  Instrument_Serif,
+  Marcellus,
+  Space_Mono,
+  Syne,
+  Unbounded,
+} from "next/font/google";
 
 /**
  * The site's faces.
@@ -35,16 +45,54 @@ export const spaceMono = Space_Mono({
 export const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],
-  weight: ["200", "400"],
+  weight: ["200", "400", "900"],
   display: "swap",
 });
 
-/** The hero's answering voice: geometric, heavy, close-set. */
+/* --- Candidates for the answering clause -----------------------------------
+   Temporary. "I make." is being chosen from these with `?f=1..6`; once one
+   lands, delete the rest and drop them from the list below. None are
+   preloaded, so the default path is not paying for the comparison. */
+
 export const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
   weight: ["700"],
   display: "swap",
+  preload: false,
+});
+
+export const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+});
+
+export const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  weight: ["800"],
+  display: "swap",
+  preload: false,
+});
+
+export const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+  preload: false,
+});
+
+export const unbounded = Unbounded({
+  variable: "--font-unbounded",
+  subsets: ["latin"],
+  weight: ["800"],
+  display: "swap",
+  preload: false,
 });
 
 /** Every font variable, for the <html> class list. */
@@ -54,4 +102,8 @@ export const fontVariables = [
   spaceMono.variable,
   archivo.variable,
   syne.variable,
+  anton.variable,
+  bricolage.variable,
+  instrumentSerif.variable,
+  unbounded.variable,
 ].join(" ");
