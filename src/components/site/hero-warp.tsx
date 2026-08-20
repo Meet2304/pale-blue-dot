@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 
 import {
   HORIZON,
   NightHorizon,
   type SceneDrivers,
 } from "@/components/horizon/night-horizon";
-import {
-  HERO_TYPE_SETS,
-  heroTypeRequested,
-  heroTypeSetFrom,
-  type HeroTypeSet,
-} from "./hero-type";
 
 /**
  * The hero and the warp are one sticky viewport over a tall scroll runway.
@@ -88,17 +82,47 @@ const SPRING_STEP = 1 / 120;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/* The query string, read without tripping a hydration mismatch: empty on the
-   server and on the first client render, real thereafter. Cheaper than
-   useSearchParams, which would drag a Suspense boundary into a static page. */
-const noStoreChanges = () => () => {};
-function useSearch(): string {
-  return useSyncExternalStore(
-    noStoreChanges,
-    () => window.location.search,
-    () => "",
-  );
-}
+/**
+ * The hero line, set as a label and an answer.
+ *
+ * "What's missing," is a hairline Archivo, small and held open by tracking —
+ * it reads as a caption to the thing underneath rather than as half a sentence.
+ * "I make." is Syne at 700, several times the size and close-set. Face, weight,
+ * size, case and colour all break at once across the comma, which is what makes
+ * the second clause land as a reply instead of a continuation.
+ *
+ * This departs from Horizon, which specifies Marcellus for display.
+ */
+const HERO_LEAD: CSSProperties = {
+  display: "block",
+  fontFamily: "var(--font-archivo), system-ui, sans-serif",
+  fontWeight: 200,
+  fontSize: "clamp(0.72rem, 1.5vw, 1.15rem)",
+  letterSpacing: "0.44em",
+  textTransform: "uppercase",
+  color: "var(--text-muted)",
+  /* Tracking leaves a gap after the final letter, and centring counts that gap
+     as part of the line — so the text sits half of it left of true centre. The
+     indent puts it back. */
+  textIndent: "0.44em",
+  marginBottom: "var(--space-6)",
+};
+
+const HERO_ACCENT: CSSProperties = {
+  display: "block",
+  fontFamily: "var(--font-syne), system-ui, sans-serif",
+  fontWeight: 700,
+  fontSize: "clamp(2.8rem, 8.4vw, 6.8rem)",
+  letterSpacing: "-0.03em",
+  lineHeight: 1,
+};
+
+/** The cue borrows the label's voice, so the small type on the page agrees. */
+const HERO_CUE: CSSProperties = {
+  fontFamily: "var(--font-archivo), system-ui, sans-serif",
+  fontWeight: 400,
+  letterSpacing: "0.3em",
+};
 
 export function HeroWarp() {
   const runwayRef = useRef<HTMLDivElement>(null);
@@ -106,10 +130,6 @@ export function HeroWarp() {
   const copyRef = useRef<HTMLDivElement>(null);
   const curtainRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
-
-  const search = useSearch();
-  const typeSet = heroTypeSetFrom(search);
-  const showTypeLabel = heroTypeRequested(search);
 
   const drivers = useRef<SceneDrivers>({ reveal: 0, warp: 0 });
 
@@ -288,8 +308,8 @@ export function HeroWarp() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: typeSet.align === "left" ? "flex-start" : "center",
-              textAlign: typeSet.align,
+              alignItems: "center",
+              textAlign: "center",
               /* Weighted below the centre of the sky box. Dead centre in three
                  quarters of empty sky read as floating; sitting lower gives the
                  line somewhere to be. Still far clear of the horizon. */
@@ -302,25 +322,20 @@ export function HeroWarp() {
               style={
                 {
                   margin: 0,
-                  ...typeSet.frame,
+                  maxWidth: "16ch",
                   "--hz-delay": "800ms",
                 } as React.CSSProperties
               }
             >
-              {/* Both clauses are blocks, so every set stacks them and the
-                  second answers the first rather than continuing it. The accent
-                  colour still comes from the system's own h1 em rule, never a
-                  colour override. */}
-              <span style={{ display: "block", ...typeSet.lead }}>
-                What&rsquo;s missing,
-              </span>
-              <em style={{ display: "block", ...typeSet.accent }}>I make.</em>
+              {/* The accent colour still comes from the system's own h1 em
+                  rule, never a colour override. */}
+              <span style={HERO_LEAD}>What&rsquo;s missing,</span>
+              <em style={HERO_ACCENT}>I make.</em>
             </h1>
           </div>
         </NightHorizon>
 
-        <ScrollCue ref={cueRef} typeSet={typeSet} />
-        {showTypeLabel && <TypeSetLabel set={typeSet} />}
+        <ScrollCue ref={cueRef} />
 
         {/* The handover to black, so the section below rises out of the dark
             rather than out of a white flash. */}
@@ -347,13 +362,7 @@ export function HeroWarp() {
  * the cue stayed lit through the whole flight. The outer node is the one the
  * loop writes to; the inner node keeps the entrance.
  */
-function ScrollCue({
-  ref,
-  typeSet,
-}: {
-  ref: React.Ref<HTMLDivElement>;
-  typeSet: HeroTypeSet;
-}) {
+function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
   return (
     <div
       ref={ref}
@@ -386,7 +395,7 @@ function ScrollCue({
             has to come from size and tracking, not from dimming. */}
         <span
           className="hz-eyebrow"
-          style={{ color: "var(--text-muted)", ...typeSet.eyebrow }}
+          style={{ color: "var(--text-muted)", ...HERO_CUE }}
         >
           Scroll up
         </span>
@@ -402,34 +411,6 @@ function ScrollCue({
           }}
         />
       </div>
-    </div>
-  );
-}
-
-/**
- * Temporary: names the active candidate while a `type` param is present, so the
- * five can be told apart. Remove this along with `hero-type.ts` and the unused
- * faces in `fonts.ts` once a pairing is chosen.
- */
-function TypeSetLabel({ set }: { set: HeroTypeSet }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: "var(--space-6)",
-        bottom: "var(--space-6)",
-        maxWidth: "34ch",
-        pointerEvents: "none",
-        fontFamily: "var(--font-mono)",
-        fontSize: "var(--text-micro)",
-        lineHeight: 1.6,
-        color: "var(--text-muted)",
-      }}
-    >
-      <div style={{ color: "var(--text-strong)" }}>
-        {set.id} / {HERO_TYPE_SETS.length} · {set.name}
-      </div>
-      <div>{set.note}</div>
     </div>
   );
 }
