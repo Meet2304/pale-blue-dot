@@ -119,26 +119,31 @@
    out into the black sky above and the bright line below. That falloff is the
    whole character of the effect.
 
-   The mask spans the full height of the sky wash, and peaks just above the
-   horizon rather than on it — the brightest part of a gradient carries the
-   least visible grain, so sitting the peak in the mid-tones is what stops it
-   looking like a band of fizz laid over the light. */
+   The mask spans the height of the sky wash and peaks above the horizon rather
+   than on it — the brightest part of a gradient carries the least visible
+   grain, so sitting the peak in the mid-tones is what stops it looking like a
+   band of fizz laid over the light.
+
+   It stops dead at the waterline. This grain belongs to the air the light is
+   shining through, and there is no air below the horizon; the sea has its own
+   texture in the crests and the glitter path, and laying screen grain over the
+   top of those just muddies them. The last stop lands a fraction above the
+   line so nothing bleeds across it. */
 .hz-noise-glow {
   position: absolute;
   inset: 0;
   background-image: var(--noise-url-coarse);
-  opacity: 0.35;
+  opacity: 0.5;
   pointer-events: none;
   mix-blend-mode: soft-light;
   --hz-mask: linear-gradient(
     to bottom,
     transparent calc(var(--hz-horizon, 76%) - 52%),
-    rgba(0, 0, 0, 0.35) calc(var(--hz-horizon, 76%) - 34%),
-    rgba(0, 0, 0, 0.85) calc(var(--hz-horizon, 76%) - 18%),
-    #000 calc(var(--hz-horizon, 76%) - 7%),
-    rgba(0, 0, 0, 0.8) var(--hz-horizon, 76%),
-    rgba(0, 0, 0, 0.35) calc(var(--hz-horizon, 76%) + 8%),
-    transparent calc(var(--hz-horizon, 76%) + 18%)
+    rgba(0, 0, 0, 0.35) calc(var(--hz-horizon, 76%) - 36%),
+    rgba(0, 0, 0, 0.85) calc(var(--hz-horizon, 76%) - 20%),
+    #000 calc(var(--hz-horizon, 76%) - 10%),
+    rgba(0, 0, 0, 0.75) calc(var(--hz-horizon, 76%) - 3%),
+    transparent calc(var(--hz-horizon, 76%) - 0.2%)
   );
   -webkit-mask-image: var(--hz-mask);
   mask-image: var(--hz-mask);

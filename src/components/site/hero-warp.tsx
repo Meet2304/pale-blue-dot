@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import {
   HORIZON,
   NightHorizon,
   type SceneDrivers,
 } from "@/components/horizon/night-horizon";
+import {
+  HERO_TYPE_SETS,
+  heroTypeRequested,
+  heroTypeSetFrom,
+  type HeroTypeSet,
+} from "./hero-type";
 
 /**
  * The hero and the warp are one sticky viewport over a tall scroll runway.
@@ -27,8 +33,16 @@ import {
  * straight to refs and inline styles, so a full scroll-through costs no renders.
  */
 
-/** Line draw occupies the first 45% of the reveal, ~1080ms — the system's cinematic duration. */
-const REVEAL_MS = 2400;
+/**
+ * Black screen to formed hero.
+ *
+ * The line draw occupies the first 45% of this, so at 1400 it lands at ~630ms
+ * and the scene is complete at 1.4s, with the headline settled just before
+ * 1.9s — the budget the original spec set. It ran at 2400 and felt like being
+ * held: a loader earns its time by having something left to show, and this one
+ * has shown everything it has well before then.
+ */
+const REVEAL_MS = 1400;
 
 /** Scroll runway height, in viewport units. The sticky pane is 1 of these. */
 const RUNWAY_VH = 420;
@@ -74,12 +88,28 @@ const SPRING_STEP = 1 / 120;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
+/* The query string, read without tripping a hydration mismatch: empty on the
+   server and on the first client render, real thereafter. Cheaper than
+   useSearchParams, which would drag a Suspense boundary into a static page. */
+const noStoreChanges = () => () => {};
+function useSearch(): string {
+  return useSyncExternalStore(
+    noStoreChanges,
+    () => window.location.search,
+    () => "",
+  );
+}
+
 export function HeroWarp() {
   const runwayRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const curtainRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
+
+  const search = useSearch();
+  const typeSet = heroTypeSetFrom(search);
+  const showTypeLabel = heroTypeRequested(search);
 
   const drivers = useRef<SceneDrivers>({ reveal: 0, warp: 0 });
 
@@ -271,21 +301,24 @@ export function HeroWarp() {
               className="hz-rise"
               style={
                 {
-                  fontSize: "var(--text-display-xl)",
+                  fontSize: `calc(var(--text-display-xl) * ${typeSet.scale})`,
                   margin: 0,
                   maxWidth: "18ch",
-                  "--hz-delay": "1500ms",
+                  "--hz-delay": "800ms",
                 } as React.CSSProperties
               }
             >
-              {/* The turn is on the second clause, so that is where the accent
-                  goes — via the system's own h1 em rule, not a colour override. */}
-              What&rsquo;s missing, <em>I make.</em>
+              {/* Two clauses with a turn between them, so each candidate set is
+                  free to treat them as two voices. The accent colour still comes
+                  from the system's own h1 em rule, never a colour override. */}
+              <span style={typeSet.lead}>What&rsquo;s missing,</span>{" "}
+              <em style={typeSet.accent}>I make.</em>
             </h1>
           </div>
         </NightHorizon>
 
-        <ScrollCue ref={cueRef} />
+        <ScrollCue ref={cueRef} typeSet={typeSet} />
+        {showTypeLabel && <TypeSetLabel set={typeSet} />}
 
         {/* The handover to black, so the section below rises out of the dark
             rather than out of a white flash. */}
@@ -312,7 +345,13 @@ export function HeroWarp() {
  * the cue stayed lit through the whole flight. The outer node is the one the
  * loop writes to; the inner node keeps the entrance.
  */
-function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
+function ScrollCue({
+  ref,
+  typeSet,
+}: {
+  ref: React.Ref<HTMLDivElement>;
+  typeSet: HeroTypeSet;
+}) {
   return (
     <div
       ref={ref}
@@ -333,25 +372,21 @@ function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
             flexDirection: "column",
             alignItems: "center",
             gap: "var(--space-4)",
-            "--hz-delay": "2400ms",
+            "--hz-delay": "1250ms",
           } as React.CSSProperties
         }
       >
-        {/* "Look up", not "Scroll". The system's rule for labels is to name the
-            act rather than the mechanism, and the act here is not scrolling —
-            it is going up into the night. It also quietly tells you what the
-            warp is about to do, so the flight arrives as something you asked
-            for. The line still points down, which is the honest instruction;
-            the tension between the two resolves the moment you move. */}
+        {/* Colour is --text-muted rather than the eyebrow's default --text-faint.
+            Against the near-black water behind it, faint measures 3.9:1 — under
+            AA for text this small even at full strength — and the 62% opacity
+            this previously carried took it to 2.2:1, which is why it could not
+            be read at all. Muted at full opacity measures 7.9:1. Restraint here
+            has to come from size and tracking, not from dimming. */}
         <span
           className="hz-eyebrow"
-          style={{
-            fontSize: "var(--text-micro)",
-            letterSpacing: "0.24em",
-            opacity: 0.62,
-          }}
+          style={{ color: "var(--text-muted)", ...typeSet.eyebrow }}
         >
-          Look up
+          Scroll up
         </span>
         {/* A thread of the horizon's light let down into the dark. It does not
             loop — in this system only the scene is allowed to move on its own. */}
@@ -361,10 +396,38 @@ function ScrollCue({ ref }: { ref: React.Ref<HTMLDivElement> }) {
             width: 1,
             height: 72,
             background:
-              "linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0) 100%)",
+              "linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.09) 45%, rgba(255,255,255,0) 100%)",
           }}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Temporary: names the active candidate while a `type` param is present, so the
+ * five can be told apart. Remove this along with `hero-type.ts` and the unused
+ * faces in `fonts.ts` once a pairing is chosen.
+ */
+function TypeSetLabel({ set }: { set: HeroTypeSet }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: "var(--space-6)",
+        bottom: "var(--space-6)",
+        maxWidth: "34ch",
+        pointerEvents: "none",
+        fontFamily: "var(--font-mono)",
+        fontSize: "var(--text-micro)",
+        lineHeight: 1.6,
+        color: "var(--text-muted)",
+      }}
+    >
+      <div style={{ color: "var(--text-strong)" }}>
+        {set.id} / {HERO_TYPE_SETS.length} · {set.name}
+      </div>
+      <div>{set.note}</div>
     </div>
   );
 }

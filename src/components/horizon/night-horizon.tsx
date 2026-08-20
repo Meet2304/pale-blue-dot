@@ -371,10 +371,10 @@ export function NightHorizon({
         ctx!.translate(w * l.c, hy);
         ctx!.scale(Math.max(w * l.w * 2.6, 1), Math.max(h * (0.3 + 0.18 * l.a), 1));
         const g = ctx!.createRadialGradient(0, 0, 0, 0, 0, 1);
-        g.addColorStop(0, `rgba(${rgbLift},0.34)`);
-        g.addColorStop(0.22, `rgba(${rgb},0.17)`);
-        g.addColorStop(0.5, `rgba(${rgb},0.07)`);
-        g.addColorStop(0.78, `rgba(${rgb},0.022)`);
+        g.addColorStop(0, `rgba(${rgbLift},0.5)`);
+        g.addColorStop(0.22, `rgba(${rgb},0.27)`);
+        g.addColorStop(0.5, `rgba(${rgb},0.12)`);
+        g.addColorStop(0.78, `rgba(${rgb},0.038)`);
         g.addColorStop(1, `rgba(${rgb},0)`);
         ctx!.globalAlpha = alpha * l.a * reach;
         ctx!.fillStyle = g;
@@ -409,8 +409,8 @@ export function NightHorizon({
         ctx!.translate(w * l.c, hy);
         ctx!.scale(Math.max(w * l.w * 2.1, 1), Math.max(h * (0.055 + 0.05 * l.a), 1));
         const bloom = ctx!.createRadialGradient(0, 0, 0, 0, 0, 1);
-        bloom.addColorStop(0, `rgba(${rgb},0.17)`);
-        bloom.addColorStop(0.4, `rgba(${rgb},0.048)`);
+        bloom.addColorStop(0, `rgba(${rgb},0.25)`);
+        bloom.addColorStop(0.4, `rgba(${rgb},0.072)`);
         bloom.addColorStop(1, `rgba(${rgb},0)`);
         ctx!.globalAlpha = alpha * l.a * reach;
         ctx!.fillStyle = bloom;
