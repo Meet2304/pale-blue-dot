@@ -112,17 +112,9 @@
    loop updates as the horizon moves, so the grain travels with the glow through
    both the load sequence and the warp.
 
-   Two things make this read as gradient noise rather than an overlay:
-
-   soft-light does most of its work in the midtones and almost none at either
-   extreme, so the grain is strongest through the middle of the ramp and thins
-   out into the black sky above and the bright line below. That falloff is the
-   whole character of the effect.
-
-   The mask spans the height of the sky wash and peaks above the horizon rather
-   than on it — the brightest part of a gradient carries the least visible
-   grain, so sitting the peak in the mid-tones is what stops it looking like a
-   band of fizz laid over the light.
+   The distribution is purely the mask's: a straight ramp from nothing at the
+   top of the sky wash to full at the waterline. See the blend note below for
+   why that needed a change of blend mode and not just a change of mask.
 
    It stops dead at the waterline. This grain belongs to the air the light is
    shining through, and there is no air below the horizon; the sea has its own
@@ -132,17 +124,24 @@
 .hz-noise-glow {
   position: absolute;
   inset: 0;
-  background-image: var(--noise-url-coarse);
-  opacity: 0.5;
+  background-image: var(--noise-url-specks);
+  opacity: 0.14;
   pointer-events: none;
-  mix-blend-mode: soft-light;
+  /* Screen, not soft-light. Soft-light scales with whatever is behind it, so
+     the grain was densest wherever the lobed glow was brightest and traced its
+     radial shape — the mask was always a vertical linear gradient, but the
+     blend was undoing it. Screen adds the source more or less directly on a
+     dark backdrop, so the distribution is the mask's and nothing else's. */
+  mix-blend-mode: screen;
+  /* A true linear ramp: nothing at the top of the wash, full at the waterline,
+     with the midpoint stop sitting exactly halfway so the interpolation stays
+     straight rather than bowing. The last two stops cut it dead just above the
+     horizon so none of it reaches the sea. */
   --hz-mask: linear-gradient(
     to bottom,
     transparent calc(var(--hz-horizon, 76%) - 52%),
-    rgba(0, 0, 0, 0.35) calc(var(--hz-horizon, 76%) - 36%),
-    rgba(0, 0, 0, 0.85) calc(var(--hz-horizon, 76%) - 20%),
-    #000 calc(var(--hz-horizon, 76%) - 10%),
-    rgba(0, 0, 0, 0.75) calc(var(--hz-horizon, 76%) - 3%),
+    rgba(0, 0, 0, 0.5) calc(var(--hz-horizon, 76%) - 26.5%),
+    #000 calc(var(--hz-horizon, 76%) - 1%),
     transparent calc(var(--hz-horizon, 76%) - 0.2%)
   );
   -webkit-mask-image: var(--hz-mask);
