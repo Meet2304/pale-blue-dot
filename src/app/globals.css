@@ -1,9 +1,6 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
-/* Horizon design system. Imported after shadcn so Horizon's tokens win any
-   name collision (--radius-sm, --space-*) — Horizon is the source of truth. */
+/* Horizon design system — the source of truth for every token below. */
 @import "../styles/horizon/colors.css";
 @import "../styles/horizon/typography.css";
 @import "../styles/horizon/spacing.css";
@@ -11,15 +8,24 @@
 @import "../styles/horizon/motion.css";
 @import "../styles/horizon/base.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark-only. In Horizon the night is the canvas, not a preference. */
+:root {
+  color-scheme: dark;
+}
 
 /* Bridge Horizon into Tailwind so utilities speak the system's vocabulary.
    Font stacks live here rather than in typography.css so that `font-display`
-   works as a utility and `var(--font-display)` works in plain CSS. */
+   works as a utility and `var(--font-display)` works in plain CSS.
+
+   Nothing on the page uses a Tailwind utility yet — the components style
+   inline against the tokens — but `@theme inline` emits no CSS of its own, so
+   this costs nothing and keeps the vocabulary available to later sections. */
 @theme inline {
   --font-display: var(--font-marcellus), ui-serif, "Palatino Linotype", Georgia, serif;
   --font-text: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-space-mono), ui-monospace, SFMono-Regular, monospace;
+  /* No webfont: nothing on the page sets mono. Restore Space Mono here when
+     something does — Horizon specifies it. */
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
   --font-sans: var(--font-text);
 
   --color-night-1000: var(--night-1000);
@@ -43,28 +49,6 @@
   --color-muted: var(--text-muted);
   --color-faint: var(--text-faint);
   --color-hairline: var(--line-hairline);
-}
-
-/* shadcn primitives, remapped onto Horizon. Kept so any shadcn component
-   dropped in later inherits the system instead of neutral greys. */
-.dark {
-  --background: var(--bg-page);
-  --foreground: var(--text-body);
-  --card: var(--surface-1);
-  --card-foreground: var(--text-body);
-  --popover: var(--surface-1);
-  --popover-foreground: var(--text-body);
-  --primary: var(--accent);
-  --primary-foreground: var(--text-on-accent);
-  --secondary: var(--surface-2);
-  --secondary-foreground: var(--text-strong);
-  --muted: var(--surface-2);
-  --muted-foreground: var(--text-muted);
-  --accent-foreground: var(--text-on-accent);
-  --destructive: var(--signal-critical);
-  --border: var(--line-hairline);
-  --input: var(--line-soft);
-  --ring: var(--blue-400);
 }
 
 /* Entrances: fade and rise 10px. The only entrance in the system.

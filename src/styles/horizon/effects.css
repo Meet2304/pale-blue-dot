@@ -13,19 +13,6 @@
   --noise-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   --noise-opacity: 0.11;
 
-  /* The same generator at a coarser scale, for the glow. Lower frequency and
-     fewer octaves give the chunkier grain that reads on a soft gradient — at
-     0.9 the texture is finer than the gradient it sits on and just looks like
-     screen noise. Same fractal turbulence, so it is one texture, not two.
-
-     The feColorMatrix is what makes it usable. feTurbulence writes noise into
-     all four channels, alpha included, so the raw output is a semi-transparent
-     mush that loses most of its contrast before it ever reaches the blend. The
-     matrix flattens RGB to luminance and pins alpha to 1, giving opaque grey
-     grain — roughly four times the effective contrast of the raw filter, which
-     is the difference between visible and not on a scene this dark. */
-  --noise-url-coarse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-
   /* The same noise pushed to specks: the matrix maps luminance through
      2L - 1, so everything below mid-grey clamps to black and only the brighter
      half survives as light flecks on nothing.

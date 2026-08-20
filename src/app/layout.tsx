@@ -15,11 +15,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      // Dark-only: in Horizon the night is the canvas, not a preference.
-      className={`dark ${fontVariables}`}
-    >
+    <html lang="en" className={fontVariables}>
       <body>{children}</body>
     </html>
   );
