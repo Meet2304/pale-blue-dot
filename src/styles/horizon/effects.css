@@ -24,6 +24,13 @@
      lifts very little and reads as grain. */
   --noise-url-specks: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
 
+  /* Two more of the same, differing only in feTurbulence's seed. Same
+     frequency, same octaves, same matrix — so they are the same grain, just a
+     different draw of it. Swapping between them is how the pattern changes
+     without anything moving. */
+  --noise-url-specks-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  --noise-url-specks-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+
   /* Protection gradients — laid under text on imagery. No capsules, no chips. */
   --veil-bottom: linear-gradient(
     to top,

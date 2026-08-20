@@ -826,7 +826,11 @@ export function NightHorizon({
           masked onto the glow and fading up into the sky, so the light reads as
           frosted rather than as a clean gradient. */}
       <div className="hz-noise" style={{ opacity: 0.04 }} />
+      {/* Three draws of the same grain; the upper two swap in and out so the
+          pattern changes without anything moving. See globals.css. */}
       <div className="hz-noise-glow">
+        <div />
+        <div />
         <div />
       </div>
       <div style={{ position: "relative", height: "100%" }}>{children}</div>
