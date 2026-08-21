@@ -33,6 +33,7 @@ const PAGES = [
   { href: "/work", label: "Work" },
   { href: "/story", label: "Story" },
   { href: "/contact", label: "Contact" },
+  { href: "/changelog", label: "Changelog" },
   { href: "/resume", label: "Resume" },
 ];
 

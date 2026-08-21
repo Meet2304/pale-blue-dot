@@ -148,9 +148,9 @@
   color: var(--blue-100);
 }
 
-/* Shared by the résumé control, the menu triggers and the panel's links — the
-   bar itself is text only. At rest they sit at the faintest ink level and only
-   assert themselves under the cursor. */
+/* The résumé control's arrow — the bar itself is text only, and the liquid
+   menu's links are words alone too. At rest it sits at the faintest ink level
+   and only asserts itself under the cursor. */
 .hz-nav-icon {
   flex: none;
   color: var(--text-faint);
@@ -400,145 +400,275 @@
   filter: blur(7px);
 }
 
-/* --- Mobile trigger ------------------------------------------------------ */
-
-.hz-nav-trigger {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-h-md);
-  height: var(--control-h-md);
-  padding: 0;
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--surface-inset);
-  color: var(--text-body);
-  cursor: pointer;
-  transition: var(--transition-control);
-}
-
-.hz-nav-trigger:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-soft);
-  color: var(--text-strong);
-}
-
-.hz-nav-trigger:hover .hz-nav-icon,
-.hz-nav-trigger:focus-visible .hz-nav-icon {
-  color: var(--blue-400);
-}
-
-/* --- Full-screen menu ---------------------------------------------------- */
-
-/* The panel is a sibling of the bar, never a child: backdrop-filter makes an
-   element a containing block for fixed descendants, so a panel nested inside
-   .hz-nav would be positioned against the 60px bar instead of the viewport.
-
-   It is not opaque — the star field stays faintly readable underneath, so
-   opening the menu reads as a veil drawn across the sky rather than as a
-   different screen. */
-.hz-nav-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  flex-direction: column;
-  background: rgba(0, 0, 0, 0.93);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-}
-
-.hz-nav-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: none;
-  height: var(--nav-h);
-  width: 100%;
-  max-width: var(--container-max);
-  margin-inline: auto;
-  padding-inline: var(--gutter);
-}
-
-.hz-nav-panel-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-7);
-  width: 100%;
-  max-width: var(--container-max);
-  margin-inline: auto;
-  padding: var(--space-8) var(--gutter) var(--space-9);
-}
-
-.hz-nav-panel-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.hz-nav-panel-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
-  border-bottom: 1px solid transparent;
-  color: var(--text-muted);
-  font-family: var(--font-display);
-  font-size: var(--text-title-l);
-  line-height: var(--leading-title);
-  transition: var(--transition-control);
-}
-
-.hz-nav-panel-link:hover,
-.hz-nav-panel-link[aria-current="page"] {
-  color: var(--text-strong);
-  border-bottom-color: var(--blue-400);
-}
-
-.hz-nav-panel-link:hover .hz-nav-icon,
-.hz-nav-panel-link:focus-visible .hz-nav-icon,
-.hz-nav-panel-link[aria-current="page"] .hz-nav-icon {
-  color: var(--blue-400);
-}
-
-.hz-nav-panel .hz-resume {
-  align-self: flex-start;
-  height: var(--control-h-lg);
-  padding-inline: var(--space-5);
-  font-size: var(--text-body-m);
-}
-
 /* --- Breakpoint ---------------------------------------------------------- */
 
-/* 720 rather than a rounder number: below it the four labels plus the resume
+/* 880 rather than a rounder number: below it the five labels plus the resume
    control stop fitting beside the mark without shrinking the type past
    --text-body-s, and shrinking type to avoid a menu is the wrong trade. */
-/* Every blur layer is its own backdrop snapshot, re-taken whenever the star
-   field behind it repaints. On a phone that is the one thing in this file that
-   can cost real frames, so small screens get a single cheap pane instead. */
 /* No mobile fallback to a single frosted pane. That pane was a 60px rectangle
    with a hard bottom edge, which is exactly the seam the progressive ramp exists
    to avoid — and it sat on top of the veil, so small screens got the tint twice.
    Phones get the same ramp, with fewer layers: see SiteChrome. */
 
-@media (max-width: 720px) {
+@media (max-width: 880px) {
   .hz-nav-list,
   .hz-nav .hz-resume {
     display: none;
   }
+}
 
-  .hz-nav-trigger {
-    display: inline-flex;
+/* --- Liquid menu (mobile) ------------------------------------------------ */
+
+/* Sibling of the bar, never a child: a filter or transform on .hz-nav would
+   make it a containing block and pin this to the 60px strip. Desktop never
+   sees it.
+
+   One progress value (--liquid-p, 0 closed → 1 open) drives the morph.
+   Radius goes 22 → 40, never 999: interpolating a stadium down to a card
+   pulled the bottom corners up the sides and clipped the toggle. */
+
+@property --liquid-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.hz-liquid {
+  display: none;
+  --liquid-p: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-arrive) var(--ease-out-soft),
+    visibility 0s linear var(--dur-arrive);
+}
+
+@media (max-width: 880px) {
+  .hz-liquid {
+    display: block;
+    --liquid-p: 0;
+  }
+
+  #content,
+  [data-site-footer] {
+    padding-bottom: 88px;
   }
 }
 
-@media (min-width: 721px) {
-  .hz-nav-panel {
-    display: none;
+.hz-liquid[data-nav="visible"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--dur-arrive) var(--ease-out-soft),
+    visibility 0s;
+}
+
+.hz-liquid a:not(.hz-resume) {
+  border-bottom-color: transparent;
+  text-decoration: none;
+}
+
+.hz-liquid button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.hz-nav-lock,
+html.hz-nav-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.hz-liquid-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  border: 0;
+  background: rgba(0, 0, 0, 0.66);
+  opacity: var(--liquid-p);
+  pointer-events: none;
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-veil {
+  pointer-events: auto;
+}
+
+.hz-liquid-stage {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  justify-items: center;
+  align-items: end;
+  transform: translateX(-50%);
+  contain: layout;
+}
+
+.hz-liquid-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Solid fallback if calc(--liquid-p) is dropped: the card must not go
+     see-through. Open lands at 0.98; closed keeps a little glass at 0.86. */
+  background: rgb(8, 9, 11);
+  background: rgba(8, 9, 11, calc(0.86 + 0.12 * var(--liquid-p)));
+  box-shadow:
+    0 0 0 1px rgba(63, 155, 255, calc(0.14 - 0.08 * var(--liquid-p))),
+    0 0 14px rgba(13, 123, 255, calc(0.08 * (1 - var(--liquid-p))));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px - env(safe-area-inset-bottom, 0px));
+}
+
+.hz-liquid-shell nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 44px;
+}
+
+.hz-liquid-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0;
+  padding: 20px 24px 0;
+  list-style: none;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.hz-liquid-link {
+  opacity: clamp(0, calc((var(--liquid-p) - 0.22) / 0.5), 1);
+  transform: translateY(calc((1 - var(--liquid-p)) * 8px));
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 1.45rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.16em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.hz-liquid-link:hover,
+.hz-liquid-link[aria-current="page"] {
+  color: var(--text-strong);
+}
+
+.hz-liquid-link[aria-current="page"] {
+  color: var(--blue-300);
+}
+
+.hz-liquid .hz-resume {
+  align-self: center;
+  flex: none;
+  width: calc(100% - 40px);
+  height: 52px;
+  margin: 10px 0 16px;
+  padding-inline: var(--space-6);
+  gap: var(--space-3);
+  font-size: var(--text-body-l);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+  opacity: clamp(0, calc((var(--liquid-p) - 0.28) / 0.45), 1);
+  transform: translateY(calc((1 - var(--liquid-p)) * 8px));
+}
+
+/* No hover on a phone, so the bloom is the resting state — that is what
+   makes it the one control in the card that reads as an action. The glow
+   host is inset a little further than desktop so the larger chip still
+   has room for the bloom to spread. */
+.hz-liquid .hz-resume .hz-resume-glow {
+  inset: -16px;
+  opacity: var(--liquid-p);
+}
+
+.hz-liquid .hz-resume .hz-resume-glow::before {
+  inset: 16px;
+}
+
+.hz-liquid .hz-resume .hz-resume-glow::after {
+  bottom: 10px;
+  width: 64%;
+  height: 26px;
+}
+
+/* Pinned to the bottom of the shell so it rides the morph instead of
+   being shoved out of the still-closed pill. */
+.hz-liquid-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 22px;
+  border: 0;
+  background: transparent;
+  color: color-mix(
+    in srgb,
+    var(--text-muted) calc((1 - var(--liquid-p)) * 100%),
+    var(--blue-400)
+  );
+}
+
+.hz-liquid-label {
+  font-size: var(--text-caption);
+  letter-spacing: calc(0.04em + 0.04em * var(--liquid-p));
+  white-space: nowrap;
+}
+
+.hz-liquid-icon {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.hz-liquid-icon span {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 1.5px;
+  margin-top: -0.75px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.hz-liquid-icon span:nth-child(1) {
+  transform: translateY(calc(-5px * (1 - var(--liquid-p))))
+    rotate(calc(45deg * var(--liquid-p)));
+}
+
+.hz-liquid-icon span:nth-child(2) {
+  opacity: calc(1 - var(--liquid-p));
+  transform: scaleX(calc(1 - 0.6 * var(--liquid-p)));
+}
+
+.hz-liquid-icon span:nth-child(3) {
+  transform: translateY(calc(5px * (1 - var(--liquid-p))))
+    rotate(calc(-45deg * var(--liquid-p)));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-liquid {
+    transition: none;
   }
 }
 
