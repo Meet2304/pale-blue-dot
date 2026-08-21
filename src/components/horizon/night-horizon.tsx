@@ -165,11 +165,28 @@ function valueNoise3(x: number, y: number, z: number, period: number): number {
 /**
  * How fast the field moves through its third axis.
  *
- * 0.303 replaces a fleck with an unrelated value every 3.3s, which is exactly
- * half the sea's 6.6s swell — the second harmonic of it. Twice the speed it
- * ran at, and still in step with the water rather than merely near it.
+ * 0.606 replaces a fleck with an unrelated value every 1.65s — a quarter of the
+ * sea's 6.6s swell, so still a harmonic of the water rather than a rate picked
+ * on its own. Twice what it was again. At 15Hz the field is resampled about
+ * twenty-five times per replacement, so nothing becomes steppy.
  */
-const GRAIN_Z_SPEED = 0.303;
+const GRAIN_Z_SPEED = 0.606;
+
+/**
+ * A slow crawl of the sampling coordinates, in lattice cells per second.
+ *
+ * Evolution alone gives every fleck its own private lifetime but no shared
+ * direction, which reads as boiling rather than as air. Moving where the field
+ * is read from adds that direction. It is not the drift that was tried and
+ * rejected early on: that translated a fixed pattern, so the same shapes slid
+ * past and could be followed. Here the field is replaced roughly four times
+ * faster than these offsets travel one cell, so nothing survives long enough
+ * to be tracked — it only lends the turbulence a bias.
+ *
+ * The two rates differ so the crawl is diagonal and never traces an axis.
+ */
+const GRAIN_DRIFT_X = 0.55;
+const GRAIN_DRIFT_Y = 0.21;
 
 /**
  * Peak strength of the grain, reached only once the glow it sits on has.
@@ -177,8 +194,12 @@ const GRAIN_Z_SPEED = 0.303;
  * The scene owns this rather than the stylesheet because it is no longer a
  * constant: it fades up with the reveal and back down through the warp, and
  * the loop is what knows where both of those are.
+ *
+ * Lower again now that the mask spreads the grain across the whole sky instead
+ * of concentrating it in a band. Wider coverage at a lower peak is what
+ * everpresent means — something a keen eye finds, not something announced.
  */
-const GRAIN_OPACITY = 0.055;
+const GRAIN_OPACITY = 0.045;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
@@ -709,12 +730,19 @@ export function NightHorizon({
       if (!grainTile || !grainTileCtx || !grainPixels) return;
 
       const z = elapsedSeconds * GRAIN_Z_SPEED;
+      /* Offsetting where the field is read from does not break the tiling: each
+         tile is generated with the same offsets, and the wrap is a modulo, so
+         the right edge still meets the left whatever these are. They must stay
+         positive though — a negative modulo would fold the lattice. */
+      const driftX = elapsedSeconds * GRAIN_DRIFT_X;
+      const driftY = elapsedSeconds * GRAIN_DRIFT_Y;
+
       const px = grainPixels.data;
       const size = grainTile.width;
       let i = 0;
 
       for (let y = 0; y < size; y++) {
-        const ny = y * GRAIN_SCALE;
+        const ny = y * GRAIN_SCALE + driftY;
         for (let x = 0; x < size; x++) {
           /* Biased so most of the field sits at black and only the upper part
              of the range shows. Under an additive blend a source averaging
@@ -722,8 +750,9 @@ export function NightHorizon({
              it reads as flecks. The threshold also thins the field out, which
              is half of why this is subtler than it was. */
           const v =
-            clamp01((valueNoise3(x * GRAIN_SCALE, ny, z, grainPeriod) - 0.46) * 2) *
-            255;
+            clamp01(
+              (valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod) - 0.48) * 1.9,
+            ) * 255;
           px[i] = v;
           px[i + 1] = v;
           px[i + 2] = v;

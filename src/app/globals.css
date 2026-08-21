@@ -123,17 +123,41 @@
      blend was undoing it. Screen adds the source more or less directly on a
      dark backdrop, so the distribution is the mask's and nothing else's. */
   mix-blend-mode: screen;
-  /* A true linear ramp: nothing at the top of the wash, full at the waterline,
-     with the midpoint stop sitting exactly halfway so the interpolation stays
-     straight rather than bowing. The last two stops cut it dead just above the
-     horizon so none of it reaches the sea. */
-  --hz-mask: linear-gradient(
+
+  /* Two masks, intersected.
+
+     The first is shaped like the glow, not merely as tall as it. A vertical
+     ramp gave the grain equal strength right across the width — but screen
+     blending adds light, so against the dark left and right of the band the
+     grain was the only thing there and stood out, while over the bright centre
+     it was swamped. That left a visible patch of grain in the dark corners:
+     precisely the opposite of grain belonging to the light. An ellipse on the
+     glow's own azimuth puts the most texture where the most light is.
+
+     It never reaches zero. The final stop holds at 20%, so there is some grain
+     everywhere in the sky and no edge anywhere for the eye to catch — present
+     rather than applied.
+
+     The second mask is the waterline. Grain is the air the light passes
+     through and there is no air below the horizon; the sea has its own texture
+     in the crests and the glitter path. Intersecting is what stops the ellipse
+     spilling across it. Note that without mask-composite the two layers add
+     instead of intersecting, which would put grain on the water — the failure
+     mode is visible rather than silent, which is the right way round. */
+  --hz-mask-shape: radial-gradient(
+    ellipse 74% 54% at 46% var(--hz-horizon, 76%),
+    #000 0%,
+    rgba(0, 0, 0, 0.64) 36%,
+    rgba(0, 0, 0, 0.34) 66%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+  --hz-mask-clip: linear-gradient(
     to bottom,
-    transparent calc(var(--hz-horizon, 76%) - 52%),
-    rgba(0, 0, 0, 0.5) calc(var(--hz-horizon, 76%) - 26.5%),
     #000 calc(var(--hz-horizon, 76%) - 1%),
     transparent calc(var(--hz-horizon, 76%) - 0.2%)
   );
-  -webkit-mask-image: var(--hz-mask);
-  mask-image: var(--hz-mask);
+  -webkit-mask-image: var(--hz-mask-shape), var(--hz-mask-clip);
+  mask-image: var(--hz-mask-shape), var(--hz-mask-clip);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
