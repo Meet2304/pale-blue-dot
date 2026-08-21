@@ -464,7 +464,11 @@ export function NightHorizon({
         const z = 1 / (d + 0.16);
 
         /* Two waves, not three. Amplitude grows with nearness; at the horizon
-           the surface is glass. */
+           the surface is glass.
+
+           These two rates, 6.6s and 9.5s, are also what the glow grain
+           dissolves on — see .hz-noise-glow in globals.css. Change one and the
+           air over the water stops keeping time with it. */
         const amp = 1.4 + d * d * 34;
         const swell = reduce
           ? 0
