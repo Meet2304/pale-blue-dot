@@ -183,9 +183,19 @@ time the cursor crossed one.
 **The résumé glow leans toward the cursor.** `--hz-glow-x` is registered with
 `@property` so it can be transitioned — an unregistered custom property is a
 token to the engine rather than a number, so the light would snap between cursor
-positions instead of easing. Both the taper mask and the swell read it.
-Vertically the glow stays pinned near the bottom edge, which is what keeps it
-reading as light from underneath rather than a spotlight.
+positions instead of easing. It is declared on `.hz-resume`, the element the
+handler writes to, and _not_ on the glow: a custom property set on an element
+beats the one it would inherit, so the glow having its own default silently
+pinned the light to centre.
+
+Nothing in the glow is masked, and that is deliberate. A `mask-image` clips to
+its element's border box, so the earlier taper mask cut every bloom the shadows
+threw past that box off square — and because its ellipse was far wider than the
+box, it was still opaque when it reached the edge. Sliding `--hz-glow-x` sideways
+only pushed more light into the cut. The taper now comes from downward-offset
+shadows with negative spread, which are naturally thickest under the bottom edge
+and thin as they wrap the corners, and the following part is a radial-gradient
+that reaches transparent by its own last stop. Neither can clip at any width.
 
 ## Mobile
 
