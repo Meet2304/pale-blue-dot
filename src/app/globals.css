@@ -95,20 +95,22 @@
   }
 }
 
-/* Gradient noise across the glow — grain that belongs to the light rather than
-   to the screen. The mask is keyed to --hz-horizon, which the scene's render
-   loop updates as the horizon moves, so the grain travels with the glow through
-   both the load sequence and the warp.
+/* Grain over the glow — a property of the light rather than a layer above it.
 
-   The distribution is purely the mask's: a straight ramp from nothing at the
-   top of the sky wash to full at the waterline. See the blend note below for
-   why that needed a change of blend mode and not just a change of mask.
+   The canvas holding it is drawn by the scene: a slice of an evolving noise
+   volume, redrawn several times a second. See night-horizon.tsx for how that
+   is generated and why. Everything here is about where it lands and how it
+   combines.
 
-   It stops dead at the waterline. This grain belongs to the air the light is
-   shining through, and there is no air below the horizon; the sea has its own
-   texture in the crests and the glitter path, and laying screen grain over the
-   top of those just muddies them. The last stop lands a fraction above the
-   line so nothing bleeds across it. */
+   Two things decide how much shows at any point. The blend does most of the
+   work — overlay scales with whatever is behind it, so the glow's own falloff
+   is the grain's falloff and there is no boundary to see. The mask does the
+   rest, and only what the blend cannot: keeping grain off the water, and off
+   the deep sky where the stars are.
+
+   The mask is keyed to --hz-horizon, which the render loop updates as the
+   horizon moves, so all of this travels with the glow through the load
+   sequence and the warp. */
 .hz-noise-glow {
   position: absolute;
   inset: 0;

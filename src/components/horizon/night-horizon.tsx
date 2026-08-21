@@ -88,14 +88,20 @@ const LOADER_Y = 0.5;
 
 /* --- Living grain ----------------------------------------------------------
    The glow's grain is 3D value noise sampled at (x, y, time).
+
    Every earlier attempt animated a fixed pattern — sliding it, then cutting
    between seeds, then dissolving between them — and all three read as two
    states with something happening in between, because that is what they were.
-   Sampling a volume instead means each fleck brightens and fades on its own,
-   its neighbours move with it because they are adjacent in the same field, and
-   there is no transition anywhere: the third axis simply is time.
-   Trilinear interpolation with a quintic fade makes it C2-continuous in all
-   three, which is what keeps it smooth rather than seething. */
+   No arrangement of static tiles produces continuous change.
+
+   Sampling a volume does, and the reason is entirely in the third axis. One
+   lattice cell per pixel means the field is spatially uncorrelated, which is
+   what grain should be — neighbouring flecks are independent. But each pixel
+   walks its own smooth path through the volume as time advances, interpolated
+   with a quintic fade so it is C2-continuous along that axis. Every fleck
+   therefore brightens and fades on its own, and there is no transition
+   anywhere, because time is not a transition between two patterns. It is the
+   axis the pattern is read along. */
 
 /** Deterministic shuffle: the same sky on every load. */
 const GRAIN_PERM = (() => {
@@ -127,8 +133,11 @@ function valueNoise3(x: number, y: number, z: number, period: number): number {
   const yf = fade5(y - yi);
   const zf = fade5(z - zi);
 
-  /* Sampling never starts beyond one period, so only the +1 neighbour can
-     overflow — a compare is cheaper than a modulo per lookup. */
+  /* The drift grows without bound, so these coordinates run far past one
+     period and the modulo is doing real work. It stays safe because the drift
+     is always positive and x is never negative — a negative operand would fold
+     the lattice rather than wrap it. The neighbour needs the same wrap, and
+     since x0 is already reduced a compare gets there without a second modulo. */
   const x0 = xi % period;
   const x1 = x0 + 1 === period ? 0 : x0 + 1;
   const y0 = yi % period;
