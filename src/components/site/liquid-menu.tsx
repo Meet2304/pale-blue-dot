@@ -29,12 +29,12 @@ const CLOSED_HEIGHT = 44;
 const CLOSED_RADIUS = 22;
 const OPEN_HEIGHT = 496;
 const OPEN_RADIUS = 40;
-const SCRUB_RANGE = 2000;
 
 export function LiquidMenu({ visible }: { visible: boolean }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const panelId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const playback = useRef<ReturnType<typeof animate> | null>(null);
@@ -42,7 +42,6 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
   const progress = useMotionValue(0);
   const openWidth = useMotionValue(360);
   const [open, setOpen] = useState(false);
-  const [p, setP] = useState(0);
 
   const width = useTransform(
     [progress, openWidth],
@@ -79,14 +78,6 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
     goTo(1);
   }, [goTo, progress]);
 
-  const scrub = useCallback(
-    (value: number) => {
-      setOpen(value > 0.12);
-      goTo(value, true);
-    },
-    [goTo],
-  );
-
   const [lastPathname, setLastPathname] = useState(pathname);
   if (pathname !== lastPathname) {
     setLastPathname(pathname);
@@ -98,7 +89,9 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
     progress.set(0);
   }
 
-  useMotionValueEvent(progress, "change", setP);
+  useMotionValueEvent(progress, "change", (value) => {
+    rootRef.current?.style.setProperty("--liquid-p", String(value));
+  });
 
   useEffect(() => {
     const measure = () => {
@@ -157,14 +150,12 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
 
   return (
     <div
+      ref={rootRef}
       className="hz-liquid"
       data-nav={visible ? "visible" : "hidden"}
       data-open={open ? "true" : "false"}
-      style={{ ["--liquid-p" as string]: p }}
       inert={!visible}
     >
-      <MorphScrubber progress={p} onScrub={scrub} />
-
       <button
         type="button"
         className="hz-liquid-veil"
@@ -202,7 +193,7 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
             ref={toggleRef}
             type="button"
             className="hz-liquid-toggle"
-            aria-label={p > 0.5 ? "Close menu" : "Open menu"}
+            aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             aria-controls={panelId}
             onClick={toggle}
@@ -215,61 +206,6 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
             </span>
           </button>
         </motion.div>
-      </div>
-    </div>
-  );
-}
-
-function MorphScrubber({
-  progress,
-  onScrub,
-}: {
-  progress: number;
-  onScrub: (value: number) => void;
-}) {
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const syncing = useRef(false);
-
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 0) return;
-    const next = progress * max;
-    if (Math.abs(el.scrollLeft - next) < 1) return;
-    syncing.current = true;
-    el.scrollLeft = next;
-    syncing.current = false;
-  }, [progress]);
-
-  return (
-    <div className="hz-liquid-scrub">
-      <div className="hz-liquid-scrub-meta">
-        <span>Testing · scrub the morph</span>
-        <span>{Math.round(progress * 100)}%</span>
-      </div>
-      <input
-        type="range"
-        className="hz-liquid-scrub-range"
-        min={0}
-        max={1000}
-        step={1}
-        value={Math.round(progress * 1000)}
-        aria-label="Scrub menu morph"
-        onChange={(event) => onScrub(Number(event.target.value) / 1000)}
-      />
-      <div
-        ref={scrollerRef}
-        className="hz-liquid-scrub-scroll"
-        onScroll={(event) => {
-          if (syncing.current) return;
-          const el = event.currentTarget;
-          const max = el.scrollWidth - el.clientWidth;
-          if (max <= 0) return;
-          onScrub(el.scrollLeft / max);
-        }}
-      >
-        <div className="hz-liquid-scrub-track" style={{ width: SCRUB_RANGE }} />
       </div>
     </div>
   );
