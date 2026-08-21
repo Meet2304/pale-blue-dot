@@ -118,35 +118,45 @@
 .hz-nav-link {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
   font-size: var(--text-body-s);
   color: var(--text-muted);
   border-bottom: 1px solid transparent;
   transition: var(--transition-control);
 }
 
-.hz-nav-link:hover,
+/* Hover lifts the colour and the icon and nothing else. The underline is
+   reserved for [aria-current] — it says which page you are on, which is a fact
+   about the site rather than a response to the cursor, and letting hover borrow
+   it made every pass of the mouse look like a navigation had happened. */
+.hz-nav-link:hover {
+  color: var(--text-strong);
+}
+
 .hz-nav-link[aria-current="page"] {
   color: var(--text-strong);
   border-bottom-color: var(--blue-400);
 }
 
-/* At rest the icons sit at the faintest ink level, so the bar reads as four
-   words and the icons only assert themselves under the cursor. That is what
-   keeps an icon on every item from turning into clutter. */
+/* Shared by the résumé control, the menu triggers and the panel's links — the
+   bar itself is text only. At rest they sit at the faintest ink level and only
+   assert themselves under the cursor. */
 .hz-nav-icon {
   flex: none;
   color: var(--text-faint);
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
-.hz-nav-link:hover .hz-nav-icon,
-.hz-nav-link:focus-visible .hz-nav-icon,
-.hz-nav-link[aria-current="page"] .hz-nav-icon {
-  color: var(--blue-400);
-}
-
 /* --- Resume control ------------------------------------------------------ */
+
+/* Registered so it can be transitioned. An unregistered custom property is a
+   token to the engine, not a number, so it would jump between values and the
+   glow would snap from one cursor position to the next. Browsers without
+   @property still get the effect, just without the easing. */
+@property --hz-glow-x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 50%;
+}
 
 /* Pitch black with stars twinkling in it. On approach a blue glow lights the
    bottom edge — thickest at the middle of it, thinning as it runs around the
@@ -308,6 +318,12 @@
 
 /* The glow.
  *
+ * It tracks the cursor horizontally — .hz-resume writes --hz-glow-x from a
+ * pointermove handler, and both the taper mask and the swell read it — so the
+ * light leans toward wherever you are on the control rather than always rising
+ * from dead centre. Vertically it stays pinned near the bottom edge, which is
+ * what keeps it reading as light coming from underneath.
+ *
  * The host is inset past the button so the bloom has somewhere to spread, and
  * carries the taper as a mask: an ellipse anchored on the bottom edge, full in
  * the middle of it and falling to nothing by the mid-height of the sides. The
@@ -317,24 +333,27 @@
  * separate, fatter layer, which is what keeps the middle visibly thicker
  * rather than merely brighter. */
 .hz-resume-glow {
+  --hz-glow-x: 50%;
   position: absolute;
   inset: -14px;
   z-index: -3;
   pointer-events: none;
   opacity: 0;
   -webkit-mask-image: radial-gradient(
-    95% 118% at 50% 78%,
+    95% 118% at var(--hz-glow-x) 78%,
     #000 0%,
     rgba(0, 0, 0, 0.5) 44%,
     transparent 80%
   );
   mask-image: radial-gradient(
-    95% 118% at 50% 78%,
+    95% 118% at var(--hz-glow-x) 78%,
     #000 0%,
     rgba(0, 0, 0, 0.5) 44%,
     transparent 80%
   );
-  transition: opacity var(--dur-slow) var(--ease-out-soft);
+  transition:
+    opacity var(--dur-slow) var(--ease-out-soft),
+    --hz-glow-x var(--dur-base) linear;
 }
 
 .hz-resume:hover .hz-resume-glow,
@@ -356,7 +375,7 @@
 .hz-resume-glow::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: var(--hz-glow-x);
   bottom: 8px;
   width: 60%;
   height: 22px;
@@ -666,6 +685,78 @@
 .hz-foot-link:hover {
   color: var(--text-strong);
   border-bottom-color: var(--line-soft);
+}
+
+/* The dot field's edge fades, as a class rather than an inline object so they
+   can respond to width.
+
+   The horizontal ramps are proportional, and at 1400px 14% is a comfortable
+   200px of thinning. At 360px the same 14% is 50px a side — over a quarter of
+   the screen spent going to black, which is what made the mobile footer read as
+   mostly margin. Below 720px they collapse to a token 4%, and the vertical ramp
+   shortens too, because there is far less height to spend on it. */
+.hz-foot-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 62%, #000 100%),
+    linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 62%, #000 100%),
+    linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* The footer's links, which have to survive down to 320px on one line. */
+.hz-foot-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-6);
+}
+
+@media (max-width: 720px) {
+  .hz-foot-field {
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0%, #000 52%, #000 100%),
+      linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+    mask-image:
+      linear-gradient(to bottom, transparent 0%, #000 52%, #000 100%),
+      linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+  }
+
+  /* nowrap is the point: five words breaking onto a second line was the thing
+     that made the block look accidental. Everything below is in service of
+     keeping them on one. */
+  .hz-foot-nav {
+    flex-wrap: nowrap;
+    gap: var(--space-4);
+  }
+
+  .hz-foot-link {
+    font-size: var(--text-body-s);
+  }
+
+  .hz-foot-icons {
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 400px) {
+  .hz-foot-nav {
+    gap: var(--space-3);
+  }
+
+  .hz-foot-link {
+    font-size: var(--text-caption);
+  }
+
+  .hz-foot-icon {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .hz-foot-icons {

@@ -8,6 +8,7 @@ import {
   useState,
   type ComponentType,
   type CSSProperties,
+  type PointerEvent,
 } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -155,6 +156,7 @@ export function SiteNav({ visible }: { visible: boolean }) {
                   className="hz-nav-link"
                   size={ICON_SIZE}
                   current={pathname === item.href}
+                  withIcon={false}
                 />
               </li>
             ))}
@@ -253,6 +255,13 @@ type NavLinkProps = {
   className: string;
   size: number;
   delayMs?: number;
+  /**
+   * The bar is set in words alone; only the full-screen menu carries icons.
+   * Four glyphs beside four one-word labels was decoration on something whose
+   * whole job is to be scanned, and at this size the words are already the
+   * fastest thing to read.
+   */
+  withIcon?: boolean;
 };
 
 function NavLink({
@@ -263,8 +272,23 @@ function NavLink({
   className,
   size,
   delayMs,
+  withIcon = true,
 }: NavLinkProps) {
   const [focused, setFocused] = useState(false);
+
+  if (!withIcon) {
+    /* No icon means nothing for AnimateIcon to drive, so the wrapper — and the
+       focus state it needs — is skipped entirely rather than mounted empty. */
+    return (
+      <Link
+        href={href}
+        aria-current={current ? "page" : undefined}
+        {...entrance(delayMs, className)}
+      >
+        {label}
+      </Link>
+    );
+  }
 
   return (
     /* `asChild` is the load-bearing prop. It makes AnimateIcon render a Slot
@@ -291,8 +315,30 @@ function NavLink({
   );
 }
 
+/** Matches `inset: -14px` on .hz-resume-glow, so the mapping stays exact. */
+const GLOW_INSET = 14;
+
 function ResumeLink({ size, delayMs }: { size: number; delayMs?: number }) {
   const [focused, setFocused] = useState(false);
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  /* Written straight to the node rather than held in state: this fires on every
+     pointer move across the control, and the repo's rule is that nothing in a
+     hot path costs a render. The glow element is inset past the button, so the
+     pointer's position has to be remapped onto that larger box or the light
+     would lag the cursor toward the edges. */
+  const track = (event: PointerEvent<HTMLAnchorElement>) => {
+    const node = ref.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    const x = event.clientX - rect.left + GLOW_INSET;
+    const span = rect.width + GLOW_INSET * 2;
+    node.style.setProperty("--hz-glow-x", `${((x / span) * 100).toFixed(2)}%`);
+  };
+
+  const recentre = () => {
+    ref.current?.style.setProperty("--hz-glow-x", "50%");
+  };
 
   return (
     /* The starry ground and the bloom are entirely CSS on .hz-resume — see
@@ -300,7 +346,10 @@ function ResumeLink({ size, delayMs }: { size: number; delayMs?: number }) {
        AnimateIcon slot onto it and animate the arrow from anywhere inside. */
     <AnimateIcon asChild animateOnHover animate={focused}>
       <Link
+        ref={ref}
         href={RESUME_HREF}
+        onPointerMove={track}
+        onPointerLeave={recentre}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
