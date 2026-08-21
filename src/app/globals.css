@@ -95,20 +95,22 @@
   }
 }
 
-/* Gradient noise across the glow — grain that belongs to the light rather than
-   to the screen. The mask is keyed to --hz-horizon, which the scene's render
-   loop updates as the horizon moves, so the grain travels with the glow through
-   both the load sequence and the warp.
+/* Grain over the glow — a property of the light rather than a layer above it.
 
-   The distribution is purely the mask's: a straight ramp from nothing at the
-   top of the sky wash to full at the waterline. See the blend note below for
-   why that needed a change of blend mode and not just a change of mask.
+   The canvas holding it is drawn by the scene: a slice of an evolving noise
+   volume, redrawn several times a second. See night-horizon.tsx for how that
+   is generated and why. Everything here is about where it lands and how it
+   combines.
 
-   It stops dead at the waterline. This grain belongs to the air the light is
-   shining through, and there is no air below the horizon; the sea has its own
-   texture in the crests and the glitter path, and laying screen grain over the
-   top of those just muddies them. The last stop lands a fraction above the
-   line so nothing bleeds across it. */
+   Two things decide how much shows at any point. The blend does most of the
+   work — overlay scales with whatever is behind it, so the glow's own falloff
+   is the grain's falloff and there is no boundary to see. The mask does the
+   rest, and only what the blend cannot: keeping grain off the water, and off
+   the deep sky where the stars are.
+
+   The mask is keyed to --hz-horizon, which the render loop updates as the
+   horizon moves, so all of this travels with the glow through the load
+   sequence and the warp. */
 .hz-noise-glow {
   position: absolute;
   inset: 0;
@@ -122,18 +124,76 @@
      radial shape — the mask was always a vertical linear gradient, but the
      blend was undoing it. Screen adds the source more or less directly on a
      dark backdrop, so the distribution is the mask's and nothing else's. */
-  mix-blend-mode: screen;
-  /* A true linear ramp: nothing at the top of the wash, full at the waterline,
-     with the midpoint stop sitting exactly halfway so the interpolation stays
-     straight rather than bowing. The last two stops cut it dead just above the
-     horizon so none of it reaches the sea. */
-  --hz-mask: linear-gradient(
+  /* Overlay, not screen. This is the change the reference actually asked for.
+
+     Screen adds a roughly fixed amount of light wherever it is unmasked, so
+     measured on this scene it was slightly MORE visible over black (9.6 levels)
+     than over the inner glow (6.7). Grain that stands out most where there is
+     no light is backwards, and no mask can correct it — which is why a visible
+     region kept reappearing however the mask was reshaped.
+
+     Overlay multiplies instead: the same source gives 0.7 levels on black and
+     41 in the inner glow. The grain is now a property of the light rather than
+     a layer over it, it disappears into the night on its own, and its edge is
+     the glow's own falloff rather than anything drawn. */
+  mix-blend-mode: overlay;
+
+  /* Two masks, intersected.
+
+     The first is shaped like the glow, not merely as tall as it. A vertical
+     ramp gave the grain equal strength right across the width — but screen
+     blending adds light, so against the dark left and right of the band the
+     grain was the only thing there and stood out, while over the bright centre
+     it was swamped. That left a visible patch of grain in the dark corners:
+     precisely the opposite of grain belonging to the light. An ellipse on the
+     glow's own azimuth puts the most texture where the most light is.
+
+     It never reaches zero. The final stop holds at 20%, so there is some grain
+     everywhere in the sky and no edge anywhere for the eye to catch — present
+     rather than applied.
+
+     The second mask is the waterline. Grain is the air the light passes
+     through and there is no air below the horizon; the sea has its own texture
+     in the crests and the glitter path. Intersecting is what stops the ellipse
+     spilling across it. Note that without mask-composite the two layers add
+     instead of intersecting, which would put grain on the water — the failure
+     mode is visible rather than silent, which is the right way round. */
+  --hz-glow-rx: 74%;
+  --hz-glow-ry: 54%;
+  /* Flat through the middle, easing slightly at dead centre.
+
+     Overlay already gives the brightest part of the glow the most grain, since
+     the effect scales with what is behind it. A mask that also peaked there
+     compounded the two, and the centre came out busier than anywhere else.
+     Holding the middle band level — and letting it fall a little at the very
+     centre — leaves the falloff to the light alone. The variation is too small
+     to read as a ring; it only takes the edge off. */
+  --hz-mask-shape: radial-gradient(
+    ellipse var(--hz-glow-rx) var(--hz-glow-ry) at 46% var(--hz-horizon, 76%),
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.7) 34%,
+    rgba(0, 0, 0, 0.55) 70%,
+    rgba(0, 0, 0, 0.34) 100%
+  );
+  --hz-mask-clip: linear-gradient(
     to bottom,
-    transparent calc(var(--hz-horizon, 76%) - 52%),
-    rgba(0, 0, 0, 0.5) calc(var(--hz-horizon, 76%) - 26.5%),
     #000 calc(var(--hz-horizon, 76%) - 1%),
     transparent calc(var(--hz-horizon, 76%) - 0.2%)
   );
-  -webkit-mask-image: var(--hz-mask);
-  mask-image: var(--hz-mask);
+  -webkit-mask-image: var(--hz-mask-shape), var(--hz-mask-clip);
+  mask-image: var(--hz-mask-shape), var(--hz-mask-clip);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* The grain mask has the same inversion problem the canvas glow does: a
+   percentage radius resolves against width horizontally and height vertically,
+   so on a portrait phone this ellipse becomes taller than it is wide and the
+   grain gathers into a disc. Wider than the viewport and much shallower keeps
+   it a band, matching the guard applied to the glow it sits on. */
+@media (max-width: 760px) {
+  .hz-noise-glow {
+    --hz-glow-rx: 132%;
+    --hz-glow-ry: 24%;
+  }
 }

@@ -88,14 +88,20 @@ const LOADER_Y = 0.5;
 
 /* --- Living grain ----------------------------------------------------------
    The glow's grain is 3D value noise sampled at (x, y, time).
+
    Every earlier attempt animated a fixed pattern — sliding it, then cutting
    between seeds, then dissolving between them — and all three read as two
    states with something happening in between, because that is what they were.
-   Sampling a volume instead means each fleck brightens and fades on its own,
-   its neighbours move with it because they are adjacent in the same field, and
-   there is no transition anywhere: the third axis simply is time.
-   Trilinear interpolation with a quintic fade makes it C2-continuous in all
-   three, which is what keeps it smooth rather than seething. */
+   No arrangement of static tiles produces continuous change.
+
+   Sampling a volume does, and the reason is entirely in the third axis. One
+   lattice cell per pixel means the field is spatially uncorrelated, which is
+   what grain should be — neighbouring flecks are independent. But each pixel
+   walks its own smooth path through the volume as time advances, interpolated
+   with a quintic fade so it is C2-continuous along that axis. Every fleck
+   therefore brightens and fades on its own, and there is no transition
+   anywhere, because time is not a transition between two patterns. It is the
+   axis the pattern is read along. */
 
 /** Deterministic shuffle: the same sky on every load. */
 const GRAIN_PERM = (() => {
@@ -127,8 +133,11 @@ function valueNoise3(x: number, y: number, z: number, period: number): number {
   const yf = fade5(y - yi);
   const zf = fade5(z - zi);
 
-  /* Sampling never starts beyond one period, so only the +1 neighbour can
-     overflow — a compare is cheaper than a modulo per lookup. */
+  /* The drift grows without bound, so these coordinates run far past one
+     period and the modulo is doing real work. It stays safe because the drift
+     is always positive and x is never negative — a negative operand would fold
+     the lattice rather than wrap it. The neighbour needs the same wrap, and
+     since x0 is already reduced a compare gets there without a second modulo. */
   const x0 = xi % period;
   const x1 = x0 + 1 === period ? 0 : x0 + 1;
   const y0 = yi % period;
@@ -165,11 +174,48 @@ function valueNoise3(x: number, y: number, z: number, period: number): number {
 /**
  * How fast the field moves through its third axis.
  *
- * 0.303 replaces a fleck with an unrelated value every 3.3s, which is exactly
- * half the sea's 6.6s swell — the second harmonic of it. Twice the speed it
- * ran at, and still in step with the water rather than merely near it.
+ * 0.4545 replaces a fleck with an unrelated value every 2.2s — a third of the
+ * sea's 6.6s swell, so it stays a harmonic of the water rather than a rate
+ * picked on its own. A quarter slower than the previous 1.65s.
  */
-const GRAIN_Z_SPEED = 0.303;
+const GRAIN_Z_SPEED = 0.4545;
+
+/**
+ * A slow crawl of the sampling coordinates, in lattice cells per second.
+ *
+ * Evolution alone gives every fleck its own private lifetime but no shared
+ * direction, which reads as boiling rather than as air. Moving where the field
+ * is read from adds that direction. It is not the drift that was tried and
+ * rejected early on: that translated a fixed pattern, so the same shapes slid
+ * past and could be followed. Here a fleck is replaced after travelling about
+ * nine tenths of a cell — barely a pixel — so nothing survives long enough to
+ * be tracked and the crawl only lends the turbulence a bias.
+ *
+ * These scale with GRAIN_Z_SPEED. Slowing the field without slowing the crawl
+ * would let flecks live long enough to be followed, and the drift would start
+ * reading as sliding again.
+ *
+ * The two rates differ so the crawl is diagonal and never traces an axis.
+ */
+const GRAIN_DRIFT_X = 0.41;
+const GRAIN_DRIFT_Y = 0.157;
+
+/**
+ * Amount the noise is spread above mid-grey.
+ *
+ * Under overlay 0.5 is neutral, above it brightens and below it darkens — both
+ * in proportion to what is already there. Only the upper half is used now.
+ * Two-sided dithering put dark specks into the glow, and a dark speck punched
+ * into a smooth bright field is far more conspicuous than a light one, which is
+ * why the middle of the glow read as the busiest part of the frame.
+ *
+ * Clamping to the bright half costs a small DC lift — the glow comes up by
+ * roughly four per cent — which is far cheaper than the dots.
+ *
+ * Value noise clusters hard around its middle, so without spreading it the
+ * modulation would be too tight to see at all.
+ */
+const GRAIN_CONTRAST = 2.2;
 
 /**
  * Peak strength of the grain, reached only once the glow it sits on has.
@@ -177,8 +223,15 @@ const GRAIN_Z_SPEED = 0.303;
  * The scene owns this rather than the stylesheet because it is no longer a
  * constant: it fades up with the reveal and back down through the warp, and
  * the loop is what knows where both of those are.
+ *
+ * Much higher than it was, and not comparable to the old figure: under an
+ * additive blend this was a quantity of light poured on, so it had to stay
+ * tiny. Under overlay it is the depth of a proportional modulation, and the
+ * scene decides how much of that shows. Higher than it looks: the grain only
+ * ever brightens now, so half the field is pinned neutral and this figure buys
+ * about half the visible effect the same number would have bought two-sided.
  */
-const GRAIN_OPACITY = 0.055;
+const GRAIN_OPACITY = 0.25;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
@@ -190,15 +243,16 @@ const GRAIN_OPACITY = 0.055;
  * showed as a grid. Blobs that large are also recognisable enough that the
  * repeat of the tile carrying them became visible. One cause, both symptoms.
  *
- * At 0.75 a cell is 1.3px and features are under 3px: below the size at which
- * the eye reads structure, and with no recognisable shapes the tiling has
- * nothing to latch onto.
+ * At 1.0 a cell is one pixel, which is where the reference sits: individual
+ * specks rather than shapes. Every pixel draws from its own lattice column, so
+ * the field is spatially uncorrelated and there is no structure at any scale to
+ * read as a grid or to make the tiling visible — while the third axis keeps it
+ * perfectly smooth in time, which is the part that matters.
  *
- * One octave, not two. A second at double the frequency would land on sub-pixel
- * detail that can only alias, and one at half would put the coarse blobs
- * straight back.
+ * Going finer than 1.0 is not possible: the samples would fall between lattice
+ * points the display cannot resolve, and the result only aliases.
  */
-const GRAIN_SCALE = 0.75;
+const GRAIN_SCALE = 1.0;
 
 /**
  * Where the light sits along the horizon.
@@ -526,7 +580,18 @@ export function NightHorizon({
 
         ctx!.save();
         ctx!.translate(w * l.c, hy);
-        ctx!.scale(Math.max(w * l.w * 2.6, 1), Math.max(h * (0.3 + 0.18 * l.a), 1));
+        /* Vertical reach is capped against the width, and horizontal reach is
+           floored against a multiple of the vertical.
+
+           Left to scale independently, the horizontal radius follows width and
+           the vertical follows height — which on a portrait phone inverts the
+           ellipse into something taller than it is wide, and a glow taller than
+           it is wide is a circle sitting on the horizon rather than light
+           spread along it. Measured, the aspect went from 1.65 on a desktop to
+           0.49 on a phone. These two guards hold it above 1.8 everywhere. */
+        const vertical = Math.max(Math.min(h, w) * (0.3 + 0.18 * l.a), 1);
+        const horizontal = Math.max(w * l.w * 2.6, vertical * 1.8);
+        ctx!.scale(horizontal, vertical);
         const g = ctx!.createRadialGradient(0, 0, 0, 0, 0, 1);
         g.addColorStop(0, `rgba(${rgbLift},0.5)`);
         g.addColorStop(0.22, `rgba(${rgb},0.27)`);
@@ -564,7 +629,10 @@ export function NightHorizon({
 
         ctx!.save();
         ctx!.translate(w * l.c, hy);
-        ctx!.scale(Math.max(w * l.w * 2.1, 1), Math.max(h * (0.055 + 0.05 * l.a), 1));
+        /* Same guard as the wash above: without it the tight bloom also turns
+           squarish on a narrow screen. */
+        const vertical = Math.max(Math.min(h, w) * (0.055 + 0.05 * l.a), 1);
+        ctx!.scale(Math.max(w * l.w * 2.1, vertical * 2.4), vertical);
         const bloom = ctx!.createRadialGradient(0, 0, 0, 0, 0, 1);
         bloom.addColorStop(0, `rgba(${rgb},0.25)`);
         bloom.addColorStop(0.4, `rgba(${rgb},0.072)`);
@@ -709,21 +777,34 @@ export function NightHorizon({
       if (!grainTile || !grainTileCtx || !grainPixels) return;
 
       const z = elapsedSeconds * GRAIN_Z_SPEED;
+      /* Offsetting where the field is read from does not break the tiling: each
+         tile is generated with the same offsets, and the wrap is a modulo, so
+         the right edge still meets the left whatever these are. They must stay
+         positive though — a negative modulo would fold the lattice. */
+      const driftX = elapsedSeconds * GRAIN_DRIFT_X;
+      const driftY = elapsedSeconds * GRAIN_DRIFT_Y;
+
+      /* The clumping octave crawls and evolves more slowly than the grain it
+         gathers. Clouds of grain should outlive the individual flecks in
+         them — if both moved at one rate the clumping would be invisible. */
       const px = grainPixels.data;
       const size = grainTile.width;
       let i = 0;
 
       for (let y = 0; y < size; y++) {
-        const ny = y * GRAIN_SCALE;
+        const ny = y * GRAIN_SCALE + driftY;
         for (let x = 0; x < size; x++) {
-          /* Biased so most of the field sits at black and only the upper part
-             of the range shows. Under an additive blend a source averaging
-             mid-grey would lift the whole band into haze; averaging near black
-             it reads as flecks. The threshold also thins the field out, which
-             is half of why this is subtler than it was. */
-          const v =
-            clamp01((valueNoise3(x * GRAIN_SCALE, ny, z, grainPeriod) - 0.46) * 2) *
-            255;
+          /* Only the bright half of the field is kept. Below mid-grey the
+             source is pinned to neutral, so overlay leaves those pixels exactly
+             as they were and the grain can only ever add light. Half the flecks
+             therefore do nothing at all, which is the other reason this is
+             quieter than the amplitude alone implies.
+
+             No clumping octave. The reference grain is dead even, and the
+             clumping added earlier was solving a problem that belonged to the
+             blend mode rather than to the noise. */
+          const n = valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod);
+          const v = clamp01(0.5 + Math.max(0, n - 0.5) * GRAIN_CONTRAST) * 255;
           px[i] = v;
           px[i + 1] = v;
           px[i + 2] = v;
@@ -988,7 +1069,11 @@ export function NightHorizon({
       }
 
       /* Reduced motion gets one still slice and nothing after it. */
-      const grainInterval = lowPower ? 1000 / 12 : 1000 / 15;
+      /* Slower than before on both counts: the field itself now moves at two
+         thirds the rate, so there is less to resolve, and the clumping octave
+         doubled the cost of a tile. Still around twenty-five resamples per
+         replacement, which is far more than smoothness needs. */
+      const grainInterval = lowPower ? 1000 / 10 : 1000 / 12;
       if (reduce) {
         if (lastGrainAt === -Infinity) {
           lastGrainAt = now;
