@@ -555,7 +555,7 @@ html.hz-nav-lock body {
 .hz-liquid .hz-resume {
   align-self: center;
   flex: none;
-  width: min(15.5rem, calc(100% - 48px));
+  width: calc(100% - 40px);
   height: 52px;
   margin: 10px 0 16px;
   padding-inline: var(--space-6);
