@@ -122,7 +122,19 @@
      radial shape — the mask was always a vertical linear gradient, but the
      blend was undoing it. Screen adds the source more or less directly on a
      dark backdrop, so the distribution is the mask's and nothing else's. */
-  mix-blend-mode: screen;
+  /* Overlay, not screen. This is the change the reference actually asked for.
+
+     Screen adds a roughly fixed amount of light wherever it is unmasked, so
+     measured on this scene it was slightly MORE visible over black (9.6 levels)
+     than over the inner glow (6.7). Grain that stands out most where there is
+     no light is backwards, and no mask can correct it — which is why a visible
+     region kept reappearing however the mask was reshaped.
+
+     Overlay multiplies instead: the same source gives 0.7 levels on black and
+     41 in the inner glow. The grain is now a property of the light rather than
+     a layer over it, it disappears into the night on its own, and its edge is
+     the glow's own falloff rather than anything drawn. */
+  mix-blend-mode: overlay;
 
   /* Two masks, intersected.
 

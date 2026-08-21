@@ -192,19 +192,17 @@ const GRAIN_DRIFT_X = 0.41;
 const GRAIN_DRIFT_Y = 0.157;
 
 /**
- * Cell size of the clumping octave, relative to a pixel.
+ * Amount the noise is spread around mid-grey.
  *
- * Real grain is not evenly distributed — it gathers into loose clouds, and a
- * single octave of even noise is exactly what made this read as mush rather
- * than as grain. This second octave is four times coarser and is applied as a
- * multiplier on the fine grain's strength, never added to it.
+ * Under overlay, 0.5 is neutral — it leaves the backdrop untouched. Values
+ * above brighten and below darken, both in proportion to what is already
+ * there. So the source wants to be centred, not biased dark the way an
+ * additive blend needed it: this is dithering the light, not adding to it.
  *
- * Multiplying is the whole point. Added, a five-pixel octave would put visible
- * blobs back on screen — the same fault that made the first version look like
- * a grid. Multiplied, it never appears on its own: it only decides where the
- * fine grain is dense and where it thins out, which is what clumping is.
+ * Value noise clusters hard around its middle, so without spreading it the
+ * modulation would be far too tight to see.
  */
-const GRAIN_CLUMP_SCALE = 0.1875;
+const GRAIN_CONTRAST = 2.2;
 
 /**
  * Peak strength of the grain, reached only once the glow it sits on has.
@@ -213,11 +211,13 @@ const GRAIN_CLUMP_SCALE = 0.1875;
  * constant: it fades up with the reveal and back down through the warp, and
  * the loop is what knows where both of those are.
  *
- * Lower again now that the mask spreads the grain across the whole sky instead
- * of concentrating it in a band. Wider coverage at a lower peak is what
- * everpresent means — something a keen eye finds, not something announced.
+ * Much higher than it was, and not comparable to the old figure: under an
+ * additive blend this was a quantity of light poured on, so it had to stay
+ * tiny. Under overlay it is the depth of a proportional modulation, and the
+ * scene decides how much of that shows. 0.32 swings the lit gradient by about
+ * 15% either way and the black sky by well under one level out of 255.
  */
-const GRAIN_OPACITY = 0.045;
+const GRAIN_OPACITY = 0.32;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
@@ -229,15 +229,16 @@ const GRAIN_OPACITY = 0.045;
  * showed as a grid. Blobs that large are also recognisable enough that the
  * repeat of the tile carrying them became visible. One cause, both symptoms.
  *
- * At 0.75 a cell is 1.3px and features are under 3px: below the size at which
- * the eye reads structure, and with no recognisable shapes the tiling has
- * nothing to latch onto.
+ * At 1.0 a cell is one pixel, which is where the reference sits: individual
+ * specks rather than shapes. Every pixel draws from its own lattice column, so
+ * the field is spatially uncorrelated and there is no structure at any scale to
+ * read as a grid or to make the tiling visible — while the third axis keeps it
+ * perfectly smooth in time, which is the part that matters.
  *
- * One octave, not two. A second at double the frequency would land on sub-pixel
- * detail that can only alias, and one at half would put the coarse blobs
- * straight back.
+ * Going finer than 1.0 is not possible: the samples would fall between lattice
+ * points the display cannot resolve, and the result only aliases.
  */
-const GRAIN_SCALE = 0.75;
+const GRAIN_SCALE = 1.0;
 
 /**
  * Where the light sits along the horizon.
@@ -330,7 +331,6 @@ export function NightHorizon({
     let grainTileCtx: CanvasRenderingContext2D | null = null;
     let grainPixels: ImageData | null = null;
     let grainPeriod = 1;
-    let grainClumpPeriod = 1;
     let lastGrainAt = -Infinity;
     let lastGrainAlpha = -1;
     const t0 = performance.now();
@@ -465,7 +465,6 @@ export function NightHorizon({
       grainTileCtx = grainTile.getContext("2d");
       grainPixels = grainTileCtx?.createImageData(tilePx, tilePx) ?? null;
       grainPeriod = Math.round(tilePx * GRAIN_SCALE);
-      grainClumpPeriod = Math.round(tilePx * GRAIN_CLUMP_SCALE);
       lastGrainAt = -Infinity;
 
       /* Both cached gradients hold absolute coordinates and were built under
@@ -774,39 +773,28 @@ export function NightHorizon({
       /* The clumping octave crawls and evolves more slowly than the grain it
          gathers. Clouds of grain should outlive the individual flecks in
          them — if both moved at one rate the clumping would be invisible. */
-      const clumpZ = z * 0.35;
-      const clumpDriftX = driftX * 0.3;
-      const clumpDriftY = driftY * 0.3;
-
       const px = grainPixels.data;
       const size = grainTile.width;
       let i = 0;
 
       for (let y = 0; y < size; y++) {
         const ny = y * GRAIN_SCALE + driftY;
-        const cy = y * GRAIN_CLUMP_SCALE + clumpDriftY;
         for (let x = 0; x < size; x++) {
-          /* Biased so most of the field sits at black and only the upper part
-             of the range shows. Under an additive blend a source averaging
-             mid-grey would lift the whole band into haze; averaging near black
-             it reads as flecks. Raising the threshold thins the field further,
-             trading an even wash for fewer, crisper specks — the other half of
-             why this no longer reads as mush. */
-          const fine = clamp01(
-            (valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod) - 0.52) * 2.6,
-          );
+          /* Spread around mid-grey rather than biased dark. Under overlay 0.5
+             changes nothing, so a centred source dithers the light — half the
+             flecks lifting it, half dropping it — instead of only ever adding.
+             That two-sided modulation is what the reference has and what an
+             additive blend structurally cannot produce.
 
-          /* Density, never brightness. The clump octave only decides how
-             strongly the fine grain shows here, and it is floored at 0.45 so no
-             part of the field ever empties into a bare patch — that would be
-             structure again, merely inverted. */
-          const clump = valueNoise3(
-            x * GRAIN_CLUMP_SCALE + clumpDriftX,
-            cy,
-            clumpZ,
-            grainClumpPeriod,
-          );
-          const v = fine * (0.45 + 0.55 * clamp01((clump - 0.35) * 3)) * 255;
+             No clumping octave. The reference grain is dead even, and the
+             clumping added for the previous version was solving a problem that
+             belonged to the blend mode, not to the noise. */
+          const v =
+            clamp01(
+              0.5 +
+                (valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod) - 0.5) *
+                  GRAIN_CONTRAST,
+            ) * 255;
           px[i] = v;
           px[i + 1] = v;
           px[i + 2] = v;
