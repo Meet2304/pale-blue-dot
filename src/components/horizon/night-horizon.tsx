@@ -218,11 +218,11 @@ const GRAIN_CONTRAST = 2.2;
  * Much higher than it was, and not comparable to the old figure: under an
  * additive blend this was a quantity of light poured on, so it had to stay
  * tiny. Under overlay it is the depth of a proportional modulation, and the
- * scene decides how much of that shows. Slightly higher than the 0.14 it was,
- * because the grain now only ever brightens: losing the darkening half of the
- * range took more out of it than the number suggests.
+ * scene decides how much of that shows. Higher than it looks: the grain only
+ * ever brightens now, so half the field is pinned neutral and this figure buys
+ * about half the visible effect the same number would have bought two-sided.
  */
-const GRAIN_OPACITY = 0.17;
+const GRAIN_OPACITY = 0.25;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
