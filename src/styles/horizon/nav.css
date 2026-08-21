@@ -371,118 +371,6 @@
   filter: blur(5px);
 }
 
-/* --- Mobile trigger ------------------------------------------------------ */
-
-.hz-nav-trigger {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-h-md);
-  height: var(--control-h-md);
-  padding: 0;
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--surface-inset);
-  color: var(--text-body);
-  cursor: pointer;
-  transition: var(--transition-control);
-}
-
-.hz-nav-trigger:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-soft);
-  color: var(--text-strong);
-}
-
-.hz-nav-trigger:hover .hz-nav-icon,
-.hz-nav-trigger:focus-visible .hz-nav-icon {
-  color: var(--blue-400);
-}
-
-/* --- Full-screen menu ---------------------------------------------------- */
-
-/* The panel is a sibling of the bar, never a child: backdrop-filter makes an
-   element a containing block for fixed descendants, so a panel nested inside
-   .hz-nav would be positioned against the 60px bar instead of the viewport.
-
-   It is not opaque — the star field stays faintly readable underneath, so
-   opening the menu reads as a veil drawn across the sky rather than as a
-   different screen. */
-.hz-nav-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  flex-direction: column;
-  background: rgba(0, 0, 0, 0.93);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-}
-
-.hz-nav-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: none;
-  height: var(--nav-h);
-  width: 100%;
-  max-width: var(--container-max);
-  margin-inline: auto;
-  padding-inline: var(--gutter);
-}
-
-.hz-nav-panel-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-7);
-  width: 100%;
-  max-width: var(--container-max);
-  margin-inline: auto;
-  padding: var(--space-8) var(--gutter) var(--space-9);
-}
-
-.hz-nav-panel-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.hz-nav-panel-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
-  border-bottom: 1px solid transparent;
-  color: var(--text-muted);
-  font-family: var(--font-display);
-  font-size: var(--text-title-l);
-  line-height: var(--leading-title);
-  transition: var(--transition-control);
-}
-
-.hz-nav-panel-link:hover,
-.hz-nav-panel-link[aria-current="page"] {
-  color: var(--text-strong);
-  border-bottom-color: var(--blue-400);
-}
-
-.hz-nav-panel-link:hover .hz-nav-icon,
-.hz-nav-panel-link:focus-visible .hz-nav-icon,
-.hz-nav-panel-link[aria-current="page"] .hz-nav-icon {
-  color: var(--blue-400);
-}
-
-.hz-nav-panel .hz-resume {
-  align-self: flex-start;
-  height: var(--control-h-lg);
-  padding-inline: var(--space-5);
-  font-size: var(--text-body-m);
-}
-
 /* --- Breakpoint ---------------------------------------------------------- */
 
 /* 720 rather than a rounder number: below it the four labels plus the resume
@@ -510,16 +398,12 @@
   }
 }
 
-@media (min-width: 721px) {
-  .hz-nav-panel {
-    display: none;
-  }
-}
-
 /* --- Liquid menu (mobile) ------------------------------------------------ */
 
-/* Replaces the hamburger panel below 720px. A quiet pill at the bottom of the
-   sky that melts into the destinations. Desktop never sees it. */
+/* Sibling of the bar, never a child: a filter or transform on .hz-nav would
+   make it a containing block and pin this to the 60px strip. Desktop never
+   sees it. One delayed trail behind the shell is the stretch; no SVG goo —
+   that filter would re-raster every frame of the spring. */
 
 .hz-liquid {
   display: none;
@@ -534,6 +418,11 @@
 @media (max-width: 720px) {
   .hz-liquid {
     display: block;
+  }
+
+  #content,
+  [data-site-footer] {
+    padding-bottom: 88px;
   }
 }
 
@@ -555,12 +444,14 @@
   font: inherit;
   color: inherit;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.hz-liquid-svg {
-  position: absolute;
-  width: 0;
-  height: 0;
+html.hz-nav-lock,
+html.hz-nav-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .hz-liquid-veil {
@@ -569,6 +460,14 @@
   z-index: 59;
   border: 0;
   background: rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease-out-soft);
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-veil {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .hz-liquid-stage {
@@ -580,32 +479,20 @@
   justify-items: center;
   align-items: end;
   transform: translateX(-50%);
+  contain: layout;
 }
 
-.hz-liquid-blobs,
+.hz-liquid-trail,
 .hz-liquid-shell {
   grid-area: 1 / 1;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px - env(safe-area-inset-bottom, 0px));
 }
 
-.hz-liquid-blobs {
-  position: relative;
+.hz-liquid-trail {
+  background: rgba(6, 7, 8, 0.4);
+  box-shadow: 0 0 0 1px rgba(63, 155, 255, 0.1);
   pointer-events: none;
-}
-
-.hz-liquid-blob {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  background: rgba(6, 7, 8, 0.52);
-  box-shadow:
-    0 0 0 1px rgba(63, 155, 255, 0.14),
-    0 0 14px rgba(13, 123, 255, 0.08);
-  translate: -50% 0;
-}
-
-.hz-liquid-stage[data-open="true"] .hz-liquid-blob {
-  background: rgba(13, 14, 16, 0.96);
-  box-shadow: 0 0 0 1px var(--line-hairline);
 }
 
 .hz-liquid-shell {
@@ -614,6 +501,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: rgba(6, 7, 8, 0.52);
+  box-shadow:
+    0 0 0 1px rgba(63, 155, 255, 0.14),
+    0 0 14px rgba(13, 123, 255, 0.08);
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-trail {
+  background: rgba(13, 14, 16, 0.7);
+  box-shadow: none;
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-shell {
+  background: rgba(13, 14, 16, 0.96);
+  box-shadow: 0 0 0 1px var(--line-hairline);
 }
 
 .hz-liquid-shell nav {
@@ -621,6 +522,13 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.hz-liquid[data-open="false"] .hz-liquid-shell nav {
+  flex: none;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .hz-liquid-list {
@@ -633,6 +541,41 @@
   margin: 0;
   padding: 28px 24px 0;
   list-style: none;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.hz-liquid-link,
+.hz-liquid-resume {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.2s var(--ease-out-soft),
+    transform 0.2s var(--ease-out-soft),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-link,
+.hz-liquid[data-open="true"] .hz-liquid-resume {
+  opacity: 1;
+  transform: none;
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(1) .hz-liquid-link {
+  transition-delay: 0.05s;
+}
+.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(2) .hz-liquid-link {
+  transition-delay: 0.08s;
+}
+.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(3) .hz-liquid-link {
+  transition-delay: 0.11s;
+}
+.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(4) .hz-liquid-link {
+  transition-delay: 0.14s;
+}
+.hz-liquid[data-open="true"] .hz-liquid-resume {
+  transition-delay: 0.17s;
 }
 
 .hz-liquid-link {
@@ -643,7 +586,6 @@
   letter-spacing: 0.16em;
   line-height: 1.15;
   text-transform: uppercase;
-  transition: color var(--dur-fast) var(--ease-standard);
 }
 
 .hz-liquid-link:hover,
@@ -655,25 +597,9 @@
   color: var(--blue-300);
 }
 
-.hz-liquid-shell[data-open="false"] nav,
-.hz-liquid-shell[data-open="false"] .hz-liquid-list,
-.hz-liquid-shell[data-open="false"] .hz-liquid-resume-wrap {
-  flex: none;
-  height: 0;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-  pointer-events: none;
-}
-
-.hz-liquid-resume-wrap {
-  display: flex;
-  justify-content: center;
-}
-
 .hz-liquid-resume {
   align-self: center;
-  margin-bottom: 4px;
+  margin: 8px 0 4px;
   color: var(--text-faint);
   font-size: var(--text-caption);
   letter-spacing: var(--tracking-eyebrow);
@@ -702,23 +628,41 @@
   letter-spacing: 0.04em;
 }
 
-.hz-liquid-shell[data-open="true"] .hz-liquid-toggle {
+.hz-liquid[data-open="true"] .hz-liquid-toggle {
   color: var(--blue-400);
 }
 
-.hz-liquid-toggle svg {
+.hz-liquid-icon {
   display: block;
+  overflow: visible;
 }
 
-@media (max-width: 720px) {
-  #content,
-  [data-site-footer] {
-    padding-bottom: 88px;
-  }
+.hz-liquid-icon line {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  transition:
+    transform 0.2s var(--ease-out-soft),
+    opacity 0.12s linear;
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-icon line:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-icon line:nth-child(2) {
+  opacity: 0;
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-icon line:nth-child(3) {
+  transform: rotate(-45deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hz-liquid {
+  .hz-liquid,
+  .hz-liquid-veil,
+  .hz-liquid-link,
+  .hz-liquid-resume,
+  .hz-liquid-icon line {
     transition: none;
   }
 }
