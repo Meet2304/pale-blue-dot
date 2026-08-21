@@ -1,0 +1,14 @@
+# Keep the working tree and the GitHub Actions runner on the same line
+# endings so Prettier's format check is not OS-dependent.
+* text=auto eol=lf
+
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary

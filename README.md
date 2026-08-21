@@ -17,9 +17,17 @@ journey from a single point of light to something larger.
 | `npm run dev`          | Dev server on http://localhost:3000 |
 | `npm run build`        | Production build                    |
 | `npm run lint`         | ESLint                              |
-| `npm run typecheck`    | `tsc --noEmit`                      |
+| `npm run typecheck`    | Next typegen, then `tsc --noEmit`   |
 | `npm run format`       | Prettier, write                     |
 | `npm run format:check` | Prettier, check only                |
+| `npm run ci`           | Format, lint, typecheck, then build |
+
+## CI
+
+Pull requests and pushes to `main` run format, lint, typecheck, and a
+production build via GitHub Actions (`.github/workflows/ci.yml`). The same
+sequence is `npm run ci` locally. Dated notes live in
+[`documentation/`](./documentation/README.md).
 
 ## Design system
 

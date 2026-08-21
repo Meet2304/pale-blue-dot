@@ -1,6 +1,7 @@
 # The Pale Blue Dot — Concept & Vision
 
 ## The name
+
 "The Pale Blue Dot" — after the Voyager photograph of Earth as a single point
 of light from ~6 billion km away. Chosen because it holds two things at once
 without resolving them: everything that's ever mattered happened on
@@ -8,6 +9,7 @@ something that small, and I don't yet know what I'll add to it — but I
 intend to add something before I'm gone.
 
 ## The throughline (who this site is actually about)
+
 Across the work that's already real — leading Serin end-to-end rather than
 staying in one lane, taking on Project Phoenix without being assigned it,
 turning down a ready-made path (Astar) for one I'd have to build myself —
@@ -19,6 +21,7 @@ Underneath that: I don't know my purpose yet, but I want to leave something
 behind. This site is that attempt, one piece at a time.
 
 ## Design principle
+
 Majesty through restraint, not accumulation. One dominant gesture, executed
 with total control, beats several good ones stacked together. Every element
 has to earn its place — if removing it loses nothing real, cut it. The
@@ -75,6 +78,7 @@ meant to be read in one breath — the long version earns its length if the
 photograph itself should register as a real image before pivoting to me.
 
 ### Short version
+
 > Seen from far enough away, this whole planet is a single point of light.
 > Everything that's ever mattered happened on it.
 >
@@ -85,6 +89,7 @@ photograph itself should register as a real image before pivoting to me.
 > Everything on this site is part of that attempt.
 
 ### Long version
+
 > There's a photograph of Earth taken from about six billion kilometers
 > away. In it, this whole planet is a single point of light — barely there,
 > easy to miss. Everything anyone has ever done, ever loved, ever built,
@@ -109,6 +114,7 @@ photograph itself should register as a real image before pivoting to me.
 
 Each entry gets the same shape, so it stays disciplined instead of
 sprawling into a portfolio:
+
 1. What the situation was before I touched it
 2. What I specifically chose to take on — my decision, not the team's output
 3. The trade-off or moment I could've stayed in my lane and didn't
@@ -128,9 +134,9 @@ design (it never has to decide what's worth including). Unit is the
 trajectory or explain why decisions get made a certain way now (e.g.
 "decided not to go to Astar" — a decision, not a resume line).
 
-Test for whether something earns an entry: *does this change how a stranger
+Test for whether something earns an entry: _does this change how a stranger
 understands why I make the choices I make, or is it just a thing that
-happened?* If the latter, it's a diary entry, not a changelog entry.
+happened?_ If the latter, it's a diary entry, not a changelog entry.
 
 Framing: versioning myself instead of narrating myself — terse, dated, one
 line per entry. Possible future tie-in: connecting changelog entries to the
@@ -139,6 +145,7 @@ star field (unresolved, worth revisiting once the project showcase exists).
 ---
 
 ## Still open
+
 - Navigation structure and where it sits relative to the Note
 - Whether the changelog visually ties into the star field or stands alone
 - Blog — revisit only once there's real intent to sustain it

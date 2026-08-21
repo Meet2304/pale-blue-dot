@@ -1,0 +1,91 @@
+# Quality gates that must stay green before production.
+# Branch protection on `main` should require the "Quality gates" job.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  quality:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Format
+            command: npm run format:check
+          - name: Lint
+            command: npm run lint -- --max-warnings=0
+          - name: Typecheck
+            command: npm run typecheck
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.command }}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Cache Next.js
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**/*.ts', 'src/**/*.tsx', 'src/**/*.css') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+  ci:
+    name: Quality gates
+    needs: [quality, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every check to pass
+        run: |
+          if [ "${{ needs.quality.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
+            echo "Quality gates failed (quality=${{ needs.quality.result }}, build=${{ needs.build.result }})"
+            exit 1
+          fi
