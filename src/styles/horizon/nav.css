@@ -1,0 +1,704 @@
+/* Horizon design system — the site navigation.
+ *
+ * Every other component in this project styles itself inline against the tokens,
+ * and that convention holds right up until a rule needs a pseudo-class, a media
+ * query or an attribute selector. The nav needs all three: hover and
+ * focus-visible states, a mobile breakpoint, and [data-nav] / [aria-current]
+ * driving the states the component can be in. None of that is expressible in a
+ * style object, so the nav gets a stylesheet. It is a deliberate exception, not
+ * a drift — anything here that could have stayed inline still did.
+ */
+
+/* --- The bar ------------------------------------------------------------- */
+
+/* Hidden is the default, so the hero's flight is never interrupted by a bar
+   sliding in behind the warp. `visibility` is what actually takes the links out
+   of the tab order; its transition is delayed by the full fade so the fade-out
+   stays visible, then it flips instantly on the way back in. The `inert`
+   attribute the component sets covers the window in between.
+
+   It enters from the edge it lives on — down, not up like the system's other
+   entrance. --dur-slow rather than --dur-cinematic: the hero is allowed
+   cinematic time, chrome is not. A bar that takes 1.1s to appear reads as
+   broken rather than as composed. */
+.hz-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: var(--nav-h);
+  /* No ground and no filter of its own: the blur is a stack of masked layers
+     rendered inside (see .hz-nav-blur), which ramps from nothing at the bottom
+     edge to fully blurred at the top instead of cutting a frosted rectangle
+     out of the page. Keeping backdrop-filter off this element also means it no
+     longer forms a containing block for fixed descendants. */
+  background: transparent;
+  opacity: 0;
+  transform: translateY(-10px);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-arrive) var(--ease-out-soft),
+    transform var(--dur-arrive) var(--ease-out-soft),
+    visibility 0s linear var(--dur-arrive);
+}
+
+.hz-nav[data-nav="visible"] {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--dur-arrive) var(--ease-out-soft),
+    transform var(--dur-arrive) var(--ease-out-soft),
+    visibility 0s;
+}
+
+.hz-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  height: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* --- The mark ------------------------------------------------------------ */
+
+.hz-nav-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 1px solid transparent;
+  color: var(--text-body);
+  font-family: var(--font-display);
+  font-size: var(--text-body-m);
+  letter-spacing: var(--tracking-title);
+  white-space: nowrap;
+  transition: var(--transition-control);
+}
+
+.hz-nav-mark:hover {
+  color: var(--text-strong);
+  border-bottom-color: transparent;
+}
+
+/* The dot the site is named after. Flat, deliberately — effects.css reserves
+   bloom for the horizon, and a glowing mark in the corner is the kind of
+   accumulation the project's design principle exists to rule out. */
+.hz-nav-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-round);
+  background: var(--blue-400);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.hz-nav-mark:hover .hz-nav-dot {
+  background: var(--blue-300);
+}
+
+/* --- Links --------------------------------------------------------------- */
+
+.hz-nav-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* base.css gives every anchor a --line-soft underline. Rather than fight it,
+   the nav borrows it: transparent at rest, blue on hover and on the current
+   page. The active state is then the system's own link affordance instead of
+   an invented pill or dot. */
+.hz-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body-s);
+  color: var(--text-muted);
+  border-bottom: 1px solid transparent;
+  transition: var(--transition-control);
+}
+
+.hz-nav-link:hover,
+.hz-nav-link[aria-current="page"] {
+  color: var(--text-strong);
+  border-bottom-color: var(--blue-400);
+}
+
+/* At rest the icons sit at the faintest ink level, so the bar reads as four
+   words and the icons only assert themselves under the cursor. That is what
+   keeps an icon on every item from turning into clutter. */
+.hz-nav-icon {
+  flex: none;
+  color: var(--text-faint);
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.hz-nav-link:hover .hz-nav-icon,
+.hz-nav-link:focus-visible .hz-nav-icon,
+.hz-nav-link[aria-current="page"] .hz-nav-icon {
+  color: var(--blue-400);
+}
+
+/* --- Resume control ------------------------------------------------------ */
+
+/* Pitch black with stars twinkling in it. On approach a blue glow lights the
+   bottom edge — thickest at the middle of it, thinning as it runs around the
+   corners, gone by the time it reaches the mid-height of the sides — and the
+   label and arrow go white.
+ *
+ * The stars are radial-gradient background layers rather than an SVG or a
+ * canvas: at this size they stay perfectly round at any DPR, they cost one
+ * paint, and there is nothing to resize or re-seed. Every stop pair is a hard
+ * edge (`0 50%` then `transparent 51%`) rather than a soft falloff — a
+ * gradient that fades out over its whole radius reads as a smudge at 1px, and
+ * behind text that smudge is what makes the label look out of focus.
+ *
+ * They twinkle because the field is split across ::before and ::after with two
+ * different periods (4.3s and 6.7s). The periods are far enough apart that the
+ * layers drift in and out of phase for about half a minute before repeating, so
+ * a two-keyframe animation reads as an unsynchronised field. */
+.hz-resume {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-h-md);
+  min-width: var(--control-h-md);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-xl);
+  color: var(--text-muted);
+  font-size: var(--text-body-s);
+  white-space: nowrap;
+  transition:
+    color var(--dur-slow) var(--ease-out-soft),
+    border-color var(--dur-slow) var(--ease-out-soft);
+}
+
+.hz-resume:hover,
+.hz-resume:focus-visible {
+  color: var(--text-strong);
+  border-color: var(--line-soft);
+}
+
+/* White, not blue: the icon joins the label rather than the glow. */
+.hz-resume .hz-nav-icon {
+  color: var(--text-faint);
+  transition: color var(--dur-slow) var(--ease-out-soft);
+}
+
+.hz-resume:hover .hz-nav-icon,
+.hz-resume:focus-visible .hz-nav-icon {
+  color: var(--text-strong);
+}
+
+/* Both star layers sit above the black ground and below the label. The button
+   itself does not clip, so the glow can spill past the edge. */
+.hz-resume::before,
+.hz-resume::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hz-resume::before {
+  z-index: -2;
+  background-color: var(--night-1000);
+  background-image:
+    radial-gradient(
+      circle 1.5px at 8% 18%,
+      rgba(255, 255, 255, 0.95) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.4px at 27% 82%,
+      rgba(198, 205, 255, 0.9) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.7px at 44% 14%,
+      rgba(255, 255, 255, 1) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.3px at 61% 86%,
+      rgba(198, 205, 255, 0.85) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.55px at 77% 20%,
+      rgba(255, 255, 255, 0.95) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.4px at 94% 78%,
+      rgba(198, 205, 255, 0.85) 0 50%,
+      transparent 51%
+    );
+  animation: hz-twinkle-a 4.3s var(--ease-in-out-calm) infinite;
+}
+
+.hz-resume::after {
+  z-index: -1;
+  background-image:
+    radial-gradient(
+      circle 1.1px at 16% 84%,
+      rgba(255, 255, 255, 0.8) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1px at 35% 22%,
+      rgba(255, 255, 255, 0.7) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.1px at 52% 88%,
+      rgba(255, 255, 255, 0.75) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1px at 69% 12%,
+      rgba(255, 255, 255, 0.7) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1.15px at 85% 85%,
+      rgba(255, 255, 255, 0.8) 0 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      circle 1px at 97% 24%,
+      rgba(255, 255, 255, 0.65) 0 50%,
+      transparent 51%
+    );
+  animation: hz-twinkle-b 6.7s var(--ease-in-out-calm) infinite;
+}
+
+@keyframes hz-twinkle-a {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes hz-twinkle-b {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  45% {
+    opacity: 0.3;
+  }
+}
+
+/* The glow.
+ *
+ * The host is inset past the button so the bloom has somewhere to spread, and
+ * carries the taper as a mask: an ellipse anchored on the bottom edge, full in
+ * the middle of it and falling to nothing by the mid-height of the sides. The
+ * mask fades the alpha, which is what pulls the *thickness* in as well — a
+ * blurred edge at low alpha drops below the visible threshold sooner, so the
+ * band narrows as it climbs the corners. The bulge at the bottom centre is a
+ * separate, fatter layer, which is what keeps the middle visibly thicker
+ * rather than merely brighter. */
+.hz-resume-glow {
+  position: absolute;
+  inset: -14px;
+  z-index: -3;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(
+    95% 118% at 50% 78%,
+    #000 0%,
+    rgba(0, 0, 0, 0.5) 44%,
+    transparent 80%
+  );
+  mask-image: radial-gradient(
+    95% 118% at 50% 78%,
+    #000 0%,
+    rgba(0, 0, 0, 0.5) 44%,
+    transparent 80%
+  );
+  transition: opacity var(--dur-slow) var(--ease-out-soft);
+}
+
+.hz-resume:hover .hz-resume-glow,
+.hz-resume:focus-visible .hz-resume-glow {
+  opacity: 1;
+}
+
+/* The line itself, sitting exactly on the button's edge. */
+.hz-resume-glow::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--blue-300);
+  box-shadow: 0 0 8px -1px rgba(13, 123, 255, 0.9);
+}
+
+/* The thicker swell under the middle of the bottom edge. */
+.hz-resume-glow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 60%;
+  height: 22px;
+  translate: -50% 0;
+  border-radius: var(--radius-round);
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    rgba(63, 155, 255, 0.8) 0%,
+    rgba(13, 123, 255, 0.3) 45%,
+    transparent 72%
+  );
+  filter: blur(5px);
+}
+
+/* --- Mobile trigger ------------------------------------------------------ */
+
+.hz-nav-trigger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-md);
+  height: var(--control-h-md);
+  padding: 0;
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  color: var(--text-body);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.hz-nav-trigger:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-soft);
+  color: var(--text-strong);
+}
+
+.hz-nav-trigger:hover .hz-nav-icon,
+.hz-nav-trigger:focus-visible .hz-nav-icon {
+  color: var(--blue-400);
+}
+
+/* --- Full-screen menu ---------------------------------------------------- */
+
+/* The panel is a sibling of the bar, never a child: backdrop-filter makes an
+   element a containing block for fixed descendants, so a panel nested inside
+   .hz-nav would be positioned against the 60px bar instead of the viewport.
+
+   It is not opaque — the star field stays faintly readable underneath, so
+   opening the menu reads as a veil drawn across the sky rather than as a
+   different screen. */
+.hz-nav-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.93);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.hz-nav-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  height: var(--nav-h);
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.hz-nav-panel-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-7);
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding: var(--space-8) var(--gutter) var(--space-9);
+}
+
+.hz-nav-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hz-nav-panel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  border-bottom: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-title-l);
+  line-height: var(--leading-title);
+  transition: var(--transition-control);
+}
+
+.hz-nav-panel-link:hover,
+.hz-nav-panel-link[aria-current="page"] {
+  color: var(--text-strong);
+  border-bottom-color: var(--blue-400);
+}
+
+.hz-nav-panel-link:hover .hz-nav-icon,
+.hz-nav-panel-link:focus-visible .hz-nav-icon,
+.hz-nav-panel-link[aria-current="page"] .hz-nav-icon {
+  color: var(--blue-400);
+}
+
+.hz-nav-panel .hz-resume {
+  align-self: flex-start;
+  height: var(--control-h-lg);
+  padding-inline: var(--space-5);
+  font-size: var(--text-body-m);
+}
+
+/* --- Breakpoint ---------------------------------------------------------- */
+
+/* 720 rather than a rounder number: below it the four labels plus the resume
+   control stop fitting beside the mark without shrinking the type past
+   --text-body-s, and shrinking type to avoid a menu is the wrong trade. */
+/* Every blur layer is its own backdrop snapshot, re-taken whenever the star
+   field behind it repaints. On a phone that is the one thing in this file that
+   can cost real frames, so small screens get a single cheap pane instead. */
+@media (max-width: 760px) {
+  .hz-edge-blur {
+    display: none;
+  }
+
+  .hz-nav {
+    background: var(--surface-glass);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+
+@media (max-width: 720px) {
+  .hz-nav-list,
+  .hz-nav .hz-resume {
+    display: none;
+  }
+
+  .hz-nav-trigger {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 721px) {
+  .hz-nav-panel {
+    display: none;
+  }
+}
+
+/* --- Skip link ----------------------------------------------------------- */
+
+/* Outside the nav, so it stays reachable on the hero where the bar is still
+   hidden — the one control that must never be gated on scroll position. */
+.hz-skip {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 70;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-strong);
+  font-size: var(--text-body-s);
+  transform: translateY(-250%);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.hz-skip:focus-visible {
+  transform: none;
+}
+
+/* --- Reduced motion ------------------------------------------------------ */
+
+/* motion.css already zeroes every --dur-* here, so the transitions collapse on
+   their own; what is left is the 6px slide, which is movement rather than
+   duration. The JS half of the both-places rule is that there is none — the
+   bar's state is one boolean flipped by an IntersectionObserver, with no rAF
+   and no timer to disable. */
+@media (prefers-reduced-motion: reduce) {
+  .hz-nav {
+    transform: none;
+  }
+
+  .hz-resume::before,
+  .hz-resume::after {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .hz-skip {
+    transition: none;
+  }
+}
+
+/* --- Bottom edge blur ------------------------------------------------------ */
+
+/* The counterpart to the bar's ramp, pinned to the other edge of the viewport.
+   Below the nav in the stack so the menu panel and the bar both cover it.
+
+   It hides whenever the footer is on screen. A blurred strip sitting over the
+   links, the icon row and the dot-matrix name is the one place this effect
+   actively costs the page something, and "fade it out when the thing it would
+   obscure arrives" is the simplest rule that fixes it. */
+/* The two edge ramps, each split into two elements on purpose.
+ *
+ * `backdrop-filter` samples what is painted behind an element up to the nearest
+ * *backdrop root*, and an ancestor with `opacity` below 1 creates one. A host
+ * that fades from 0 to 1 is therefore its own worst enemy: for the whole length
+ * of the fade its layers have nothing but their parent to sample, and browsers
+ * are not reliable about re-establishing the backdrop once the value lands back
+ * on exactly 1. That is the trap this was falling into.
+ *
+ * So the blur never animates. .hz-edge-blur is mounted only while it should be
+ * showing and always sits at full opacity, and the fade lives on .hz-edge-veil,
+ * a plain gradient with no filter on it at all. Nothing is lost: at the moment
+ * the ramp appears the frame behind it is black, so an un-faded blur arriving is
+ * not something you can see.
+ *
+ * The veil is deliberately light. It holds contrast under the links where a
+ * bright star drifts past; it is not meant to be the effect. */
+.hz-edge-blur,
+.hz-edge-veil {
+  position: fixed;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.hz-edge-blur {
+  z-index: 45;
+}
+
+.hz-edge-veil {
+  z-index: 44;
+  opacity: 0;
+  transition: opacity var(--dur-arrive) var(--ease-out-soft);
+}
+
+.hz-edge-veil[data-visible="true"] {
+  opacity: 1;
+}
+
+.hz-edge-blur--top,
+.hz-edge-veil--top {
+  top: 0;
+  height: calc(var(--nav-h) * 2.4);
+}
+
+.hz-edge-veil--top {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.32) 46%,
+    rgba(0, 0, 0, 0.1) 76%,
+    transparent 100%
+  );
+}
+
+/* Shorter and lighter than the top. At the bar the ramp has a job — separating
+   the links from whatever scrolls underneath them. At the bottom edge there is
+   nothing to protect, and matching the top's weight just smeared the last two
+   lines of every page. */
+.hz-edge-blur--bottom,
+.hz-edge-veil--bottom {
+  bottom: 0;
+  height: calc(var(--nav-h) * 1.15);
+}
+
+.hz-edge-veil--bottom {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.44) 0%,
+    rgba(0, 0, 0, 0.22) 45%,
+    rgba(0, 0, 0, 0.06) 76%,
+    transparent 100%
+  );
+}
+
+/* --- Footer --------------------------------------------------------------- */
+
+/* The brightest thing in the footer, on purpose. base.css gives every anchor a
+   --line-soft underline, so like the nav these just start it transparent. Everything else down here —
+   the icon row, the name in the grid, the small print — is set below it so the
+   eye lands on the links first. */
+.hz-foot-link {
+  color: var(--text-body);
+  font-size: var(--text-body-m);
+  border-bottom: 1px solid transparent;
+  transition: var(--transition-control);
+}
+
+.hz-foot-link:hover {
+  color: var(--text-strong);
+  border-bottom-color: var(--line-soft);
+}
+
+.hz-foot-icons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* No border, no box — the icons are the affordance. The 40px square is the tap
+   target; the glyph inside it stays small. */
+/* No plate behind it — the glyph is the whole control. The 36px box is only
+   there to give the pointer and a fingertip something to land on; it never
+   paints. The radius survives because :focus-visible draws its ring around this
+   box, and a square ring around a round-ish icon looks like an accident. */
+.hz-foot-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  transition: var(--transition-control);
+}
+
+.hz-foot-icon:hover,
+.hz-foot-icon:focus-visible {
+  color: var(--text-strong);
+}

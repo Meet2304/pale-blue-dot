@@ -40,8 +40,12 @@ export function Arrival() {
       ref={ref}
       data-arrived={arrived ? "true" : "false"}
       style={{
-        background: "var(--bg-page)",
+        /* Transparent rather than --bg-page: the star field is fixed behind the
+           whole document, and painting black here would cover it everywhere the
+           warp has already ended. */
+        background: "transparent",
         minHeight: "100svh",
+        paddingTop: "var(--nav-h)",
         display: "flex",
         alignItems: "center",
       }}

@@ -8,10 +8,36 @@
 html {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+
+  /* The nav is fixed, so an anchor jump would otherwise land under it. */
+  scroll-padding-top: var(--nav-h);
+
+  /* The strip revealed by overscrolling past the end of the document is painted
+     from the root element, not from body — nothing inside the footer can reach
+     it, which is why bouncing at the bottom used to expose a band of flat black
+     under the dot field.
+     
+     Giving html a background stops body's from propagating to the canvas, so
+     body now paints only its own box and this shows through exactly where the
+     document ends. The pitch and colour match the footer's field (5px cells,
+     --ink-400), so the bounce reads as more of the same grid rather than as the
+     end of the page. It cannot flicker — it is a background image, not the
+     canvas — but it is only ever visible for the length of a rubber-band. */
+  background-color: var(--bg-page);
+  background-image: radial-gradient(
+    circle 1px at 1px 1px,
+    rgba(100, 112, 110, 0.5) 0 50%,
+    transparent 51%
+  );
+  background-size: 5px 5px;
 }
 
 body {
   margin: 0;
+  /* Opaque, and no longer propagating to the canvas now that html has its own
+     background — so this covers the root's dot pattern everywhere the document
+     actually reaches, and the pattern survives only past its end. */
+  min-height: 100svh;
   background: var(--bg-page);
   color: var(--text-body);
   font-family: var(--font-text);

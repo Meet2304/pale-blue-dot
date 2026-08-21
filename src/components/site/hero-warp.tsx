@@ -320,6 +320,15 @@ export function HeroWarp() {
         background: "var(--night-1000)",
       }}
     >
+      {/* The chrome's gate. This edge is where the sticky stage releases, and
+          the curtain's safety term has held the frame black since 0.9 of the
+          runway, so the nav crossing it fades in on the same frame the black
+          hands off to the section below. See `use-hero-gate.ts`. */}
+      <div
+        data-hero-end
+        aria-hidden
+        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1 }}
+      />
       <div
         ref={stageRef}
         style={{ position: "sticky", top: 0, height: "100svh", overflow: "hidden" }}

@@ -30,4 +30,8 @@
   --control-h-sm: 30px;
   --control-h-md: 38px;
   --control-h-lg: 48px;
+
+  /* One height, shared by the bar itself, the top padding every page needs to
+     clear it, and scroll-padding-top for in-page anchors. */
+  --nav-h: 60px;
 }
