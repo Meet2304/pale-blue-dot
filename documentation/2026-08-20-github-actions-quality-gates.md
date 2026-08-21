@@ -19,7 +19,7 @@ The checks:
 | ------------ | ---------------------------------- | ------------------------------------- |
 | Format       | `npm run format:check`             | Prettier (incl. Tailwind class order) |
 | Lint         | `npm run lint -- --max-warnings=0` | ESLint + Next.js Core Web Vitals      |
-| Typecheck    | `npm run typecheck`                | `tsc --noEmit` against strict TS      |
+| Typecheck    | `npm run typecheck`                | `next typegen` then `tsc --noEmit`    |
 | Build        | `npm run build`                    | Next.js production compile succeeds   |
 | Quality gate | Aggregates the jobs above          | One required status check for `main`  |
 
@@ -106,6 +106,11 @@ first run.
 
 ## Future-me notes
 
+- Typecheck must run `next typegen` before `tsc`. `LayoutProps` / `PageProps`
+  live in generated files (`next-env.d.ts`, `.next/types`) that are gitignored.
+  A clean CI checkout does not have them. That is why PR #3's Typecheck job
+  failed with `Cannot find name 'LayoutProps'` while Build (which generates
+  the types itself) passed.
 - Line endings are LF (`.gitattributes` + Prettier `endOfLine: "lf"`). If
   `format:check` fails only on Windows after a checkout, the working tree is
   still CRLF — run `git checkout -- .` once this change is on the branch.

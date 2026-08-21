@@ -9,7 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "ci": "npm run format:check && npm run lint -- --max-warnings=0 && npm run typecheck && npm run build"
   },
   "engines": {

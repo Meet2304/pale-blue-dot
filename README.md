@@ -17,7 +17,7 @@ journey from a single point of light to something larger.
 | `npm run dev`          | Dev server on http://localhost:3000 |
 | `npm run build`        | Production build                    |
 | `npm run lint`         | ESLint                              |
-| `npm run typecheck`    | `tsc --noEmit`                      |
+| `npm run typecheck`    | Next typegen, then `tsc --noEmit`   |
 | `npm run format`       | Prettier, write                     |
 | `npm run format:check` | Prettier, check only                |
 | `npm run ci`           | Format, lint, typecheck, then build |
