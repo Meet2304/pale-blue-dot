@@ -165,12 +165,11 @@ function valueNoise3(x: number, y: number, z: number, period: number): number {
 /**
  * How fast the field moves through its third axis.
  *
- * 0.606 replaces a fleck with an unrelated value every 1.65s — a quarter of the
- * sea's 6.6s swell, so still a harmonic of the water rather than a rate picked
- * on its own. Twice what it was again. At 15Hz the field is resampled about
- * twenty-five times per replacement, so nothing becomes steppy.
+ * 0.4545 replaces a fleck with an unrelated value every 2.2s — a third of the
+ * sea's 6.6s swell, so it stays a harmonic of the water rather than a rate
+ * picked on its own. A quarter slower than the previous 1.65s.
  */
-const GRAIN_Z_SPEED = 0.606;
+const GRAIN_Z_SPEED = 0.4545;
 
 /**
  * A slow crawl of the sampling coordinates, in lattice cells per second.
@@ -179,14 +178,33 @@ const GRAIN_Z_SPEED = 0.606;
  * direction, which reads as boiling rather than as air. Moving where the field
  * is read from adds that direction. It is not the drift that was tried and
  * rejected early on: that translated a fixed pattern, so the same shapes slid
- * past and could be followed. Here the field is replaced roughly four times
- * faster than these offsets travel one cell, so nothing survives long enough
- * to be tracked — it only lends the turbulence a bias.
+ * past and could be followed. Here a fleck is replaced after travelling about
+ * nine tenths of a cell — barely a pixel — so nothing survives long enough to
+ * be tracked and the crawl only lends the turbulence a bias.
+ *
+ * These scale with GRAIN_Z_SPEED. Slowing the field without slowing the crawl
+ * would let flecks live long enough to be followed, and the drift would start
+ * reading as sliding again.
  *
  * The two rates differ so the crawl is diagonal and never traces an axis.
  */
-const GRAIN_DRIFT_X = 0.55;
-const GRAIN_DRIFT_Y = 0.21;
+const GRAIN_DRIFT_X = 0.41;
+const GRAIN_DRIFT_Y = 0.157;
+
+/**
+ * Cell size of the clumping octave, relative to a pixel.
+ *
+ * Real grain is not evenly distributed — it gathers into loose clouds, and a
+ * single octave of even noise is exactly what made this read as mush rather
+ * than as grain. This second octave is four times coarser and is applied as a
+ * multiplier on the fine grain's strength, never added to it.
+ *
+ * Multiplying is the whole point. Added, a five-pixel octave would put visible
+ * blobs back on screen — the same fault that made the first version look like
+ * a grid. Multiplied, it never appears on its own: it only decides where the
+ * fine grain is dense and where it thins out, which is what clumping is.
+ */
+const GRAIN_CLUMP_SCALE = 0.1875;
 
 /**
  * Peak strength of the grain, reached only once the glow it sits on has.
@@ -312,6 +330,7 @@ export function NightHorizon({
     let grainTileCtx: CanvasRenderingContext2D | null = null;
     let grainPixels: ImageData | null = null;
     let grainPeriod = 1;
+    let grainClumpPeriod = 1;
     let lastGrainAt = -Infinity;
     let lastGrainAlpha = -1;
     const t0 = performance.now();
@@ -446,6 +465,7 @@ export function NightHorizon({
       grainTileCtx = grainTile.getContext("2d");
       grainPixels = grainTileCtx?.createImageData(tilePx, tilePx) ?? null;
       grainPeriod = Math.round(tilePx * GRAIN_SCALE);
+      grainClumpPeriod = Math.round(tilePx * GRAIN_CLUMP_SCALE);
       lastGrainAt = -Infinity;
 
       /* Both cached gradients hold absolute coordinates and were built under
@@ -547,7 +567,18 @@ export function NightHorizon({
 
         ctx!.save();
         ctx!.translate(w * l.c, hy);
-        ctx!.scale(Math.max(w * l.w * 2.6, 1), Math.max(h * (0.3 + 0.18 * l.a), 1));
+        /* Vertical reach is capped against the width, and horizontal reach is
+           floored against a multiple of the vertical.
+
+           Left to scale independently, the horizontal radius follows width and
+           the vertical follows height — which on a portrait phone inverts the
+           ellipse into something taller than it is wide, and a glow taller than
+           it is wide is a circle sitting on the horizon rather than light
+           spread along it. Measured, the aspect went from 1.65 on a desktop to
+           0.49 on a phone. These two guards hold it above 1.8 everywhere. */
+        const vertical = Math.max(Math.min(h, w) * (0.3 + 0.18 * l.a), 1);
+        const horizontal = Math.max(w * l.w * 2.6, vertical * 1.8);
+        ctx!.scale(horizontal, vertical);
         const g = ctx!.createRadialGradient(0, 0, 0, 0, 0, 1);
         g.addColorStop(0, `rgba(${rgbLift},0.5)`);
         g.addColorStop(0.22, `rgba(${rgb},0.27)`);
@@ -585,7 +616,10 @@ export function NightHorizon({
 
         ctx!.save();
         ctx!.translate(w * l.c, hy);
-        ctx!.scale(Math.max(w * l.w * 2.1, 1), Math.max(h * (0.055 + 0.05 * l.a), 1));
+        /* Same guard as the wash above: without it the tight bloom also turns
+           squarish on a narrow screen. */
+        const vertical = Math.max(Math.min(h, w) * (0.055 + 0.05 * l.a), 1);
+        ctx!.scale(Math.max(w * l.w * 2.1, vertical * 2.4), vertical);
         const bloom = ctx!.createRadialGradient(0, 0, 0, 0, 0, 1);
         bloom.addColorStop(0, `rgba(${rgb},0.25)`);
         bloom.addColorStop(0.4, `rgba(${rgb},0.072)`);
@@ -737,22 +771,42 @@ export function NightHorizon({
       const driftX = elapsedSeconds * GRAIN_DRIFT_X;
       const driftY = elapsedSeconds * GRAIN_DRIFT_Y;
 
+      /* The clumping octave crawls and evolves more slowly than the grain it
+         gathers. Clouds of grain should outlive the individual flecks in
+         them — if both moved at one rate the clumping would be invisible. */
+      const clumpZ = z * 0.35;
+      const clumpDriftX = driftX * 0.3;
+      const clumpDriftY = driftY * 0.3;
+
       const px = grainPixels.data;
       const size = grainTile.width;
       let i = 0;
 
       for (let y = 0; y < size; y++) {
         const ny = y * GRAIN_SCALE + driftY;
+        const cy = y * GRAIN_CLUMP_SCALE + clumpDriftY;
         for (let x = 0; x < size; x++) {
           /* Biased so most of the field sits at black and only the upper part
              of the range shows. Under an additive blend a source averaging
              mid-grey would lift the whole band into haze; averaging near black
-             it reads as flecks. The threshold also thins the field out, which
-             is half of why this is subtler than it was. */
-          const v =
-            clamp01(
-              (valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod) - 0.48) * 1.9,
-            ) * 255;
+             it reads as flecks. Raising the threshold thins the field further,
+             trading an even wash for fewer, crisper specks — the other half of
+             why this no longer reads as mush. */
+          const fine = clamp01(
+            (valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod) - 0.52) * 2.6,
+          );
+
+          /* Density, never brightness. The clump octave only decides how
+             strongly the fine grain shows here, and it is floored at 0.45 so no
+             part of the field ever empties into a bare patch — that would be
+             structure again, merely inverted. */
+          const clump = valueNoise3(
+            x * GRAIN_CLUMP_SCALE + clumpDriftX,
+            cy,
+            clumpZ,
+            grainClumpPeriod,
+          );
+          const v = fine * (0.45 + 0.55 * clamp01((clump - 0.35) * 3)) * 255;
           px[i] = v;
           px[i + 1] = v;
           px[i + 2] = v;
@@ -1017,7 +1071,11 @@ export function NightHorizon({
       }
 
       /* Reduced motion gets one still slice and nothing after it. */
-      const grainInterval = lowPower ? 1000 / 12 : 1000 / 15;
+      /* Slower than before on both counts: the field itself now moves at two
+         thirds the rate, so there is less to resolve, and the clumping octave
+         doubled the cost of a tile. Still around twenty-five resamples per
+         replacement, which is far more than smoothness needs. */
+      const grainInterval = lowPower ? 1000 / 10 : 1000 / 12;
       if (reduce) {
         if (lastGrainAt === -Infinity) {
           lastGrainAt = now;

@@ -144,8 +144,10 @@
      spilling across it. Note that without mask-composite the two layers add
      instead of intersecting, which would put grain on the water — the failure
      mode is visible rather than silent, which is the right way round. */
+  --hz-glow-rx: 74%;
+  --hz-glow-ry: 54%;
   --hz-mask-shape: radial-gradient(
-    ellipse 74% 54% at 46% var(--hz-horizon, 76%),
+    ellipse var(--hz-glow-rx) var(--hz-glow-ry) at 46% var(--hz-horizon, 76%),
     #000 0%,
     rgba(0, 0, 0, 0.64) 36%,
     rgba(0, 0, 0, 0.34) 66%,
@@ -160,4 +162,16 @@
   mask-image: var(--hz-mask-shape), var(--hz-mask-clip);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
+}
+
+/* The grain mask has the same inversion problem the canvas glow does: a
+   percentage radius resolves against width horizontally and height vertically,
+   so on a portrait phone this ellipse becomes taller than it is wide and the
+   grain gathers into a disc. Wider than the viewport and much shallower keeps
+   it a band, matching the guard applied to the glow it sits on. */
+@media (max-width: 760px) {
+  .hz-noise-glow {
+    --hz-glow-rx: 132%;
+    --hz-glow-ry: 24%;
+  }
 }
