@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { StarField } from "@/components/horizon/star-field";
-import { LabSwitcher } from "@/components/site/nav-lab/lab-switcher";
 import { SiteNav } from "@/components/site/site-nav";
 import { useHeroGate } from "@/components/site/use-hero-gate";
 import { ProgressiveBlur } from "@/components/ui/progressive-blur";
@@ -61,7 +60,6 @@ export function SiteChrome() {
           frame is the most useful thing the star field can do. */}
       <StarField paused={!past} />
       <SiteNav visible={past} />
-      {past && <LabSwitcher />}
       {/* The veils fade; the blurs do not, and that split is the fix.
           `backdrop-filter` samples what is behind an element up to the nearest
           backdrop root, and any ancestor at opacity below 1 creates one — so a

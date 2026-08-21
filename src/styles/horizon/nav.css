@@ -508,15 +508,218 @@
   .hz-nav .hz-resume {
     display: none;
   }
-
-  .hz-nav-trigger {
-    display: inline-flex;
-  }
 }
 
 @media (min-width: 721px) {
   .hz-nav-panel {
     display: none;
+  }
+}
+
+/* --- Liquid menu (mobile) ------------------------------------------------ */
+
+/* Replaces the hamburger panel below 720px. A quiet pill at the bottom of the
+   sky that melts into the destinations. Desktop never sees it. */
+
+.hz-liquid {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-arrive) var(--ease-out-soft),
+    visibility 0s linear var(--dur-arrive);
+}
+
+@media (max-width: 720px) {
+  .hz-liquid {
+    display: block;
+  }
+}
+
+.hz-liquid[data-nav="visible"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--dur-arrive) var(--ease-out-soft),
+    visibility 0s;
+}
+
+.hz-liquid a {
+  border-bottom-color: transparent;
+  text-decoration: none;
+}
+
+.hz-liquid button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.hz-liquid-svg {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.hz-liquid-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  border: 0;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.hz-liquid-stage {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  justify-items: center;
+  align-items: end;
+  transform: translateX(-50%);
+}
+
+.hz-liquid-blobs,
+.hz-liquid-shell {
+  grid-area: 1 / 1;
+}
+
+.hz-liquid-blobs {
+  position: relative;
+  pointer-events: none;
+}
+
+.hz-liquid-blob {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  background: rgba(6, 7, 8, 0.52);
+  box-shadow:
+    0 0 0 1px rgba(63, 155, 255, 0.14),
+    0 0 14px rgba(13, 123, 255, 0.08);
+  translate: -50% 0;
+}
+
+.hz-liquid-stage[data-open="true"] .hz-liquid-blob {
+  background: rgba(13, 14, 16, 0.96);
+  box-shadow: 0 0 0 1px var(--line-hairline);
+}
+
+.hz-liquid-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hz-liquid-shell nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.hz-liquid-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 0;
+  padding: 28px 24px 0;
+  list-style: none;
+}
+
+.hz-liquid-link {
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 1.45rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.16em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.hz-liquid-link:hover,
+.hz-liquid-link[aria-current="page"] {
+  color: var(--text-strong);
+}
+
+.hz-liquid-link[aria-current="page"] {
+  color: var(--blue-300);
+}
+
+.hz-liquid-shell[data-open="false"] nav,
+.hz-liquid-shell[data-open="false"] .hz-liquid-list,
+.hz-liquid-shell[data-open="false"] .hz-liquid-resume-wrap {
+  flex: none;
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.hz-liquid-resume-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.hz-liquid-resume {
+  align-self: center;
+  margin-bottom: 4px;
+  color: var(--text-faint);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.hz-liquid-resume:hover {
+  color: var(--text-body);
+}
+
+.hz-liquid-toggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+  padding: 0 16px 0 18px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.hz-liquid-toggle span {
+  font-size: var(--text-caption);
+  letter-spacing: 0.04em;
+}
+
+.hz-liquid-shell[data-open="true"] .hz-liquid-toggle {
+  color: var(--blue-400);
+}
+
+.hz-liquid-toggle svg {
+  display: block;
+}
+
+@media (max-width: 720px) {
+  #content,
+  [data-site-footer] {
+    padding-bottom: 88px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-liquid {
+    transition: none;
   }
 }
 

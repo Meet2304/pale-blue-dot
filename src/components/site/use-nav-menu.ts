@@ -6,22 +6,15 @@ import { usePathname } from "next/navigation";
 /**
  * Open/close, route-change dismiss, hero-gate dismiss, focus trap, scroll lock.
  *
- * Shared by every expandable mobile nav so the six designs disagree about shape
- * and motion, not about the boring correctness.
+ * The liquid menu is the only consumer. The boring correctness lives here so
+ * the morph can be about shape and motion.
  */
-export function useNavMenu({
-  visible,
-  preview = false,
-}: {
-  visible: boolean;
-  preview?: boolean;
-}) {
+export function useNavMenu({ visible }: { visible: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => setOpen(false), []);
@@ -37,12 +30,12 @@ export function useNavMenu({
   }
 
   useEffect(() => {
-    if (!open || preview) return;
+    if (!open) return;
 
-    const opener = triggerRef.current;
+    const opener = toggleRef.current;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
+    opener?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -74,16 +67,14 @@ export function useNavMenu({
       document.body.style.overflow = previousOverflow;
       opener?.focus();
     };
-  }, [open, close, preview]);
+  }, [open, close]);
 
   return {
     open,
-    setOpen,
     close,
     toggle,
     panelId,
-    triggerRef,
-    closeRef,
+    toggleRef,
     panelRef,
   };
 }
