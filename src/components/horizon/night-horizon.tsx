@@ -192,15 +192,19 @@ const GRAIN_DRIFT_X = 0.41;
 const GRAIN_DRIFT_Y = 0.157;
 
 /**
- * Amount the noise is spread around mid-grey.
+ * Amount the noise is spread above mid-grey.
  *
- * Under overlay, 0.5 is neutral — it leaves the backdrop untouched. Values
- * above brighten and below darken, both in proportion to what is already
- * there. So the source wants to be centred, not biased dark the way an
- * additive blend needed it: this is dithering the light, not adding to it.
+ * Under overlay 0.5 is neutral, above it brightens and below it darkens — both
+ * in proportion to what is already there. Only the upper half is used now.
+ * Two-sided dithering put dark specks into the glow, and a dark speck punched
+ * into a smooth bright field is far more conspicuous than a light one, which is
+ * why the middle of the glow read as the busiest part of the frame.
+ *
+ * Clamping to the bright half costs a small DC lift — the glow comes up by
+ * roughly four per cent — which is far cheaper than the dots.
  *
  * Value noise clusters hard around its middle, so without spreading it the
- * modulation would be far too tight to see.
+ * modulation would be too tight to see at all.
  */
 const GRAIN_CONTRAST = 2.2;
 
@@ -214,11 +218,11 @@ const GRAIN_CONTRAST = 2.2;
  * Much higher than it was, and not comparable to the old figure: under an
  * additive blend this was a quantity of light poured on, so it had to stay
  * tiny. Under overlay it is the depth of a proportional modulation, and the
- * scene decides how much of that shows. 0.14 swings the inner glow by about
- * eleven levels out of 255, the mid glow by five, and the black sky by a fifth
- * of one — present in the light, gone everywhere else.
+ * scene decides how much of that shows. Slightly higher than the 0.14 it was,
+ * because the grain now only ever brightens: losing the darkening half of the
+ * range took more out of it than the number suggests.
  */
-const GRAIN_OPACITY = 0.14;
+const GRAIN_OPACITY = 0.17;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
@@ -781,21 +785,17 @@ export function NightHorizon({
       for (let y = 0; y < size; y++) {
         const ny = y * GRAIN_SCALE + driftY;
         for (let x = 0; x < size; x++) {
-          /* Spread around mid-grey rather than biased dark. Under overlay 0.5
-             changes nothing, so a centred source dithers the light — half the
-             flecks lifting it, half dropping it — instead of only ever adding.
-             That two-sided modulation is what the reference has and what an
-             additive blend structurally cannot produce.
+          /* Only the bright half of the field is kept. Below mid-grey the
+             source is pinned to neutral, so overlay leaves those pixels exactly
+             as they were and the grain can only ever add light. Half the flecks
+             therefore do nothing at all, which is the other reason this is
+             quieter than the amplitude alone implies.
 
              No clumping octave. The reference grain is dead even, and the
-             clumping added for the previous version was solving a problem that
-             belonged to the blend mode, not to the noise. */
-          const v =
-            clamp01(
-              0.5 +
-                (valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod) - 0.5) *
-                  GRAIN_CONTRAST,
-            ) * 255;
+             clumping added earlier was solving a problem that belonged to the
+             blend mode rather than to the noise. */
+          const n = valueNoise3(x * GRAIN_SCALE + driftX, ny, z, grainPeriod);
+          const v = clamp01(0.5 + Math.max(0, n - 0.5) * GRAIN_CONTRAST) * 255;
           px[i] = v;
           px[i + 1] = v;
           px[i + 2] = v;

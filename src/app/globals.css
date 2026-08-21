@@ -158,12 +158,20 @@
      mode is visible rather than silent, which is the right way round. */
   --hz-glow-rx: 74%;
   --hz-glow-ry: 54%;
+  /* Flat through the middle, easing slightly at dead centre.
+
+     Overlay already gives the brightest part of the glow the most grain, since
+     the effect scales with what is behind it. A mask that also peaked there
+     compounded the two, and the centre came out busier than anywhere else.
+     Holding the middle band level — and letting it fall a little at the very
+     centre — leaves the falloff to the light alone. The variation is too small
+     to read as a ring; it only takes the edge off. */
   --hz-mask-shape: radial-gradient(
     ellipse var(--hz-glow-rx) var(--hz-glow-ry) at 46% var(--hz-horizon, 76%),
-    #000 0%,
-    rgba(0, 0, 0, 0.64) 36%,
-    rgba(0, 0, 0, 0.34) 66%,
-    rgba(0, 0, 0, 0.2) 100%
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.7) 34%,
+    rgba(0, 0, 0, 0.55) 70%,
+    rgba(0, 0, 0, 0.34) 100%
   );
   --hz-mask-clip: linear-gradient(
     to bottom,
