@@ -408,6 +408,12 @@
    Radius goes 22 → 40, never 999: interpolating a stadium down to a card
    pulled the bottom corners up the sides and clipped the toggle. */
 
+@property --liquid-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .hz-liquid {
   display: none;
   --liquid-p: 0;
@@ -464,7 +470,7 @@ html.hz-nav-lock body {
   inset: 0;
   z-index: 59;
   border: 0;
-  background: rgba(0, 0, 0, 0.42);
+  background: rgba(0, 0, 0, 0.66);
   opacity: var(--liquid-p);
   pointer-events: none;
 }
@@ -491,7 +497,10 @@ html.hz-nav-lock body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgba(13, 14, 16, calc(0.52 + 0.44 * var(--liquid-p)));
+  /* Solid fallback if calc(--liquid-p) is dropped: the card must not go
+     see-through. Open lands at 0.98; closed keeps a little glass at 0.86. */
+  background: rgb(8, 9, 11);
+  background: rgba(8, 9, 11, calc(0.86 + 0.12 * var(--liquid-p)));
   box-shadow:
     0 0 0 1px rgba(63, 155, 255, calc(0.14 - 0.08 * var(--liquid-p))),
     0 0 14px rgba(13, 123, 255, calc(0.08 * (1 - var(--liquid-p))));
