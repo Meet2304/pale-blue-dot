@@ -440,7 +440,7 @@
     visibility 0s;
 }
 
-.hz-liquid a {
+.hz-liquid a:not(.hz-resume) {
   border-bottom-color: transparent;
   text-decoration: none;
 }
@@ -522,13 +522,9 @@ html.hz-nav-lock body {
   overscroll-behavior: contain;
 }
 
-.hz-liquid-link,
-.hz-liquid-resume {
+.hz-liquid-link {
   opacity: clamp(0, calc((var(--liquid-p) - 0.22) / 0.5), 1);
   transform: translateY(calc((1 - var(--liquid-p)) * 8px));
-}
-
-.hz-liquid-link {
   color: var(--text-muted);
   font-family: var(--font-text);
   font-size: 1.45rem;
@@ -547,17 +543,18 @@ html.hz-nav-lock body {
   color: var(--blue-300);
 }
 
-.hz-liquid-resume {
+.hz-liquid .hz-resume {
   align-self: center;
-  margin: 8px 0 4px;
-  color: var(--text-faint);
-  font-size: var(--text-caption);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  flex: none;
+  margin: 16px 0 20px;
+  opacity: clamp(0, calc((var(--liquid-p) - 0.28) / 0.45), 1);
+  transform: translateY(calc((1 - var(--liquid-p)) * 8px));
 }
 
-.hz-liquid-resume:hover {
-  color: var(--text-body);
+/* No hover on a phone, so the bloom is the resting state — that is what
+   makes it the one control in the card that reads as an action. */
+.hz-liquid .hz-resume .hz-resume-glow {
+  opacity: var(--liquid-p);
 }
 
 /* Pinned to the bottom of the shell so it rides the morph instead of

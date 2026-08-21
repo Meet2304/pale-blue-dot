@@ -6,13 +6,13 @@ import { usePathname } from "next/navigation";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
 import { Compass } from "@/components/animate-ui/icons/compass";
-import { Download } from "@/components/animate-ui/icons/download";
 import { Layers } from "@/components/animate-ui/icons/layers";
 import { List } from "@/components/animate-ui/icons/list";
 import { Send } from "@/components/animate-ui/icons/send";
 import { User } from "@/components/animate-ui/icons/user";
 import { LiquidMenu } from "@/components/site/liquid-menu";
-import { NAV_ITEMS, RESUME_HREF, RESUME_READY } from "@/components/site/nav-items";
+import { NAV_ITEMS } from "@/components/site/nav-items";
+import { ResumeLink } from "@/components/site/resume-link";
 
 const ICON_SIZE = 15;
 
@@ -100,29 +100,6 @@ function NavLink({ href, label, Icon, current, className, size }: NavLinkProps) 
       >
         <Icon className="hz-nav-icon" size={size} />
         <span>{label}</span>
-      </Link>
-    </AnimateIcon>
-  );
-}
-
-function ResumeLink({ size }: { size: number }) {
-  const [focused, setFocused] = useState(false);
-
-  return (
-    /* The starry ground and the bloom are entirely CSS on .hz-resume — see
-       nav.css. All this has to do is be one hover target, which is what lets
-       AnimateIcon slot onto it and animate the arrow from anywhere inside. */
-    <AnimateIcon asChild animateOnHover animate={focused}>
-      <Link
-        href={RESUME_HREF}
-        className="hz-resume"
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
-      >
-        <span className="hz-resume-glow" aria-hidden />
-        <Download className="hz-nav-icon" size={size} />
-        <span>Resume</span>
       </Link>
     </AnimateIcon>
   );

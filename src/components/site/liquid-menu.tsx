@@ -12,7 +12,8 @@ import {
   useTransform,
 } from "motion/react";
 
-import { NAV_ITEMS, RESUME_HREF, RESUME_READY } from "@/components/site/nav-items";
+import { NAV_ITEMS } from "@/components/site/nav-items";
+import { ResumeLink } from "@/components/site/resume-link";
 
 const spring = {
   type: "spring" as const,
@@ -27,7 +28,7 @@ const OPEN_MAX_WIDTH = 420;
 const CLOSED_WIDTH = 148;
 const CLOSED_HEIGHT = 44;
 const CLOSED_RADIUS = 22;
-const OPEN_HEIGHT = 496;
+const OPEN_HEIGHT = 520;
 const OPEN_RADIUS = 40;
 
 export function LiquidMenu({ visible }: { visible: boolean }) {
@@ -180,13 +181,7 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
                 </li>
               ))}
             </ul>
-            <Link
-              href={RESUME_HREF}
-              className="hz-liquid-resume"
-              {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
-            >
-              Resume
-            </Link>
+            <ResumeLink size={15} />
           </nav>
 
           <button
