@@ -522,11 +522,13 @@ html.hz-nav-lock body {
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  padding-bottom: 44px;
 }
 
 .hz-liquid[data-open="false"] .hz-liquid-shell nav {
   flex: none;
   height: 0;
+  padding: 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -549,10 +551,10 @@ html.hz-nav-lock body {
 .hz-liquid-link,
 .hz-liquid-resume {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(10px);
   transition:
-    opacity 0.2s var(--ease-out-soft),
-    transform 0.2s var(--ease-out-soft),
+    opacity 0.28s var(--ease-out-soft),
+    transform 0.28s var(--ease-out-soft),
     color var(--dur-fast) var(--ease-standard);
 }
 
@@ -613,32 +615,49 @@ html.hz-nav-lock body {
   color: var(--text-body);
 }
 
+/* Pinned to the bottom of the shell, out of the flex flow. Otherwise the
+   nav going from height 0 to flex: 1 on the same frame as the click shoves
+   this 44px row below the still-closed pill, and "Menu" plus the icon vanish
+   until the spring has grown enough to show them again. */
 .hz-liquid-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
   display: flex;
-  flex: none;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
   height: 44px;
-  padding: 0 20px 0 18px;
+  padding: 0 22px;
   border: 0;
   background: transparent;
   color: var(--text-muted);
+  transition: color 0.28s var(--ease-out-soft);
 }
 
 .hz-liquid-label {
   font-size: var(--text-caption);
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  transform-origin: left center;
+  transition:
+    color 0.28s var(--ease-out-soft),
+    letter-spacing 0.35s var(--ease-out-soft);
 }
 
 .hz-liquid[data-open="true"] .hz-liquid-toggle {
-  padding: 0 24px;
   color: var(--blue-400);
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-label {
+  letter-spacing: 0.08em;
 }
 
 /* Three bars, not an SVG. CSS transform-box on <line> is unreliable on
    mobile, and a rotated stroke was being clipped by the 40px corner. These
-   sit in an 18px box, well inside the padded toggle. */
+   sit in an 18px box, well inside the padded toggle. Both states set
+   translate and rotate so the morph interpolates instead of snapping. */
 .hz-liquid-icon {
   position: relative;
   width: 18px;
@@ -656,28 +675,34 @@ html.hz-nav-lock body {
   border-radius: 1px;
   background: currentColor;
   transition:
-    transform 0.2s var(--ease-out-soft),
-    opacity 0.12s linear;
+    transform 0.32s var(--ease-out-soft),
+    opacity 0.2s linear;
 }
 
 .hz-liquid-icon span:nth-child(1) {
-  transform: translateY(-5px);
+  transform: translateY(-5px) rotate(0deg);
+}
+
+.hz-liquid-icon span:nth-child(2) {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .hz-liquid-icon span:nth-child(3) {
-  transform: translateY(5px);
+  transform: translateY(5px) rotate(0deg);
 }
 
 .hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(1) {
-  transform: rotate(45deg);
+  transform: translateY(0) rotate(45deg);
 }
 
 .hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(2) {
   opacity: 0;
+  transform: scaleX(0.4);
 }
 
 .hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(3) {
-  transform: rotate(-45deg);
+  transform: translateY(0) rotate(-45deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -685,6 +710,8 @@ html.hz-nav-lock body {
   .hz-liquid-veil,
   .hz-liquid-link,
   .hz-liquid-resume,
+  .hz-liquid-toggle,
+  .hz-liquid-label,
   .hz-liquid-icon span {
     transition: none;
   }
