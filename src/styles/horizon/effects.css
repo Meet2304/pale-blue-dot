@@ -13,17 +13,6 @@
   --noise-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   --noise-opacity: 0.11;
 
-  /* The same noise pushed to specks: the matrix maps luminance through
-     2L - 1, so everything below mid-grey clamps to black and only the brighter
-     half survives as light flecks on nothing.
-
-     That shape is what an additive blend needs. Screen adds the source more or
-     less directly on a dark backdrop, which is exactly why it distributes grain
-     evenly instead of tracking whatever is behind it — but a source averaging
-     mid-grey would then lift the whole band into haze. Averaging near black, it
-     lifts very little and reads as grain. */
-  --noise-url-specks: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0.667 0.667 0.667 0 -1 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-
   /* Protection gradients — laid under text on imagery. No capsules, no chips. */
   --veil-bottom: linear-gradient(
     to top,

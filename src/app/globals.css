@@ -112,8 +112,10 @@
 .hz-noise-glow {
   position: absolute;
   inset: 0;
-  background-image: var(--noise-url-specks);
-  opacity: 0.1;
+  /* Initial state only. The scene raises this: the grain fades up with the
+     glow it belongs to and back down through the warp. GRAIN_OPACITY in
+     night-horizon.tsx sets how far it gets. */
+  opacity: 0;
   pointer-events: none;
   /* Screen, not soft-light. Soft-light scales with whatever is behind it, so
      the grain was densest wherever the lobed glow was brightest and traced its

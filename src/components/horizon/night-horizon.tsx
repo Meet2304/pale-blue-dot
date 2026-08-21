@@ -86,6 +86,120 @@ const hash = (n: number) => {
 /** Where the loader line rests before it descends. */
 const LOADER_Y = 0.5;
 
+/* --- Living grain ----------------------------------------------------------
+   The glow's grain is 3D value noise sampled at (x, y, time).
+   Every earlier attempt animated a fixed pattern — sliding it, then cutting
+   between seeds, then dissolving between them — and all three read as two
+   states with something happening in between, because that is what they were.
+   Sampling a volume instead means each fleck brightens and fades on its own,
+   its neighbours move with it because they are adjacent in the same field, and
+   there is no transition anywhere: the third axis simply is time.
+   Trilinear interpolation with a quintic fade makes it C2-continuous in all
+   three, which is what keeps it smooth rather than seething. */
+
+/** Deterministic shuffle: the same sky on every load. */
+const GRAIN_PERM = (() => {
+  const src = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) src[i] = i;
+  let seed = 1337;
+  for (let i = 255; i > 0; i--) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const j = seed % (i + 1);
+    const t = src[i];
+    src[i] = src[j];
+    src[j] = t;
+  }
+  return src;
+})();
+
+/** Quintic fade — zero first and second derivative at both ends. */
+const fade5 = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+
+/**
+ * One octave of 3D value noise, wrapping on a lattice of `period` in x and y so
+ * the tile repeats seamlessly however many times it is laid down.
+ */
+function valueNoise3(x: number, y: number, z: number, period: number): number {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const zi = Math.floor(z);
+  const xf = fade5(x - xi);
+  const yf = fade5(y - yi);
+  const zf = fade5(z - zi);
+
+  /* Sampling never starts beyond one period, so only the +1 neighbour can
+     overflow — a compare is cheaper than a modulo per lookup. */
+  const x0 = xi % period;
+  const x1 = x0 + 1 === period ? 0 : x0 + 1;
+  const y0 = yi % period;
+  const y1 = y0 + 1 === period ? 0 : y0 + 1;
+  const z0 = zi & 255;
+  const z1 = (zi + 1) & 255;
+
+  const ax0 = GRAIN_PERM[x0];
+  const ax1 = GRAIN_PERM[x1];
+  const b00 = GRAIN_PERM[(ax0 + y0) & 255];
+  const b10 = GRAIN_PERM[(ax1 + y0) & 255];
+  const b01 = GRAIN_PERM[(ax0 + y1) & 255];
+  const b11 = GRAIN_PERM[(ax1 + y1) & 255];
+
+  const c000 = GRAIN_PERM[(b00 + z0) & 255];
+  const c100 = GRAIN_PERM[(b10 + z0) & 255];
+  const c010 = GRAIN_PERM[(b01 + z0) & 255];
+  const c110 = GRAIN_PERM[(b11 + z0) & 255];
+  const c001 = GRAIN_PERM[(b00 + z1) & 255];
+  const c101 = GRAIN_PERM[(b10 + z1) & 255];
+  const c011 = GRAIN_PERM[(b01 + z1) & 255];
+  const c111 = GRAIN_PERM[(b11 + z1) & 255];
+
+  const e00 = c000 + (c100 - c000) * xf;
+  const e10 = c010 + (c110 - c010) * xf;
+  const e01 = c001 + (c101 - c001) * xf;
+  const e11 = c011 + (c111 - c011) * xf;
+  const f0 = e00 + (e10 - e00) * yf;
+  const f1 = e01 + (e11 - e01) * yf;
+
+  return (f0 + (f1 - f0) * zf) / 255;
+}
+
+/**
+ * How fast the field moves through its third axis.
+ *
+ * 0.303 replaces a fleck with an unrelated value every 3.3s, which is exactly
+ * half the sea's 6.6s swell — the second harmonic of it. Twice the speed it
+ * ran at, and still in step with the water rather than merely near it.
+ */
+const GRAIN_Z_SPEED = 0.303;
+
+/**
+ * Peak strength of the grain, reached only once the glow it sits on has.
+ *
+ * The scene owns this rather than the stylesheet because it is no longer a
+ * constant: it fades up with the reveal and back down through the warp, and
+ * the loop is what knows where both of those are.
+ */
+const GRAIN_OPACITY = 0.055;
+
+/**
+ * Lattice cells per pixel. This one number decides how the grain reads, and it
+ * was wrong.
+ *
+ * At 0.33 a cell spanned three pixels and the smoothed features came out around
+ * six — far too coarse for grain. Worse, value noise places its features on the
+ * lattice axes, which is its known weakness, so at that size the alignment
+ * showed as a grid. Blobs that large are also recognisable enough that the
+ * repeat of the tile carrying them became visible. One cause, both symptoms.
+ *
+ * At 0.75 a cell is 1.3px and features are under 3px: below the size at which
+ * the eye reads structure, and with no recognisable shapes the tiling has
+ * nothing to latch onto.
+ *
+ * One octave, not two. A second at double the frequency would land on sub-pixel
+ * detail that can only alias, and one at half would put the coarse blobs
+ * straight back.
+ */
+const GRAIN_SCALE = 0.75;
+
 /**
  * Where the light sits along the horizon.
  *
@@ -134,15 +248,18 @@ export function NightHorizon({
 }: NightHorizonProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const grainRef = useRef<HTMLCanvasElement>(null);
   const pointer = useRef({ x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, active: false, wet: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const grain = grainRef.current;
     const host = hostRef.current;
-    if (!canvas || !host) return;
+    if (!canvas || !grain || !host) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const gctx = grain.getContext("2d");
+    if (!ctx || !gctx) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -167,6 +284,15 @@ export function NightHorizon({
     /* Glitter seeds, resolved once per resize instead of two Math.sin calls per
        row per frame. */
     let glitterSeeds = new Float32Array(0);
+
+    /* The grain tile and its pattern. The tile is small and repeated, so the
+       cost of regenerating it does not scale with the size of the window. */
+    let grainTile: HTMLCanvasElement | null = null;
+    let grainTileCtx: CanvasRenderingContext2D | null = null;
+    let grainPixels: ImageData | null = null;
+    let grainPeriod = 1;
+    let lastGrainAt = -Infinity;
+    let lastGrainAlpha = -1;
     const t0 = performance.now();
 
     /* The pale blue dot: not one of the stars, but its own object — larger,
@@ -228,10 +354,17 @@ export function NightHorizon({
 
     function resize() {
       const r = host!.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = r.width;
       h = r.height;
       lowPower = w < 760 || (window.navigator.hardwareConcurrency ?? 8) <= 4;
+
+      /* This scene is fill-rate bound — a full-screen gradient, a stack of
+         reflection rows and a few hundred small fills, every frame. Phones
+         report device ratios of 3 and 4, and honouring those means shading
+         nine to sixteen times the pixels for detail nobody can resolve at
+         arm-s length. Capping at 1.5 is the single largest thing that keeps a
+         handset at its refresh rate. */
+      const dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
       canvas!.width = Math.floor(w * dpr);
       canvas!.height = Math.floor(h * dpr);
       canvas!.style.width = `${w}px`;
@@ -240,10 +373,15 @@ export function NightHorizon({
 
       const hy = h * horizon;
 
+      /* Fewer stars on a small screen. The field is scaled to the frame, not
+         to the device, so the same count in a quarter of the area reads as
+         clutter as well as costing more per pixel than it is worth. */
+      const count = w < 640 ? Math.round(starCount * 0.62) : starCount;
+
       /* Stars fill the sky rather than crowding its top — a mild exponent keeps
          them spread down toward the horizon, where `fade` thins them out as the
          glow washes them away. */
-      stars = new Array(starCount).fill(0).map(() => {
+      stars = new Array(count).fill(0).map(() => {
         const rel = Math.pow(Math.random(), 1.12);
         const y = rel * hy * 0.98;
         return {
@@ -269,6 +407,25 @@ export function NightHorizon({
       dot.y = hy * 0.2;
       dot.r = Math.max(2.6, Math.min(w, h) * 0.0036);
       dot.phase = 1.1;
+
+      /* The grain canvas runs at CSS resolution, not device resolution. Grain
+         is meant to sit at the limit of what the eye resolves, so rendering it
+         at 2x or 3x buys nothing and costs everything — and letting the display
+         upscale it slightly is closer to how film grain behaves anyway. */
+      grain!.width = Math.max(1, Math.floor(w));
+      grain!.height = Math.max(1, Math.floor(h));
+
+      /* A larger tile repeats fewer times across the frame. Both sizes are
+         chosen so tilePx * GRAIN_SCALE lands on a whole number of lattice
+         cells, which is what keeps the repeat seamless. */
+      const tilePx = lowPower ? 64 : 128;
+      grainTile = document.createElement("canvas");
+      grainTile.width = tilePx;
+      grainTile.height = tilePx;
+      grainTileCtx = grainTile.getContext("2d");
+      grainPixels = grainTileCtx?.createImageData(tilePx, tilePx) ?? null;
+      grainPeriod = Math.round(tilePx * GRAIN_SCALE);
+      lastGrainAt = -Infinity;
 
       /* Both cached gradients hold absolute coordinates and were built under
          the previous dpr transform, so neither survives a resize. */
@@ -452,7 +609,11 @@ export function NightHorizon({
         const z = 1 / (d + 0.16);
 
         /* Two waves, not three. Amplitude grows with nearness; at the horizon
-           the surface is glass. */
+           the surface is glass.
+
+           These two rates, 6.6s and 9.5s, are also what the glow grain
+           dissolves on — see .hz-noise-glow in globals.css. Change one and the
+           air over the water stops keeping time with it. */
         const amp = 1.4 + d * d * 34;
         const swell = reduce
           ? 0
@@ -535,6 +696,53 @@ export function NightHorizon({
       ctx!.globalCompositeOperation = "source-over";
     }
 
+    /**
+     * Redraw the grain tile from the noise volume and lay it across the frame.
+     *
+     * Regenerated well below the frame rate: the field only travels 0.16 units
+     * per second, so consecutive slices are nearly identical and refreshing at
+     * 15Hz is indistinguishable from 60 while costing a quarter as much. The
+     * tile is repeated with a pattern fill, so the per-frame cost is one
+     * fillRect no matter how large the window is.
+     */
+    function paintGrain(elapsedSeconds: number) {
+      if (!grainTile || !grainTileCtx || !grainPixels) return;
+
+      const z = elapsedSeconds * GRAIN_Z_SPEED;
+      const px = grainPixels.data;
+      const size = grainTile.width;
+      let i = 0;
+
+      for (let y = 0; y < size; y++) {
+        const ny = y * GRAIN_SCALE;
+        for (let x = 0; x < size; x++) {
+          /* Biased so most of the field sits at black and only the upper part
+             of the range shows. Under an additive blend a source averaging
+             mid-grey would lift the whole band into haze; averaging near black
+             it reads as flecks. The threshold also thins the field out, which
+             is half of why this is subtler than it was. */
+          const v =
+            clamp01((valueNoise3(x * GRAIN_SCALE, ny, z, grainPeriod) - 0.46) * 2) *
+            255;
+          px[i] = v;
+          px[i + 1] = v;
+          px[i + 2] = v;
+          px[i + 3] = 255;
+          i += 4;
+        }
+      }
+
+      grainTileCtx.putImageData(grainPixels, 0, 0);
+
+      /* Rebuilt each time rather than held: the spec lets a pattern snapshot
+         its source, so a cached one is not guaranteed to see the new tile. */
+      const pattern = gctx!.createPattern(grainTile, "repeat");
+      gctx!.clearRect(0, 0, grain!.width, grain!.height);
+      if (!pattern) return;
+      gctx!.fillStyle = pattern;
+      gctx!.fillRect(0, 0, grain!.width, grain!.height);
+    }
+
     function draw(now: number) {
       const t = (now - t0) / 1000;
       const { reveal, warp } = driversRef.current;
@@ -556,6 +764,12 @@ export function NightHorizon({
       const settle = clamp01((reveal - 0.35) / 0.5);
       const starsIn = clamp01((reveal - 0.5) / 0.5);
       const waterIn = clamp01((reveal - 0.62) / 0.38);
+      /* Grain arrives last, and over the gradient rather than before it. Held
+         back until the glow is more than half formed, because grain on an unlit
+         sky has nothing to be the texture of — it just reads as a layer someone
+         switched on, which is exactly how it read while it was a CSS constant
+         ignoring the sequence entirely. */
+      const grainIn = clamp01((reveal - 0.55) / 0.45);
 
       const warpEase = easeInOutCalm(warp);
       const restY = LOADER_Y + (horizon - LOADER_Y) * easeInOutCalm(settle);
@@ -582,6 +796,19 @@ export function NightHorizon({
         easeOutSoft(lineDraw),
         settle * intensity * (1 - clamp01(warp * 1.6)),
       );
+
+      /* Grain strength follows the glow up and back down again. Written to
+         style rather than baked into the tile so it can move at frame rate
+         while the tile itself only regenerates at 15Hz — and rounded, because
+         every write of it costs a style recalc. */
+      const grainAlpha =
+        Math.round(
+          GRAIN_OPACITY * grainIn * intensity * (1 - clamp01(warp * 1.6)) * 1000,
+        ) / 1000;
+      if (grainAlpha !== lastGrainAlpha) {
+        lastGrainAlpha = grainAlpha;
+        grain!.style.opacity = String(grainAlpha);
+      }
 
       /* Hand the horizon's position to CSS so the masked noise can sit on the
          glow. Only when it has actually moved — this triggers a style recalc. */
@@ -760,6 +987,18 @@ export function NightHorizon({
         ctx!.globalAlpha = 1;
       }
 
+      /* Reduced motion gets one still slice and nothing after it. */
+      const grainInterval = lowPower ? 1000 / 12 : 1000 / 15;
+      if (reduce) {
+        if (lastGrainAt === -Infinity) {
+          lastGrainAt = now;
+          paintGrain(0);
+        }
+      } else if (now - lastGrainAt >= grainInterval) {
+        lastGrainAt = now;
+        paintGrain(t);
+      }
+
       raf = requestAnimationFrame(draw);
     }
 
@@ -814,7 +1053,10 @@ export function NightHorizon({
           masked onto the glow and fading up into the sky, so the light reads as
           frosted rather than as a clean gradient. */}
       <div className="hz-noise" style={{ opacity: 0.04 }} />
-      <div className="hz-noise-glow" />
+      {/* The grain is drawn, not tiled from a file — it is a slice of a noise
+          volume that the render loop advances through. The mask and the blend
+          still live in CSS. */}
+      <canvas ref={grainRef} className="hz-noise-glow" aria-hidden />
       <div style={{ position: "relative", height: "100%" }}>{children}</div>
     </div>
   );
