@@ -402,11 +402,15 @@
 
 /* Sibling of the bar, never a child: a filter or transform on .hz-nav would
    make it a containing block and pin this to the 60px strip. Desktop never
-   sees it. One delayed trail behind the shell is the stretch; no SVG goo —
-   that filter would re-raster every frame of the spring. */
+   sees it.
+
+   One progress value (--liquid-p, 0 closed → 1 open) drives the morph.
+   Radius goes 22 → 40, never 999: interpolating a stadium down to a card
+   pulled the bottom corners up the sides and clipped the toggle. */
 
 .hz-liquid {
   display: none;
+  --liquid-p: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -418,6 +422,7 @@
 @media (max-width: 880px) {
   .hz-liquid {
     display: block;
+    --liquid-p: 0;
   }
 
   #content,
@@ -460,13 +465,11 @@ html.hz-nav-lock body {
   z-index: 59;
   border: 0;
   background: rgba(0, 0, 0, 0.42);
-  opacity: 0;
+  opacity: var(--liquid-p);
   pointer-events: none;
-  transition: opacity 0.2s var(--ease-out-soft);
 }
 
 .hz-liquid[data-open="true"] .hz-liquid-veil {
-  opacity: 1;
   pointer-events: auto;
 }
 
@@ -482,39 +485,18 @@ html.hz-nav-lock body {
   contain: layout;
 }
 
-.hz-liquid-trail,
-.hz-liquid-shell {
-  grid-area: 1 / 1;
-  max-width: calc(100vw - 24px);
-  max-height: calc(100dvh - 24px - env(safe-area-inset-bottom, 0px));
-}
-
-.hz-liquid-trail {
-  background: rgba(6, 7, 8, 0.4);
-  box-shadow: 0 0 0 1px rgba(63, 155, 255, 0.1);
-  pointer-events: none;
-}
-
 .hz-liquid-shell {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgba(6, 7, 8, 0.52);
+  background: rgba(13, 14, 16, calc(0.52 + 0.44 * var(--liquid-p)));
   box-shadow:
-    0 0 0 1px rgba(63, 155, 255, 0.14),
-    0 0 14px rgba(13, 123, 255, 0.08);
-}
-
-.hz-liquid[data-open="true"] .hz-liquid-trail {
-  background: rgba(13, 14, 16, 0.7);
-  box-shadow: none;
-}
-
-.hz-liquid[data-open="true"] .hz-liquid-shell {
-  background: rgba(13, 14, 16, 0.96);
-  box-shadow: 0 0 0 1px var(--line-hairline);
+    0 0 0 1px rgba(63, 155, 255, calc(0.14 - 0.08 * var(--liquid-p))),
+    0 0 14px rgba(13, 123, 255, calc(0.08 * (1 - var(--liquid-p))));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px - env(safe-area-inset-bottom, 0px));
 }
 
 .hz-liquid-shell nav {
@@ -523,14 +505,6 @@ html.hz-nav-lock body {
   flex-direction: column;
   min-height: 0;
   padding-bottom: 44px;
-}
-
-.hz-liquid[data-open="false"] .hz-liquid-shell nav {
-  flex: none;
-  height: 0;
-  padding: 0;
-  overflow: hidden;
-  pointer-events: none;
 }
 
 .hz-liquid-list {
@@ -550,37 +524,8 @@ html.hz-nav-lock body {
 
 .hz-liquid-link,
 .hz-liquid-resume {
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.28s var(--ease-out-soft),
-    transform 0.28s var(--ease-out-soft),
-    color var(--dur-fast) var(--ease-standard);
-}
-
-.hz-liquid[data-open="true"] .hz-liquid-link,
-.hz-liquid[data-open="true"] .hz-liquid-resume {
-  opacity: 1;
-  transform: none;
-}
-
-.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(1) .hz-liquid-link {
-  transition-delay: 0.05s;
-}
-.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(2) .hz-liquid-link {
-  transition-delay: 0.08s;
-}
-.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(3) .hz-liquid-link {
-  transition-delay: 0.11s;
-}
-.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(4) .hz-liquid-link {
-  transition-delay: 0.14s;
-}
-.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(5) .hz-liquid-link {
-  transition-delay: 0.17s;
-}
-.hz-liquid[data-open="true"] .hz-liquid-resume {
-  transition-delay: 0.2s;
+  opacity: clamp(0, calc((var(--liquid-p) - 0.22) / 0.5), 1);
+  transform: translateY(calc((1 - var(--liquid-p)) * 8px));
 }
 
 .hz-liquid-link {
@@ -615,10 +560,8 @@ html.hz-nav-lock body {
   color: var(--text-body);
 }
 
-/* Pinned to the bottom of the shell, out of the flex flow. Otherwise the
-   nav going from height 0 to flex: 1 on the same frame as the click shoves
-   this 44px row below the still-closed pill, and "Menu" plus the icon vanish
-   until the spring has grown enough to show them again. */
+/* Pinned to the bottom of the shell so it rides the morph instead of
+   being shoved out of the still-closed pill. */
 .hz-liquid-toggle {
   position: absolute;
   right: 0;
@@ -632,32 +575,19 @@ html.hz-nav-lock body {
   padding: 0 22px;
   border: 0;
   background: transparent;
-  color: var(--text-muted);
-  transition: color 0.28s var(--ease-out-soft);
+  color: color-mix(
+    in srgb,
+    var(--text-muted) calc((1 - var(--liquid-p)) * 100%),
+    var(--blue-400)
+  );
 }
 
 .hz-liquid-label {
   font-size: var(--text-caption);
-  letter-spacing: 0.04em;
+  letter-spacing: calc(0.04em + 0.04em * var(--liquid-p));
   white-space: nowrap;
-  transform-origin: left center;
-  transition:
-    color 0.28s var(--ease-out-soft),
-    letter-spacing 0.35s var(--ease-out-soft);
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-toggle {
-  color: var(--blue-400);
-}
-
-.hz-liquid[data-open="true"] .hz-liquid-label {
-  letter-spacing: 0.08em;
-}
-
-/* Three bars, not an SVG. CSS transform-box on <line> is unreliable on
-   mobile, and a rotated stroke was being clipped by the 40px corner. These
-   sit in an 18px box, well inside the padded toggle. Both states set
-   translate and rotate so the morph interpolates instead of snapping. */
 .hz-liquid-icon {
   position: relative;
   width: 18px;
@@ -674,45 +604,81 @@ html.hz-nav-lock body {
   margin-top: -0.75px;
   border-radius: 1px;
   background: currentColor;
-  transition:
-    transform 0.32s var(--ease-out-soft),
-    opacity 0.2s linear;
 }
 
 .hz-liquid-icon span:nth-child(1) {
-  transform: translateY(-5px) rotate(0deg);
+  transform: translateY(calc(-5px * (1 - var(--liquid-p))))
+    rotate(calc(45deg * var(--liquid-p)));
 }
 
 .hz-liquid-icon span:nth-child(2) {
-  opacity: 1;
-  transform: scaleX(1);
+  opacity: calc(1 - var(--liquid-p));
+  transform: scaleX(calc(1 - 0.6 * var(--liquid-p)));
 }
 
 .hz-liquid-icon span:nth-child(3) {
-  transform: translateY(5px) rotate(0deg);
+  transform: translateY(calc(5px * (1 - var(--liquid-p))))
+    rotate(calc(-45deg * var(--liquid-p)));
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(1) {
-  transform: translateY(0) rotate(45deg);
+/* Testing only: drag the slider or scroll the tick strip to step the morph. */
+.hz-liquid-scrub {
+  position: fixed;
+  top: calc(var(--nav-h) + 8px);
+  right: 12px;
+  left: 12px;
+  z-index: 80;
+  padding: 10px 12px 8px;
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-md);
+  background: rgba(8, 9, 11, 0.92);
+  color: var(--text-muted);
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  visibility: visible;
+  pointer-events: auto;
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(2) {
-  opacity: 0;
-  transform: scaleX(0.4);
+.hz-liquid-scrub-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--blue-300);
+  text-transform: uppercase;
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(3) {
-  transform: translateY(0) rotate(-45deg);
+.hz-liquid-scrub-range {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--blue-400);
+}
+
+.hz-liquid-scrub-scroll {
+  height: 28px;
+  margin-top: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: var(--radius-xs);
+  background: var(--night-1000, #050506);
+  scrollbar-width: thin;
+  touch-action: pan-x;
+}
+
+.hz-liquid-scrub-track {
+  height: 28px;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0 7px,
+    rgba(63, 155, 255, 0.35) 7px 8px,
+    transparent 8px 39px,
+    rgba(63, 155, 255, 0.7) 39px 40px
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hz-liquid,
-  .hz-liquid-veil,
-  .hz-liquid-link,
-  .hz-liquid-resume,
-  .hz-liquid-toggle,
-  .hz-liquid-label,
-  .hz-liquid-icon span {
+  .hz-liquid {
     transition: none;
   }
 }
