@@ -116,10 +116,10 @@ const GRAIN_PERM = (() => {
 const fade5 = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 
 /**
- * One octave of 3D value noise, wrapping on a lattice of `mask + 1` in x and y
- * so the tile repeats seamlessly however many times it is laid down.
+ * One octave of 3D value noise, wrapping on a lattice of `period` in x and y so
+ * the tile repeats seamlessly however many times it is laid down.
  */
-function valueNoise3(x: number, y: number, z: number, mask: number): number {
+function valueNoise3(x: number, y: number, z: number, period: number): number {
   const xi = Math.floor(x);
   const yi = Math.floor(y);
   const zi = Math.floor(z);
@@ -127,10 +127,12 @@ function valueNoise3(x: number, y: number, z: number, mask: number): number {
   const yf = fade5(y - yi);
   const zf = fade5(z - zi);
 
-  const x0 = xi & mask;
-  const x1 = (xi + 1) & mask;
-  const y0 = yi & mask;
-  const y1 = (yi + 1) & mask;
+  /* Sampling never starts beyond one period, so only the +1 neighbour can
+     overflow — a compare is cheaper than a modulo per lookup. */
+  const x0 = xi % period;
+  const x1 = x0 + 1 === period ? 0 : x0 + 1;
+  const y0 = yi % period;
+  const y1 = y0 + 1 === period ? 0 : y0 + 1;
   const z0 = zi & 255;
   const z1 = (zi + 1) & 255;
 
@@ -160,11 +162,6 @@ function valueNoise3(x: number, y: number, z: number, mask: number): number {
   return (f0 + (f1 - f0) * zf) / 255;
 }
 
-/** Two octaves. The finer one also evolves faster, so the field never settles. */
-function grainAt(x: number, y: number, z: number): number {
-  return valueNoise3(x, y, z, 31) * 0.62 + valueNoise3(x * 2, y * 2, z * 2, 63) * 0.38;
-}
-
 /**
  * How fast the field moves through its third axis. At 0.16 a fleck takes about
  * 6.3s to be replaced by an unrelated value — near enough the sea's 6.6s swell
@@ -172,8 +169,25 @@ function grainAt(x: number, y: number, z: number): number {
  */
 const GRAIN_Z_SPEED = 0.16;
 
-/** Lattice size across one tile. A power of two so wrapping is a mask. */
-const GRAIN_LATTICE = 32;
+/**
+ * Lattice cells per pixel. This one number decides how the grain reads, and it
+ * was wrong.
+ *
+ * At 0.33 a cell spanned three pixels and the smoothed features came out around
+ * six — far too coarse for grain. Worse, value noise places its features on the
+ * lattice axes, which is its known weakness, so at that size the alignment
+ * showed as a grid. Blobs that large are also recognisable enough that the
+ * repeat of the tile carrying them became visible. One cause, both symptoms.
+ *
+ * At 0.75 a cell is 1.3px and features are under 3px: below the size at which
+ * the eye reads structure, and with no recognisable shapes the tiling has
+ * nothing to latch onto.
+ *
+ * One octave, not two. A second at double the frequency would land on sub-pixel
+ * detail that can only alias, and one at half would put the coarse blobs
+ * straight back.
+ */
+const GRAIN_SCALE = 0.75;
 
 /**
  * Where the light sits along the horizon.
@@ -265,7 +279,7 @@ export function NightHorizon({
     let grainTile: HTMLCanvasElement | null = null;
     let grainTileCtx: CanvasRenderingContext2D | null = null;
     let grainPixels: ImageData | null = null;
-    let grainScale = 1;
+    let grainPeriod = 1;
     let lastGrainAt = -Infinity;
     const t0 = performance.now();
 
@@ -389,13 +403,16 @@ export function NightHorizon({
       grain!.width = Math.max(1, Math.floor(w));
       grain!.height = Math.max(1, Math.floor(h));
 
-      const tilePx = lowPower ? 72 : 96;
+      /* A larger tile repeats fewer times across the frame. Both sizes are
+         chosen so tilePx * GRAIN_SCALE lands on a whole number of lattice
+         cells, which is what keeps the repeat seamless. */
+      const tilePx = lowPower ? 64 : 128;
       grainTile = document.createElement("canvas");
       grainTile.width = tilePx;
       grainTile.height = tilePx;
       grainTileCtx = grainTile.getContext("2d");
       grainPixels = grainTileCtx?.createImageData(tilePx, tilePx) ?? null;
-      grainScale = GRAIN_LATTICE / tilePx;
+      grainPeriod = Math.round(tilePx * GRAIN_SCALE);
       lastGrainAt = -Infinity;
 
       /* Both cached gradients hold absolute coordinates and were built under
@@ -685,13 +702,16 @@ export function NightHorizon({
       let i = 0;
 
       for (let y = 0; y < size; y++) {
-        const ny = y * grainScale;
+        const ny = y * GRAIN_SCALE;
         for (let x = 0; x < size; x++) {
           /* Biased so most of the field sits at black and only the upper part
              of the range shows. Under an additive blend a source averaging
              mid-grey would lift the whole band into haze; averaging near black
-             it reads as flecks. */
-          const v = clamp01((grainAt(x * grainScale, ny, z) - 0.42) * 2.2) * 255;
+             it reads as flecks. The threshold also thins the field out, which
+             is half of why this is subtler than it was. */
+          const v =
+            clamp01((valueNoise3(x * GRAIN_SCALE, ny, z, grainPeriod) - 0.46) * 2) *
+            255;
           px[i] = v;
           px[i + 1] = v;
           px[i + 2] = v;
