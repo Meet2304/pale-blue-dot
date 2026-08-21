@@ -8,6 +8,7 @@ import { AnimateIcon } from "@/components/animate-ui/icons/icon";
 import { Compass } from "@/components/animate-ui/icons/compass";
 import { Download } from "@/components/animate-ui/icons/download";
 import { Layers } from "@/components/animate-ui/icons/layers";
+import { List } from "@/components/animate-ui/icons/list";
 import { Send } from "@/components/animate-ui/icons/send";
 import { User } from "@/components/animate-ui/icons/user";
 import { LiquidMenu } from "@/components/site/liquid-menu";
@@ -20,6 +21,7 @@ const ICONS = {
   "/work": Layers,
   "/story": Compass,
   "/contact": Send,
+  "/changelog": List,
 } as const;
 
 export function SiteNav({ visible }: { visible: boolean }) {

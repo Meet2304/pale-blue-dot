@@ -373,7 +373,7 @@
 
 /* --- Breakpoint ---------------------------------------------------------- */
 
-/* 720 rather than a rounder number: below it the four labels plus the resume
+/* 880 rather than a rounder number: below it the five labels plus the resume
    control stop fitting beside the mark without shrinking the type past
    --text-body-s, and shrinking type to avoid a menu is the wrong trade. */
 /* Every blur layer is its own backdrop snapshot, re-taken whenever the star
@@ -391,7 +391,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 880px) {
   .hz-nav-list,
   .hz-nav .hz-resume {
     display: none;
@@ -415,7 +415,7 @@
     visibility 0s linear var(--dur-arrive);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 880px) {
   .hz-liquid {
     display: block;
   }
@@ -574,8 +574,11 @@ html.hz-nav-lock body {
 .hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(4) .hz-liquid-link {
   transition-delay: 0.14s;
 }
-.hz-liquid[data-open="true"] .hz-liquid-resume {
+.hz-liquid[data-open="true"] .hz-liquid-list li:nth-child(5) .hz-liquid-link {
   transition-delay: 0.17s;
+}
+.hz-liquid[data-open="true"] .hz-liquid-resume {
+  transition-delay: 0.2s;
 }
 
 .hz-liquid-link {
@@ -617,43 +620,63 @@ html.hz-nav-lock body {
   justify-content: space-between;
   width: 100%;
   height: 44px;
-  padding: 0 16px 0 18px;
+  padding: 0 20px 0 18px;
   border: 0;
   background: transparent;
   color: var(--text-muted);
 }
 
-.hz-liquid-toggle span {
+.hz-liquid-label {
   font-size: var(--text-caption);
   letter-spacing: 0.04em;
 }
 
 .hz-liquid[data-open="true"] .hz-liquid-toggle {
+  padding: 0 24px;
   color: var(--blue-400);
 }
 
+/* Three bars, not an SVG. CSS transform-box on <line> is unreliable on
+   mobile, and a rotated stroke was being clipped by the 40px corner. These
+   sit in an 18px box, well inside the padded toggle. */
 .hz-liquid-icon {
-  display: block;
-  overflow: visible;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: none;
 }
 
-.hz-liquid-icon line {
-  transform-box: view-box;
-  transform-origin: 12px 12px;
+.hz-liquid-icon span {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 1.5px;
+  margin-top: -0.75px;
+  border-radius: 1px;
+  background: currentColor;
   transition:
     transform 0.2s var(--ease-out-soft),
     opacity 0.12s linear;
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-icon line:nth-child(1) {
+.hz-liquid-icon span:nth-child(1) {
+  transform: translateY(-5px);
+}
+
+.hz-liquid-icon span:nth-child(3) {
+  transform: translateY(5px);
+}
+
+.hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(1) {
   transform: rotate(45deg);
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-icon line:nth-child(2) {
+.hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(2) {
   opacity: 0;
 }
 
-.hz-liquid[data-open="true"] .hz-liquid-icon line:nth-child(3) {
+.hz-liquid[data-open="true"] .hz-liquid-icon span:nth-child(3) {
   transform: rotate(-45deg);
 }
 
@@ -662,7 +685,7 @@ html.hz-nav-lock body {
   .hz-liquid-veil,
   .hz-liquid-link,
   .hz-liquid-resume,
-  .hz-liquid-icon line {
+  .hz-liquid-icon span {
     transition: none;
   }
 }

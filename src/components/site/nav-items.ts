@@ -1,5 +1,5 @@
 /**
- * The site's whole internal link graph, in four single words.
+ * The site's whole internal link graph, in five single words.
  *
  * Single words because the bar is a tool, not a statement — "Story" rather than
  * "The Note", "Work" rather than "Selected Projects".
@@ -9,6 +9,7 @@ export const NAV_ITEMS = [
   { href: "/work", label: "Work" },
   { href: "/story", label: "Story" },
   { href: "/contact", label: "Contact" },
+  { href: "/changelog", label: "Changelog" },
 ] as const;
 
 /**

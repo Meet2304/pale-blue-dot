@@ -14,8 +14,11 @@ const spring = {
   mass: 0.7,
 };
 
+const MOBILE_NAV = "(max-width: 880px)";
+const OPEN_GUTTER = 24;
+const OPEN_MAX_WIDTH = 420;
 const closed = { width: 148, height: 44, borderRadius: 999 };
-const opened = { width: 300, height: 428, borderRadius: 40 };
+const openedBase = { height: 496, borderRadius: 40 };
 
 export function LiquidMenu({ visible }: { visible: boolean }) {
   const pathname = usePathname();
@@ -25,6 +28,7 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
+  const [openWidth, setOpenWidth] = useState(360);
   const close = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((current) => !current), []);
 
@@ -34,6 +38,15 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
     setOpen(false);
   }
   if (open && !visible) setOpen(false);
+
+  useEffect(() => {
+    const measure = () => {
+      setOpenWidth(Math.min(OPEN_MAX_WIDTH, window.innerWidth - OPEN_GUTTER));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +77,7 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
       }
     };
 
-    const mobile = window.matchMedia("(max-width: 720px)");
+    const mobile = window.matchMedia(MOBILE_NAV);
     const onViewport = () => {
       if (!mobile.matches) close();
     };
@@ -79,7 +92,7 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
     };
   }, [open, close]);
 
-  const shape = open ? opened : closed;
+  const shape = open ? { ...openedBase, width: openWidth } : closed;
   const morph = reduce ? { duration: 0 } : spring;
   const trail = reduce
     ? { duration: 0 }
@@ -149,22 +162,12 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
             aria-controls={panelId}
             onClick={toggle}
           >
-            <span>Menu</span>
-            <svg
-              className="hz-liquid-icon"
-              width={18}
-              height={18}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.75}
-              strokeLinecap="round"
-              aria-hidden
-            >
-              <line x1="4" y1="7" x2="20" y2="7" />
-              <line x1="4" y1="12" x2="20" y2="12" />
-              <line x1="4" y1="17" x2="20" y2="17" />
-            </svg>
+            <span className="hz-liquid-label">Menu</span>
+            <span className="hz-liquid-icon" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
         </motion.div>
       </div>
