@@ -6,47 +6,23 @@ import {
   useId,
   useRef,
   useState,
-  type ComponentType,
   type CSSProperties,
 } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
-import { Compass } from "@/components/animate-ui/icons/compass";
 import { Download } from "@/components/animate-ui/icons/download";
-import { Layers } from "@/components/animate-ui/icons/layers";
 import { Menu } from "@/components/animate-ui/icons/menu";
-import { Send } from "@/components/animate-ui/icons/send";
-import { User } from "@/components/animate-ui/icons/user";
 import { X } from "@/components/animate-ui/icons/x";
-
-/** The one shape every Animate UI icon satisfies; the rest of their props are optional. */
-type NavIcon = ComponentType<{ className?: string; size?: number }>;
-
-/**
- * The site's whole internal link graph, in four single words.
- *
- * Single words because the bar is a tool, not a statement — "Story" rather than
- * "The Note", "Work" rather than "Selected Projects". Compass for the story
- * page: it is the page about direction, and the star was already spoken for
- * (in this project's vocabulary a star is a piece of work).
- */
-const NAV_ITEMS: readonly { href: string; label: string; Icon: NavIcon }[] = [
-  { href: "/about", label: "About", Icon: User },
-  { href: "/work", label: "Work", Icon: Layers },
-  { href: "/story", label: "Story", Icon: Compass },
-  { href: "/contact", label: "Contact", Icon: Send },
-];
-
-/**
- * Flip this — and drop the file at `public/resume.pdf` — when the resume is
- * ready, then delete `src/app/resume/page.tsx`. Until then the control points
- * at a real route rather than at a missing file: an `<a download>` aimed at a
- * 404 navigates away silently, which is a worse failure than an honest page.
- */
-const RESUME_READY = false;
-const RESUME_HREF = RESUME_READY ? "/resume.pdf" : "/resume";
+import {
+  NAV_ITEMS,
+  RESUME_HREF,
+  RESUME_READY,
+  type NavIcon,
+} from "@/components/site/nav-lab/items";
+import { MobileNav } from "@/components/site/nav-lab/mobile-nav";
+import { useNavLab } from "@/components/site/nav-lab/provider";
 
 const ICON_SIZE = 15;
 const PANEL_ICON_SIZE = 20;
@@ -56,6 +32,8 @@ const PANEL_STAGGER_MS = 60;
 
 export function SiteNav({ visible }: { visible: boolean }) {
   const pathname = usePathname();
+  const { variant, variantId } = useNavLab();
+  const classic = variantId === "classic";
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -82,6 +60,9 @@ export function SiteNav({ visible }: { visible: boolean }) {
     setOpen(false);
   }
   if (open && !visible) {
+    setOpen(false);
+  }
+  if (open && !classic) {
     setOpen(false);
   }
 
@@ -136,6 +117,8 @@ export function SiteNav({ visible }: { visible: boolean }) {
         className="hz-nav"
         aria-label="Primary"
         data-nav={visible ? "visible" : "hidden"}
+        data-mobile-menu={classic ? "on" : "off"}
+        data-mobile-chrome={variant.hidesTopBar ? "off" : "on"}
         /* `visibility: hidden` already takes the links out of the tab order;
            `inert` covers the 420ms while the bar is fading out and still
            visible, and any browser where a child subverts the inheritance. */
@@ -162,23 +145,25 @@ export function SiteNav({ visible }: { visible: boolean }) {
 
           <ResumeLink size={ICON_SIZE} />
 
-          <AnimateIcon asChild animateOnHover>
-            <button
-              ref={triggerRef}
-              type="button"
-              className="hz-nav-trigger"
-              aria-label="Open menu"
-              aria-expanded={open}
-              aria-controls={panelId}
-              onClick={() => setOpen(true)}
-            >
-              <Menu className="hz-nav-icon" size={ICON_SIZE + 3} />
-            </button>
-          </AnimateIcon>
+          {classic && (
+            <AnimateIcon asChild animateOnHover>
+              <button
+                ref={triggerRef}
+                type="button"
+                className="hz-nav-trigger"
+                aria-label="Open menu"
+                aria-expanded={open}
+                aria-controls={panelId}
+                onClick={() => setOpen(true)}
+              >
+                <Menu className="hz-nav-icon" size={ICON_SIZE + 3} />
+              </button>
+            </AnimateIcon>
+          )}
         </div>
       </nav>
 
-      {open && (
+      {classic && open && (
         <div
           ref={panelRef}
           id={panelId}
@@ -223,6 +208,8 @@ export function SiteNav({ visible }: { visible: boolean }) {
           </div>
         </div>
       )}
+
+      <MobileNav visible={visible} />
     </>
   );
 }
