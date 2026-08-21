@@ -28,7 +28,7 @@ const OPEN_MAX_WIDTH = 420;
 const CLOSED_WIDTH = 148;
 const CLOSED_HEIGHT = 44;
 const CLOSED_RADIUS = 22;
-const OPEN_HEIGHT = 520;
+const OPEN_HEIGHT = 536;
 const OPEN_RADIUS = 40;
 
 export function LiquidMenu({ visible }: { visible: boolean }) {
@@ -181,7 +181,7 @@ export function LiquidMenu({ visible }: { visible: boolean }) {
                 </li>
               ))}
             </ul>
-            <ResumeLink size={15} />
+            <ResumeLink size={18} />
           </nav>
 
           <button

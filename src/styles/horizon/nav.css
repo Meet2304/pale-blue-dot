@@ -546,15 +546,35 @@ html.hz-nav-lock body {
 .hz-liquid .hz-resume {
   align-self: center;
   flex: none;
-  margin: 16px 0 20px;
+  width: min(15.5rem, calc(100% - 48px));
+  height: 52px;
+  margin: 12px 0 22px;
+  padding-inline: var(--space-6);
+  gap: var(--space-3);
+  font-size: var(--text-body-l);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
   opacity: clamp(0, calc((var(--liquid-p) - 0.28) / 0.45), 1);
   transform: translateY(calc((1 - var(--liquid-p)) * 8px));
 }
 
 /* No hover on a phone, so the bloom is the resting state — that is what
-   makes it the one control in the card that reads as an action. */
+   makes it the one control in the card that reads as an action. The glow
+   host is inset a little further than desktop so the larger chip still
+   has room for the bloom to spread. */
 .hz-liquid .hz-resume .hz-resume-glow {
+  inset: -16px;
   opacity: var(--liquid-p);
+}
+
+.hz-liquid .hz-resume .hz-resume-glow::before {
+  inset: 16px;
+}
+
+.hz-liquid .hz-resume .hz-resume-glow::after {
+  bottom: 10px;
+  width: 64%;
+  height: 26px;
 }
 
 /* Pinned to the bottom of the shell so it rides the morph instead of
