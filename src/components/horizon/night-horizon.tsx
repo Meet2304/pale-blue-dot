@@ -214,11 +214,11 @@ const GRAIN_CONTRAST = 2.2;
  * Much higher than it was, and not comparable to the old figure: under an
  * additive blend this was a quantity of light poured on, so it had to stay
  * tiny. Under overlay it is the depth of a proportional modulation, and the
- * scene decides how much of that shows. 0.21 swings the inner glow by about
- * seventeen levels out of 255 and the black sky by under half of one, so the
- * grain is unmistakable where the light is and absent where it is not.
+ * scene decides how much of that shows. 0.14 swings the inner glow by about
+ * eleven levels out of 255, the mid glow by five, and the black sky by a fifth
+ * of one — present in the light, gone everywhere else.
  */
-const GRAIN_OPACITY = 0.21;
+const GRAIN_OPACITY = 0.14;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
