@@ -159,20 +159,35 @@
 
 /* --- Resume control ------------------------------------------------------ */
 
-/* Registered so it can be transitioned. An unregistered custom property is a
-   token to the engine, not a number, so it would jump between values and the
-   glow would snap from one cursor position to the next. Browsers without
-   @property still get the effect, just without the easing. */
+/* Where the light sits on the button's outline, as a fraction of the button's
+   own half-width and half-height: (0, 1) is the middle of the bottom edge,
+   (-1, 0) the middle of the left edge, (1, -1) the top-right corner.
+
+   Fractions rather than pixels because the same control is 38px tall in the bar
+   and 52px tall and nearly full-width in the mobile card, and this way neither
+   the CSS below nor the pointer handler has to know which one it is looking at.
+
+   Registered so they can be transitioned. An unregistered custom property is a
+   token to the engine, not a number, so the light would snap from one cursor
+   position to the next. .hz-resume declares both explicitly as well, so the
+   calc() below still resolves without @property — it just arrives unsmoothed. */
 @property --hz-glow-x {
-  syntax: "<percentage>";
+  syntax: "<number>";
   inherits: true;
-  initial-value: 50%;
+  initial-value: 0;
+}
+
+@property --hz-glow-y {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
 }
 
 /* Pitch black with stars twinkling in it. On approach a blue glow lights the
    bottom edge — thickest at the middle of it, thinning as it runs around the
-   corners, gone by the time it reaches the mid-height of the sides — and the
-   label and arrow go white.
+   corners, gone by the time it reaches the mid-height of the sides — a second,
+   brighter light rides the outline under the cursor, and the label and arrow go
+   white.
  *
  * The stars are radial-gradient background layers rather than an SVG or a
  * canvas: at this size they stay perfectly round at any DPR, they cost one
@@ -201,16 +216,28 @@
   font-size: var(--text-body-s);
   white-space: nowrap;
   /* Declared here, not on .hz-resume-glow. A custom property set on an element
-     beats the one it would inherit, so the glow having its own `--hz-glow-x: 50%`
+     beats the one it would inherit, so the glow having its own `--hz-glow-x`
      silently shadowed the value the pointer handler writes to this element — the
      light was pinned to centre no matter where the cursor went. The transition
      belongs here too: this is where the value changes, and the glow inherits the
-     interpolated result. */
-  --hz-glow-x: 50%;
+     interpolated result.
+
+     --hz-glow-inset is how far the glow host is blown out past the button on
+     every side. It lives here because the outline maths further down subtracts
+     exactly that much to get back to the button's own half-size, and the mobile
+     card wants a different value — one variable keeps the two in step, where
+     before they were two numbers in two rules that had to be remembered
+     together. Resting at (0, 1) is the middle of the bottom edge, which is where
+     the light belongs when nothing is pointing at it. */
+  --hz-glow-inset: 50px;
+  --hz-glow-size: 76px;
+  --hz-glow-x: 0;
+  --hz-glow-y: 1;
   transition:
     color var(--dur-slow) var(--ease-out-soft),
     border-color var(--dur-slow) var(--ease-out-soft),
-    --hz-glow-x var(--dur-base) linear;
+    --hz-glow-x var(--dur-base) linear,
+    --hz-glow-y var(--dur-base) linear;
 }
 
 .hz-resume:hover,
@@ -352,7 +379,7 @@
  * to transparent on its own terms. */
 .hz-resume-glow {
   position: absolute;
-  inset: -50px;
+  inset: calc(var(--hz-glow-inset) * -1);
   z-index: -3;
   pointer-events: none;
   opacity: 0;
@@ -371,7 +398,7 @@
 .hz-resume-glow::before {
   content: "";
   position: absolute;
-  inset: 50px;
+  inset: var(--hz-glow-inset);
   border-radius: var(--radius-xl);
   border: 1px solid rgba(63, 155, 255, 0.7);
   box-shadow:
@@ -379,25 +406,43 @@
     0 8px 20px -6px rgba(13, 123, 255, 0.75);
 }
 
-/* The swell under the middle of the bottom edge, and the part that follows the
-   cursor. A radial-gradient reaches transparent by its own last stop, so it has
-   no edge to be clipped at whatever width the control ends up. */
+/* The part that follows the cursor: one small round bloom that rides the
+   button's outline.
+ *
+ * It is a circle *centred on the edge*, not a smear parked under it. The glow
+ * host sits at z-index -3 and the button's own black ground at -2, so the half
+ * of the circle that falls inside the button is covered by the button and only
+ * the outer half is ever seen — light coming from behind the edge rather than a
+ * blob lying on top of it. Move the centre around the outline and the visible
+ * crescent wraps with it, around the corners and up the sides, with nothing to
+ * fade in or out at the turn.
+ *
+ * This is what the old rule could not do. It slid along `left` at a fixed
+ * `bottom`, and a horizontal track has no way to leave the bottom edge: at the
+ * ends of the control the light carried straight on into open space instead of
+ * turning the corner, which read as a bar of light floating beside the button.
+ * Two axes and a centred circle remove the track entirely.
+ *
+ * `50% - var(--hz-glow-inset)` is the button's own half-size, since the host is
+ * exactly that much larger on every side — which is the whole reason the inset
+ * is a variable. A radial-gradient reaches transparent by its own last stop, so
+ * there is still no edge anywhere for anything to clip against. */
 .hz-resume-glow::after {
   content: "";
   position: absolute;
-  left: var(--hz-glow-x);
-  bottom: 30px;
-  width: 62%;
-  height: 34px;
-  translate: -50% 0;
+  left: calc(50% + var(--hz-glow-x) * (50% - var(--hz-glow-inset)));
+  top: calc(50% + var(--hz-glow-y) * (50% - var(--hz-glow-inset)));
+  width: var(--hz-glow-size);
+  height: var(--hz-glow-size);
+  translate: -50% -50%;
   border-radius: var(--radius-round);
   background: radial-gradient(
     closest-side,
-    rgba(63, 155, 255, 0.75) 0%,
-    rgba(13, 123, 255, 0.28) 48%,
+    rgba(63, 155, 255, 0.8) 0%,
+    rgba(13, 123, 255, 0.3) 46%,
     transparent 100%
   );
-  filter: blur(7px);
+  filter: blur(9px);
 }
 
 /* --- Breakpoint ---------------------------------------------------------- */
@@ -584,25 +629,20 @@ html.hz-nav-lock body {
   letter-spacing: 0.04em;
   opacity: clamp(0, calc((var(--liquid-p) - 0.28) / 0.45), 1);
   transform: translateY(calc((1 - var(--liquid-p)) * 8px));
+  /* The chip is bigger here, so the host sits closer in and the bloom runs
+     larger. Setting the inset moves the outline maths with it. */
+  --hz-glow-inset: 16px;
+  --hz-glow-size: 84px;
 }
 
-/* No hover on a phone, so the bloom is the resting state — that is what
-   makes it the one control in the card that reads as an action. The glow
-   host is inset a little further than desktop so the larger chip still
-   has room for the bloom to spread. */
+/* No hover on a phone, so the bloom is the resting state — that is what makes
+   it the one control in the card that reads as an action. It rests under the
+   bottom edge, the same place the desktop control returns to, and stays there:
+   a touch gets one pointermove before the browser claims the gesture for
+   panning, so the tracking never runs here. Nothing is lost — the resting bloom
+   is what this control is on a phone. */
 .hz-liquid .hz-resume .hz-resume-glow {
-  inset: -16px;
   opacity: var(--liquid-p);
-}
-
-.hz-liquid .hz-resume .hz-resume-glow::before {
-  inset: 16px;
-}
-
-.hz-liquid .hz-resume .hz-resume-glow::after {
-  bottom: 10px;
-  width: 64%;
-  height: 26px;
 }
 
 /* Pinned to the bottom of the shell so it rides the morph instead of
