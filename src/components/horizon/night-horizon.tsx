@@ -163,11 +163,22 @@ function valueNoise3(x: number, y: number, z: number, period: number): number {
 }
 
 /**
- * How fast the field moves through its third axis. At 0.16 a fleck takes about
- * 6.3s to be replaced by an unrelated value — near enough the sea's 6.6s swell
- * that the air and the water keep the same time without being locked to it.
+ * How fast the field moves through its third axis.
+ *
+ * 0.303 replaces a fleck with an unrelated value every 3.3s, which is exactly
+ * half the sea's 6.6s swell — the second harmonic of it. Twice the speed it
+ * ran at, and still in step with the water rather than merely near it.
  */
-const GRAIN_Z_SPEED = 0.16;
+const GRAIN_Z_SPEED = 0.303;
+
+/**
+ * Peak strength of the grain, reached only once the glow it sits on has.
+ *
+ * The scene owns this rather than the stylesheet because it is no longer a
+ * constant: it fades up with the reveal and back down through the warp, and
+ * the loop is what knows where both of those are.
+ */
+const GRAIN_OPACITY = 0.055;
 
 /**
  * Lattice cells per pixel. This one number decides how the grain reads, and it
@@ -281,6 +292,7 @@ export function NightHorizon({
     let grainPixels: ImageData | null = null;
     let grainPeriod = 1;
     let lastGrainAt = -Infinity;
+    let lastGrainAlpha = -1;
     const t0 = performance.now();
 
     /* The pale blue dot: not one of the stars, but its own object — larger,
@@ -752,6 +764,12 @@ export function NightHorizon({
       const settle = clamp01((reveal - 0.35) / 0.5);
       const starsIn = clamp01((reveal - 0.5) / 0.5);
       const waterIn = clamp01((reveal - 0.62) / 0.38);
+      /* Grain arrives last, and over the gradient rather than before it. Held
+         back until the glow is more than half formed, because grain on an unlit
+         sky has nothing to be the texture of — it just reads as a layer someone
+         switched on, which is exactly how it read while it was a CSS constant
+         ignoring the sequence entirely. */
+      const grainIn = clamp01((reveal - 0.55) / 0.45);
 
       const warpEase = easeInOutCalm(warp);
       const restY = LOADER_Y + (horizon - LOADER_Y) * easeInOutCalm(settle);
@@ -778,6 +796,19 @@ export function NightHorizon({
         easeOutSoft(lineDraw),
         settle * intensity * (1 - clamp01(warp * 1.6)),
       );
+
+      /* Grain strength follows the glow up and back down again. Written to
+         style rather than baked into the tile so it can move at frame rate
+         while the tile itself only regenerates at 15Hz — and rounded, because
+         every write of it costs a style recalc. */
+      const grainAlpha =
+        Math.round(
+          GRAIN_OPACITY * grainIn * intensity * (1 - clamp01(warp * 1.6)) * 1000,
+        ) / 1000;
+      if (grainAlpha !== lastGrainAlpha) {
+        lastGrainAlpha = grainAlpha;
+        grain!.style.opacity = String(grainAlpha);
+      }
 
       /* Hand the horizon's position to CSS so the masked noise can sit on the
          glow. Only when it has actually moved — this triggers a style recalc. */
