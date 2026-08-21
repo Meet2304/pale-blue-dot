@@ -111,10 +111,15 @@
   list-style: none;
 }
 
-/* base.css gives every anchor a --line-soft underline. Rather than fight it,
-   the nav borrows it: transparent at rest, blue on hover and on the current
-   page. The active state is then the system's own link affordance instead of
-   an invented pill or dot. */
+/* base.css gives every anchor a --line-soft underline and, on `a:hover`, turns
+   it blue with `border-color`. Setting the bottom border transparent here is
+   not enough on its own: `a:hover` still wins the colour for every side, so the
+   transparent border lit up under the cursor anyway. Every state below pins
+   `border-bottom-color` explicitly, which is what actually keeps the line away.
+
+   No line in any state, then — the current page is said with colour instead. A
+   rule under a nav item reads as "you are here", and having the cursor draw the
+   same mark made every hover look like a navigation had already happened. */
 .hz-nav-link {
   display: inline-flex;
   align-items: center;
@@ -128,13 +133,19 @@
    reserved for [aria-current] — it says which page you are on, which is a fact
    about the site rather than a response to the cursor, and letting hover borrow
    it made every pass of the mouse look like a navigation had happened. */
-.hz-nav-link:hover {
+.hz-nav-link:hover,
+.hz-nav-link:focus-visible {
   color: var(--text-strong);
+  border-bottom-color: transparent;
 }
 
 .hz-nav-link[aria-current="page"] {
-  color: var(--text-strong);
-  border-bottom-color: var(--blue-400);
+  color: var(--blue-200);
+  border-bottom-color: transparent;
+}
+
+.hz-nav-link[aria-current="page"]:hover {
+  color: var(--blue-100);
 }
 
 /* Shared by the résumé control, the menu triggers and the panel's links — the
@@ -189,9 +200,17 @@
   color: var(--text-muted);
   font-size: var(--text-body-s);
   white-space: nowrap;
+  /* Declared here, not on .hz-resume-glow. A custom property set on an element
+     beats the one it would inherit, so the glow having its own `--hz-glow-x: 50%`
+     silently shadowed the value the pointer handler writes to this element — the
+     light was pinned to centre no matter where the cursor went. The transition
+     belongs here too: this is where the value changes, and the glow inherits the
+     interpolated result. */
+  --hz-glow-x: 50%;
   transition:
     color var(--dur-slow) var(--ease-out-soft),
-    border-color var(--dur-slow) var(--ease-out-soft);
+    border-color var(--dur-slow) var(--ease-out-soft),
+    --hz-glow-x var(--dur-base) linear;
 }
 
 .hz-resume:hover,
@@ -333,7 +352,6 @@
  * separate, fatter layer, which is what keeps the middle visibly thicker
  * rather than merely brighter. */
 .hz-resume-glow {
-  --hz-glow-x: 50%;
   position: absolute;
   inset: -14px;
   z-index: -3;
@@ -351,9 +369,7 @@
     rgba(0, 0, 0, 0.5) 44%,
     transparent 80%
   );
-  transition:
-    opacity var(--dur-slow) var(--ease-out-soft),
-    --hz-glow-x var(--dur-base) linear;
+  transition: opacity var(--dur-slow) var(--ease-out-soft);
 }
 
 .hz-resume:hover .hz-resume-glow,
@@ -510,17 +526,10 @@
 /* Every blur layer is its own backdrop snapshot, re-taken whenever the star
    field behind it repaints. On a phone that is the one thing in this file that
    can cost real frames, so small screens get a single cheap pane instead. */
-@media (max-width: 760px) {
-  .hz-edge-blur {
-    display: none;
-  }
-
-  .hz-nav {
-    background: var(--surface-glass);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
-}
+/* No mobile fallback to a single frosted pane. That pane was a 60px rectangle
+   with a hard bottom edge, which is exactly the seam the progressive ramp exists
+   to avoid — and it sat on top of the veil, so small screens got the tint twice.
+   Phones get the same ramp, with fewer layers: see SiteChrome. */
 
 @media (max-width: 720px) {
   .hz-nav-list,
