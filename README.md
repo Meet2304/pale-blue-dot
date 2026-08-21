@@ -20,6 +20,14 @@ journey from a single point of light to something larger.
 | `npm run typecheck`    | `tsc --noEmit`                      |
 | `npm run format`       | Prettier, write                     |
 | `npm run format:check` | Prettier, check only                |
+| `npm run ci`           | Format, lint, typecheck, then build |
+
+## CI
+
+Pull requests and pushes to `main` run format, lint, typecheck, and a
+production build via GitHub Actions (`.github/workflows/ci.yml`). The same
+sequence is `npm run ci` locally. Dated notes live in
+[`documentation/`](./documentation/README.md).
 
 ## Design system
 

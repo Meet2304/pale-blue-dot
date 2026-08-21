@@ -9,7 +9,11 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run format:check && npm run lint -- --max-warnings=0 && npm run typecheck && npm run build"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "next": "16.3.1",
