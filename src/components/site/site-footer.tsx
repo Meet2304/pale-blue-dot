@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
@@ -67,6 +67,48 @@ export function SiteFooter() {
     return () => query.removeEventListener("change", sync);
   }, []);
 
+  /* Where the word sits, measured against the gap the layout holds open for it
+     rather than named as a fraction of the block.
+   *
+   * A fraction cannot work here, and 0.64 of the block is what used to put the
+   * word through the small print. The field is as tall as the footer, and the
+   * footer is as tall as its contents — including the very gap that exists to
+   * make room for the word. So the two chase each other: adding 100px of gap
+   * makes the block 100px taller and moves a 0.64 word down 64px, buying 36px
+   * of daylight for 100px of space. Below about 800px wide it never catches up,
+   * and the word lands on "Made by Humans, on Earth".
+   *
+   * Measuring breaks the loop. The gap knows where it is; the word goes in the
+   * middle of it, and stays there at any width, type scale or content length.
+   * 0.64 remains as the value to draw at before the first measurement — close
+   * enough that the correction is invisible on a watermark that is fading its
+   * cells in and out anyway. */
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const roomRef = useRef<HTMLDivElement>(null);
+  const [textY, setTextY] = useState(0.64);
+
+  useEffect(() => {
+    const field = fieldRef.current;
+    const room = roomRef.current;
+    if (!field || !room) return;
+
+    const place = () => {
+      const f = field.getBoundingClientRect();
+      if (f.height === 0) return;
+      const r = room.getBoundingClientRect();
+      setTextY((r.top + r.height / 2 - f.top) / f.height);
+    };
+
+    place();
+    /* Both, because either can move independently: the gap is sized off the
+       viewport, and the block's height follows the links wrapping. Neither is
+       affected by what this writes, so there is no loop to guard against. */
+    const observer = new ResizeObserver(place);
+    observer.observe(field);
+    observer.observe(room);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <footer
       /* The bottom edge blur watches for this and gets out of the way. */
@@ -78,7 +120,7 @@ export function SiteFooter() {
         paddingTop: "var(--space-8)",
       }}
     >
-      <div aria-hidden className="hz-foot-field">
+      <div aria-hidden ref={fieldRef} className="hz-foot-field">
         <FlickeringGrid
           text="MEET BHATT"
           /* The body sans, not the ultra-condensed hero face: at dot-matrix
@@ -88,8 +130,8 @@ export function SiteFooter() {
           fontWeight={600}
           fitWidth={narrow ? 0.92 : 0.7}
           letterSpacing="0.06em"
-          /* Low in the block: under the icon row, above the small print. */
-          textY={0.64}
+          /* Centred in the room held open for it — see the effect above. */
+          textY={textY}
           squareSize={2}
           gridGap={3}
           /* Deliberately inverted from the obvious arrangement: the field is
@@ -143,8 +185,19 @@ export function SiteFooter() {
 
         {/* The room the name needs, held open by the layout rather than by a
             fixed height on the canvas — so the word cannot collide with the
-            small print when the type scale moves. */}
-        <div aria-hidden style={{ height: "clamp(4.5rem, 12vw, 9rem)" }} />
+            small print when the type scale moves. The effect above reads this
+            box and centres the word in it, which is what makes that true rather
+            than merely intended.
+
+            14vw rather than 12: the word is drawn to a fraction of the block's
+            width, so its cap height grows with the viewport at about 10vw on a
+            phone. At 12vw the room was only a fifth taller than the word it
+            held, which is not a margin so much as a rounding error. */}
+        <div
+          aria-hidden
+          ref={roomRef}
+          style={{ height: "clamp(4.5rem, 14vw, 9.5rem)" }}
+        />
 
         <p
           style={{
