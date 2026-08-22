@@ -43,9 +43,33 @@ function useFooterInView(): boolean {
  * question ("are we past the warp?"), and asking it twice would mean two
  * IntersectionObservers watching the same 1px marker.
  */
+/**
+ * Whether we are on a small screen.
+ *
+ * Only the blur ramps ask, and only to spend fewer layers. Every layer is its
+ * own backdrop snapshot, re-taken whenever the star field behind it repaints, so
+ * the count is the cost — and it is a prop rather than something CSS can reach.
+ * The alternative was a single frosted pane on phones, which put a hard-edged
+ * rectangle under the bar: the exact seam the ramp exists to avoid.
+ */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const sync = () => setNarrow(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return narrow;
+}
+
 export function SiteChrome() {
   const past = useHeroGate();
   const footerInView = useFooterInView();
+  const narrow = useNarrow();
 
   return (
     <>
@@ -78,8 +102,8 @@ export function SiteChrome() {
         <ProgressiveBlur
           className="hz-edge-blur hz-edge-blur--top"
           direction="top"
-          layers={8}
-          intensity={2.4}
+          layers={narrow ? 5 : 8}
+          intensity={narrow ? 3 : 2.4}
         />
       )}
 
@@ -92,8 +116,8 @@ export function SiteChrome() {
         <ProgressiveBlur
           className="hz-edge-blur hz-edge-blur--bottom"
           direction="bottom"
-          layers={6}
-          intensity={1.4}
+          layers={narrow ? 4 : 6}
+          intensity={narrow ? 1.8 : 1.4}
         />
       )}
     </>

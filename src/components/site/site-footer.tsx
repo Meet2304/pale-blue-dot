@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
@@ -51,23 +51,64 @@ const ELSEWHERE: { href: string; label: string; Icon: FooterIcon }[] = [
   { href: "/story", label: "Story", Icon: Compass },
 ];
 
-/* Solid at the bottom, gone by the top, with the sides drawn in so the field
-   never meets the viewport edge as a straight line.
-
-   The top ramp runs over nearly two thirds of the block, and that is where the
-   links and the icon row live. They need dots behind them thin enough to read
-   through, and putting them high in the ramp is how you get that without
-   dimming the whole field. */
-const FIELD_MASK: CSSProperties = {
-  maskImage:
-    "linear-gradient(to bottom, transparent 0%, #000 62%, #000 100%), linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%)",
-  WebkitMaskImage:
-    "linear-gradient(to bottom, transparent 0%, #000 62%, #000 100%), linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%)",
-  maskComposite: "intersect",
-  WebkitMaskComposite: "source-in",
-};
-
 export function SiteFooter() {
+  /* The word is measured against the container, and the container's usable
+     width is whatever the field mask leaves behind — which is far narrower in
+     proportion on a phone. One breakpoint, one number: `fitWidth` is the only
+     thing here that CSS cannot express, because it is an argument to a canvas
+     measurement rather than a style. */
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 720px)");
+    const sync = () => setNarrow(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  /* Where the word sits, measured against the gap the layout holds open for it
+     rather than named as a fraction of the block.
+   *
+   * A fraction cannot work here, and 0.64 of the block is what used to put the
+   * word through the small print. The field is as tall as the footer, and the
+   * footer is as tall as its contents — including the very gap that exists to
+   * make room for the word. So the two chase each other: adding 100px of gap
+   * makes the block 100px taller and moves a 0.64 word down 64px, buying 36px
+   * of daylight for 100px of space. Below about 800px wide it never catches up,
+   * and the word lands on "Made by Humans, on Earth".
+   *
+   * Measuring breaks the loop. The gap knows where it is; the word goes in the
+   * middle of it, and stays there at any width, type scale or content length.
+   * 0.64 remains as the value to draw at before the first measurement — close
+   * enough that the correction is invisible on a watermark that is fading its
+   * cells in and out anyway. */
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const roomRef = useRef<HTMLDivElement>(null);
+  const [textY, setTextY] = useState(0.64);
+
+  useEffect(() => {
+    const field = fieldRef.current;
+    const room = roomRef.current;
+    if (!field || !room) return;
+
+    const place = () => {
+      const f = field.getBoundingClientRect();
+      if (f.height === 0) return;
+      const r = room.getBoundingClientRect();
+      setTextY((r.top + r.height / 2 - f.top) / f.height);
+    };
+
+    place();
+    /* Both, because either can move independently: the gap is sized off the
+       viewport, and the block's height follows the links wrapping. Neither is
+       affected by what this writes, so there is no loop to guard against. */
+    const observer = new ResizeObserver(place);
+    observer.observe(field);
+    observer.observe(room);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <footer
       /* The bottom edge blur watches for this and gets out of the way. */
@@ -79,10 +120,7 @@ export function SiteFooter() {
         paddingTop: "var(--space-8)",
       }}
     >
-      <div
-        aria-hidden
-        style={{ position: "absolute", inset: 0, zIndex: 0, ...FIELD_MASK }}
-      >
+      <div aria-hidden ref={fieldRef} className="hz-foot-field">
         <FlickeringGrid
           text="MEET BHATT"
           /* The body sans, not the ultra-condensed hero face: at dot-matrix
@@ -90,10 +128,10 @@ export function SiteFooter() {
              Set in caps, where every glyph is a shape a 5px grid can resolve. */
           fontFamily="var(--font-text), sans-serif"
           fontWeight={600}
-          fitWidth={0.7}
+          fitWidth={narrow ? 0.92 : 0.7}
           letterSpacing="0.06em"
-          /* Low in the block: under the icon row, above the small print. */
-          textY={0.64}
+          /* Centred in the room held open for it — see the effect above. */
+          textY={textY}
           squareSize={2}
           gridGap={3}
           /* Deliberately inverted from the obvious arrangement: the field is
@@ -107,6 +145,12 @@ export function SiteFooter() {
           textMinOpacity={0.28}
           textMaxOpacity={0.54}
           flickerChance={0.12}
+          /* The one place the page answers back. Cells under the cursor lift
+             toward --ink-200; the light sets a floor rather than replacing the
+             flicker, so a bright cell inside it stays bright and the field keeps
+             breathing underneath. */
+          haloRadius={narrow ? 96 : 140}
+          haloOpacity={0.8}
         />
       </div>
 
@@ -123,15 +167,7 @@ export function SiteFooter() {
           gap: "var(--space-5)",
         }}
       >
-        <nav
-          aria-label="Footer"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: "var(--space-6)",
-          }}
-        >
+        <nav aria-label="Footer" className="hz-foot-nav">
           {PAGES.map((item) => (
             <Link key={item.href} href={item.href} className="hz-foot-link">
               {item.label}
@@ -149,8 +185,19 @@ export function SiteFooter() {
 
         {/* The room the name needs, held open by the layout rather than by a
             fixed height on the canvas — so the word cannot collide with the
-            small print when the type scale moves. */}
-        <div aria-hidden style={{ height: "clamp(6rem, 12vw, 9rem)" }} />
+            small print when the type scale moves. The effect above reads this
+            box and centres the word in it, which is what makes that true rather
+            than merely intended.
+
+            14vw rather than 12: the word is drawn to a fraction of the block's
+            width, so its cap height grows with the viewport at about 10vw on a
+            phone. At 12vw the room was only a fifth taller than the word it
+            held, which is not a margin so much as a rounding error. */}
+        <div
+          aria-hidden
+          ref={roomRef}
+          style={{ height: "clamp(4.5rem, 14vw, 9.5rem)" }}
+        />
 
         <p
           style={{

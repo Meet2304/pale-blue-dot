@@ -54,6 +54,7 @@ export function SiteNav({ visible }: { visible: boolean }) {
                   className="hz-nav-link"
                   size={ICON_SIZE}
                   current={pathname === item.href}
+                  withIcon={false}
                 />
               </li>
             ))}
@@ -75,10 +76,39 @@ type NavLinkProps = {
   current: boolean;
   className: string;
   size: number;
+  /**
+   * The bar is set in words alone; only the full-screen menu carries icons.
+   * Five glyphs beside five one-word labels was decoration on something whose
+   * whole job is to be scanned, and at this size the words are already the
+   * fastest thing to read.
+   */
+  withIcon?: boolean;
 };
 
-function NavLink({ href, label, Icon, current, className, size }: NavLinkProps) {
+function NavLink({
+  href,
+  label,
+  Icon,
+  current,
+  className,
+  size,
+  withIcon = true,
+}: NavLinkProps) {
   const [focused, setFocused] = useState(false);
+
+  if (!withIcon) {
+    /* No icon means nothing for AnimateIcon to drive, so the wrapper — and the
+       focus state it needs — is skipped entirely rather than mounted empty. */
+    return (
+      <Link
+        href={href}
+        aria-current={current ? "page" : undefined}
+        className={className}
+      >
+        {label}
+      </Link>
+    );
+  }
 
   return (
     /* `asChild` is the load-bearing prop. It makes AnimateIcon render a Slot
@@ -88,7 +118,7 @@ function NavLink({ href, label, Icon, current, className, size }: NavLinkProps) 
 
        AnimateIcon ships animateOnHover / Tap / View but no animateOnFocus, so
        keyboard users would otherwise get nothing at all. `animate` is a live
-       prop (there is an effect on it), and four links re-rendering once per Tab
+       prop (there is an effect on it), and five links re-rendering once per Tab
        is not a hot path. */
     <AnimateIcon asChild animateOnHover animate={focused}>
       <Link

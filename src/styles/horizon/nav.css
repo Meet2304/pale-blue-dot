@@ -111,47 +111,83 @@
   list-style: none;
 }
 
-/* base.css gives every anchor a --line-soft underline. Rather than fight it,
-   the nav borrows it: transparent at rest, blue on hover and on the current
-   page. The active state is then the system's own link affordance instead of
-   an invented pill or dot. */
+/* base.css gives every anchor a --line-soft underline and, on `a:hover`, turns
+   it blue with `border-color`. Setting the bottom border transparent here is
+   not enough on its own: `a:hover` still wins the colour for every side, so the
+   transparent border lit up under the cursor anyway. Every state below pins
+   `border-bottom-color` explicitly, which is what actually keeps the line away.
+
+   No line in any state, then — the current page is said with colour instead. A
+   rule under a nav item reads as "you are here", and having the cursor draw the
+   same mark made every hover look like a navigation had already happened. */
 .hz-nav-link {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
   font-size: var(--text-body-s);
   color: var(--text-muted);
   border-bottom: 1px solid transparent;
   transition: var(--transition-control);
 }
 
+/* Hover lifts the colour and the icon and nothing else. The underline is
+   reserved for [aria-current] — it says which page you are on, which is a fact
+   about the site rather than a response to the cursor, and letting hover borrow
+   it made every pass of the mouse look like a navigation had happened. */
 .hz-nav-link:hover,
-.hz-nav-link[aria-current="page"] {
+.hz-nav-link:focus-visible {
   color: var(--text-strong);
-  border-bottom-color: var(--blue-400);
+  border-bottom-color: transparent;
 }
 
-/* At rest the icons sit at the faintest ink level, so the bar reads as four
-   words and the icons only assert themselves under the cursor. That is what
-   keeps an icon on every item from turning into clutter. */
+.hz-nav-link[aria-current="page"] {
+  color: var(--blue-200);
+  border-bottom-color: transparent;
+}
+
+.hz-nav-link[aria-current="page"]:hover {
+  color: var(--blue-100);
+}
+
+/* The résumé control's arrow — the bar itself is text only, and the liquid
+   menu's links are words alone too. At rest it sits at the faintest ink level
+   and only asserts itself under the cursor. */
 .hz-nav-icon {
   flex: none;
   color: var(--text-faint);
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
-.hz-nav-link:hover .hz-nav-icon,
-.hz-nav-link:focus-visible .hz-nav-icon,
-.hz-nav-link[aria-current="page"] .hz-nav-icon {
-  color: var(--blue-400);
+/* --- Resume control ------------------------------------------------------ */
+
+/* Where the light sits on the button's outline, as a fraction of the button's
+   own half-width and half-height: (0, 1) is the middle of the bottom edge,
+   (-1, 0) the middle of the left edge, (1, -1) the top-right corner.
+
+   Fractions rather than pixels because the same control is 38px tall in the bar
+   and 52px tall and nearly full-width in the mobile card, and this way neither
+   the CSS below nor the pointer handler has to know which one it is looking at.
+
+   Registered so they can be transitioned. An unregistered custom property is a
+   token to the engine, not a number, so the light would snap from one cursor
+   position to the next. .hz-resume declares both explicitly as well, so the
+   calc() below still resolves without @property — it just arrives unsmoothed. */
+@property --hz-glow-x {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
 }
 
-/* --- Resume control ------------------------------------------------------ */
+@property --hz-glow-y {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
 
 /* Pitch black with stars twinkling in it. On approach a blue glow lights the
    bottom edge — thickest at the middle of it, thinning as it runs around the
-   corners, gone by the time it reaches the mid-height of the sides — and the
-   label and arrow go white.
+   corners, gone by the time it reaches the mid-height of the sides — a second,
+   brighter light rides the outline under the cursor, and the label and arrow go
+   white.
  *
  * The stars are radial-gradient background layers rather than an SVG or a
  * canvas: at this size they stay perfectly round at any DPR, they cost one
@@ -179,9 +215,29 @@
   color: var(--text-muted);
   font-size: var(--text-body-s);
   white-space: nowrap;
+  /* Declared here, not on .hz-resume-glow. A custom property set on an element
+     beats the one it would inherit, so the glow having its own `--hz-glow-x`
+     silently shadowed the value the pointer handler writes to this element — the
+     light was pinned to centre no matter where the cursor went. The transition
+     belongs here too: this is where the value changes, and the glow inherits the
+     interpolated result.
+
+     --hz-glow-inset is how far the glow host is blown out past the button on
+     every side. It lives here because the outline maths further down subtracts
+     exactly that much to get back to the button's own half-size, and the mobile
+     card wants a different value — one variable keeps the two in step, where
+     before they were two numbers in two rules that had to be remembered
+     together. Resting at (0, 1) is the middle of the bottom edge, which is where
+     the light belongs when nothing is pointing at it. */
+  --hz-glow-inset: 50px;
+  --hz-glow-size: 76px;
+  --hz-glow-x: 0;
+  --hz-glow-y: 1;
   transition:
     color var(--dur-slow) var(--ease-out-soft),
-    border-color var(--dur-slow) var(--ease-out-soft);
+    border-color var(--dur-slow) var(--ease-out-soft),
+    --hz-glow-x var(--dur-base) linear,
+    --hz-glow-y var(--dur-base) linear;
 }
 
 .hz-resume:hover,
@@ -308,32 +364,25 @@
 
 /* The glow.
  *
- * The host is inset past the button so the bloom has somewhere to spread, and
- * carries the taper as a mask: an ellipse anchored on the bottom edge, full in
- * the middle of it and falling to nothing by the mid-height of the sides. The
- * mask fades the alpha, which is what pulls the *thickness* in as well — a
- * blurred edge at low alpha drops below the visible threshold sooner, so the
- * band narrows as it climbs the corners. The bulge at the bottom centre is a
- * separate, fatter layer, which is what keeps the middle visibly thicker
- * rather than merely brighter. */
+ * There is no mask here, and that is the whole design. A `mask-image` clips to
+ * its element's border box, so any bloom the shadows threw past that box was cut
+ * off square — and because the mask's ellipse was far wider than the box, it was
+ * still opaque when it reached the edge. Sliding --hz-glow-x toward one side
+ * only pushed more of the light into the cut. Nothing below is masked, so
+ * nothing below can clip.
+ *
+ * The taper comes from the shadows instead. A downward-offset shadow with a
+ * negative spread on a rounded rect is naturally thickest under the bottom edge
+ * and thins as it wraps the corners, which is the shape that was wanted in the
+ * first place — and it falls off in the same direction the light is supposed to
+ * come from. The pointer-following part is a separate soft ellipse that fades
+ * to transparent on its own terms. */
 .hz-resume-glow {
   position: absolute;
-  inset: -14px;
+  inset: calc(var(--hz-glow-inset) * -1);
   z-index: -3;
   pointer-events: none;
   opacity: 0;
-  -webkit-mask-image: radial-gradient(
-    95% 118% at 50% 78%,
-    #000 0%,
-    rgba(0, 0, 0, 0.5) 44%,
-    transparent 80%
-  );
-  mask-image: radial-gradient(
-    95% 118% at 50% 78%,
-    #000 0%,
-    rgba(0, 0, 0, 0.5) 44%,
-    transparent 80%
-  );
   transition: opacity var(--dur-slow) var(--ease-out-soft);
 }
 
@@ -342,33 +391,58 @@
   opacity: 1;
 }
 
-/* The line itself, sitting exactly on the button's edge. */
+/* The lit edge, sitting exactly on the button's outline. Two shadows: a tight
+   one that reads as the border itself catching light, and a wider, lower one
+   that does the spill. Both are offset down, which is what weights them toward
+   the bottom without anything having to cut them. */
 .hz-resume-glow::before {
   content: "";
   position: absolute;
-  inset: 14px;
+  inset: var(--hz-glow-inset);
   border-radius: var(--radius-xl);
-  border: 1px solid var(--blue-300);
-  box-shadow: 0 0 8px -1px rgba(13, 123, 255, 0.9);
+  border: 1px solid rgba(63, 155, 255, 0.7);
+  box-shadow:
+    0 2px 7px -1px rgba(63, 155, 255, 0.55),
+    0 8px 20px -6px rgba(13, 123, 255, 0.75);
 }
 
-/* The thicker swell under the middle of the bottom edge. */
+/* The part that follows the cursor: one small round bloom that rides the
+   button's outline.
+ *
+ * It is a circle *centred on the edge*, not a smear parked under it. The glow
+ * host sits at z-index -3 and the button's own black ground at -2, so the half
+ * of the circle that falls inside the button is covered by the button and only
+ * the outer half is ever seen — light coming from behind the edge rather than a
+ * blob lying on top of it. Move the centre around the outline and the visible
+ * crescent wraps with it, around the corners and up the sides, with nothing to
+ * fade in or out at the turn.
+ *
+ * This is what the old rule could not do. It slid along `left` at a fixed
+ * `bottom`, and a horizontal track has no way to leave the bottom edge: at the
+ * ends of the control the light carried straight on into open space instead of
+ * turning the corner, which read as a bar of light floating beside the button.
+ * Two axes and a centred circle remove the track entirely.
+ *
+ * `50% - var(--hz-glow-inset)` is the button's own half-size, since the host is
+ * exactly that much larger on every side — which is the whole reason the inset
+ * is a variable. A radial-gradient reaches transparent by its own last stop, so
+ * there is still no edge anywhere for anything to clip against. */
 .hz-resume-glow::after {
   content: "";
   position: absolute;
-  left: 50%;
-  bottom: 8px;
-  width: 60%;
-  height: 22px;
-  translate: -50% 0;
+  left: calc(50% + var(--hz-glow-x) * (50% - var(--hz-glow-inset)));
+  top: calc(50% + var(--hz-glow-y) * (50% - var(--hz-glow-inset)));
+  width: var(--hz-glow-size);
+  height: var(--hz-glow-size);
+  translate: -50% -50%;
   border-radius: var(--radius-round);
   background: radial-gradient(
-    ellipse at 50% 100%,
+    closest-side,
     rgba(63, 155, 255, 0.8) 0%,
-    rgba(13, 123, 255, 0.3) 45%,
-    transparent 72%
+    rgba(13, 123, 255, 0.3) 46%,
+    transparent 100%
   );
-  filter: blur(5px);
+  filter: blur(9px);
 }
 
 /* --- Breakpoint ---------------------------------------------------------- */
@@ -376,20 +450,10 @@
 /* 880 rather than a rounder number: below it the five labels plus the resume
    control stop fitting beside the mark without shrinking the type past
    --text-body-s, and shrinking type to avoid a menu is the wrong trade. */
-/* Every blur layer is its own backdrop snapshot, re-taken whenever the star
-   field behind it repaints. On a phone that is the one thing in this file that
-   can cost real frames, so small screens get a single cheap pane instead. */
-@media (max-width: 760px) {
-  .hz-edge-blur {
-    display: none;
-  }
-
-  .hz-nav {
-    background: var(--surface-glass);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
-}
+/* No mobile fallback to a single frosted pane. That pane was a 60px rectangle
+   with a hard bottom edge, which is exactly the seam the progressive ramp exists
+   to avoid — and it sat on top of the veil, so small screens got the tint twice.
+   Phones get the same ramp, with fewer layers: see SiteChrome. */
 
 @media (max-width: 880px) {
   .hz-nav-list,
@@ -565,25 +629,20 @@ html.hz-nav-lock body {
   letter-spacing: 0.04em;
   opacity: clamp(0, calc((var(--liquid-p) - 0.28) / 0.45), 1);
   transform: translateY(calc((1 - var(--liquid-p)) * 8px));
+  /* The chip is bigger here, so the host sits closer in and the bloom runs
+     larger. Setting the inset moves the outline maths with it. */
+  --hz-glow-inset: 16px;
+  --hz-glow-size: 84px;
 }
 
-/* No hover on a phone, so the bloom is the resting state — that is what
-   makes it the one control in the card that reads as an action. The glow
-   host is inset a little further than desktop so the larger chip still
-   has room for the bloom to spread. */
+/* No hover on a phone, so the bloom is the resting state — that is what makes
+   it the one control in the card that reads as an action. It rests under the
+   bottom edge, the same place the desktop control returns to, and stays there:
+   a touch gets one pointermove before the browser claims the gesture for
+   panning, so the tracking never runs here. Nothing is lost — the resting bloom
+   is what this control is on a phone. */
 .hz-liquid .hz-resume .hz-resume-glow {
-  inset: -16px;
   opacity: var(--liquid-p);
-}
-
-.hz-liquid .hz-resume .hz-resume-glow::before {
-  inset: 16px;
-}
-
-.hz-liquid .hz-resume .hz-resume-glow::after {
-  bottom: 10px;
-  width: 64%;
-  height: 26px;
 }
 
 /* Pinned to the bottom of the shell so it rides the morph instead of
@@ -799,6 +858,78 @@ html.hz-nav-lock body {
 .hz-foot-link:hover {
   color: var(--text-strong);
   border-bottom-color: var(--line-soft);
+}
+
+/* The dot field's edge fades, as a class rather than an inline object so they
+   can respond to width.
+
+   The horizontal ramps are proportional, and at 1400px 14% is a comfortable
+   200px of thinning. At 360px the same 14% is 50px a side — over a quarter of
+   the screen spent going to black, which is what made the mobile footer read as
+   mostly margin. Below 720px they collapse to a token 4%, and the vertical ramp
+   shortens too, because there is far less height to spend on it. */
+.hz-foot-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 62%, #000 100%),
+    linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 62%, #000 100%),
+    linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* The footer's links, which have to survive down to 320px on one line. */
+.hz-foot-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-6);
+}
+
+@media (max-width: 720px) {
+  .hz-foot-field {
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0%, #000 52%, #000 100%),
+      linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+    mask-image:
+      linear-gradient(to bottom, transparent 0%, #000 52%, #000 100%),
+      linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+  }
+
+  /* nowrap is the point: five words breaking onto a second line was the thing
+     that made the block look accidental. Everything below is in service of
+     keeping them on one. */
+  .hz-foot-nav {
+    flex-wrap: nowrap;
+    gap: var(--space-4);
+  }
+
+  .hz-foot-link {
+    font-size: var(--text-body-s);
+  }
+
+  .hz-foot-icons {
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 400px) {
+  .hz-foot-nav {
+    gap: var(--space-3);
+  }
+
+  .hz-foot-link {
+    font-size: var(--text-caption);
+  }
+
+  .hz-foot-icon {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .hz-foot-icons {
