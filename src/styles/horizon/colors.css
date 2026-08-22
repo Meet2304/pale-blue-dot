@@ -58,11 +58,4 @@
   --horizon-core: #f0f9ff;
   --horizon-mid: var(--blue-500);
   --horizon-far: var(--night-600);
-
-  /* The fixed nav sits over the star field on every page. Opaque would make it
-     a black band across the top of the sky; fully transparent would leave the
-     links unreadable wherever a star drifted behind them. --night-900 at 72%
-     with a blur behind it turns the stars into light rather than points, which
-     is the only reason a surface that isn't already in the scale is warranted. */
-  --surface-glass: rgba(6, 6, 7, 0.72);
 }
