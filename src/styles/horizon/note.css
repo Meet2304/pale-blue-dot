@@ -1,0 +1,228 @@
+/* Horizon design system — the Story page (the Note).
+ *
+ * Same exception as nav.css: a clip, a descendant, a dialog, and a breakpoint.
+ * Everything else on the page stays inline against the tokens.
+ *
+ * The photograph is the real Voyager still, shown at 16:9 so it does not
+ * eat the page. A quiet lip — a soft rim and a thin inner catchlight —
+ * keeps a black picture from dissolving into a black sky, without turning
+ * it into a frame. */
+
+.hz-note-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hz-note-sky {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: calc(var(--nav-h) + var(--space-7)) var(--gutter) var(--space-6);
+}
+
+.hz-note-frame {
+  position: relative;
+  display: block;
+  width: min(100%, 44rem);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  cursor: zoom-in;
+  color: inherit;
+  background: #000;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+}
+
+.hz-note-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.hz-note-frame:focus-visible {
+  outline: 1px solid var(--blue-400);
+  outline-offset: 3px;
+}
+
+.hz-note-mat {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--night-800);
+  border-radius: inherit;
+}
+
+.hz-note-frame[data-ready="false"] .hz-note-mat {
+  animation: hz-skel 1.8s var(--ease-in-out-calm) infinite;
+}
+
+.hz-note-shot {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out-soft);
+}
+
+.hz-note-frame[data-ready="true"] .hz-note-shot {
+  opacity: 1;
+}
+
+/* --- Lightbox ------------------------------------------------------------ */
+
+.hz-note-lightbox {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: var(--space-8) var(--space-5);
+  overflow: hidden;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.92);
+  border: 0;
+}
+
+.hz-note-lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.hz-note-lightbox[open] {
+  display: grid;
+  place-items: center;
+  animation: horizon-fade var(--dur-slow) var(--ease-out-soft);
+}
+
+.hz-note-lightbox-bar {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: 1;
+  margin: 0;
+}
+
+.hz-note-lightbox-close {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-round);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.hz-note-lightbox-close:hover,
+.hz-note-lightbox-close:focus-visible {
+  color: var(--text-strong);
+}
+
+.hz-note-lightbox-close:focus-visible {
+  outline: 1px solid var(--blue-400);
+  outline-offset: 3px;
+}
+
+.hz-note-lightbox-shot {
+  display: block;
+  width: auto;
+  max-width: min(96vw, 64rem);
+  height: auto;
+  max-height: 88dvh;
+  margin: auto;
+  object-fit: contain;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-note-lightbox[open] {
+    animation: none;
+  }
+
+  .hz-note-frame[data-ready="false"] .hz-note-mat {
+    animation: none;
+  }
+
+  .hz-note-shot {
+    opacity: 1;
+    transition: none;
+  }
+
+  .hz-note-skel {
+    animation: none;
+    opacity: 0.55;
+  }
+}
+
+/* --- The letter ---------------------------------------------------------- */
+
+.hz-note-letter {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--gutter) var(--space-10);
+}
+
+/* Route-level skeleton (loading.tsx): same proportions as the real page so
+   a slow RSC payload does not jump when the letter arrives. */
+.hz-note-skel-plate {
+  cursor: default;
+  pointer-events: none;
+}
+
+.hz-note-skel {
+  display: block;
+  height: 0.78em;
+  margin-bottom: 0.85em;
+  border-radius: 2px;
+}
+
+.hz-note-beat + .hz-note-beat {
+  margin-top: var(--space-5);
+}
+
+.hz-note-copy {
+  font-size: var(--text-body-l);
+  line-height: 1.65;
+  color: var(--text-body);
+}
+
+.hz-note-pause {
+  font-family: var(--font-display);
+  font-size: var(--text-title-m);
+  line-height: var(--leading-title);
+  letter-spacing: var(--tracking-display);
+  color: var(--text-strong);
+}
+
+.hz-note-close {
+  color: var(--text-strong);
+}
+
+.hz-note-rule {
+  width: 2.5rem;
+  margin: var(--space-8) 0 0;
+}
+
+.hz-note-sign {
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-8);
+  font-size: clamp(2.35rem, 6vw, 3.15rem);
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  color: var(--ink-200);
+}

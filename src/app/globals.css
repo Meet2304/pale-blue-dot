@@ -8,6 +8,7 @@
 @import "../styles/horizon/motion.css";
 @import "../styles/horizon/base.css";
 @import "../styles/horizon/nav.css";
+@import "../styles/horizon/note.css";
 
 /* Dark-only. In Horizon the night is the canvas, not a preference. */
 :root {
@@ -62,6 +63,31 @@
     var(--hz-delay, 0ms) both;
 }
 
+/* A quieter cousin of .hz-rise: fade only, for a whole page arriving at once.
+   Used on routes that have no hero to hand off from, so the first paint is
+   not a hard cut against the star field. */
+.hz-page-enter {
+  animation: horizon-fade var(--dur-arrive) var(--ease-out-soft) both;
+}
+
+/* A quiet pulse for plates and lines that are still waiting on the network.
+   Night-700, not a wash of colour — the skeleton should read as absence, not
+   as a second design. */
+.hz-skel {
+  background: var(--night-700);
+  animation: hz-skel 1.8s var(--ease-in-out-calm) infinite;
+}
+
+@keyframes hz-skel {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
 /* An interrupted load collapses any in-flight entrance to its end state. */
 [data-hero="skipped"] .hz-rise {
   animation: none;
@@ -84,7 +110,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hz-rise {
+  .hz-rise,
+  .hz-page-enter {
     animation: none;
     opacity: 1;
     transform: none;
@@ -93,6 +120,11 @@
   .hz-arrive {
     opacity: 1;
     transform: none;
+  }
+
+  .hz-skel {
+    animation: none;
+    opacity: 0.55;
   }
 }
 
