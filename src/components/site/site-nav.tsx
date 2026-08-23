@@ -13,15 +13,16 @@ import { User } from "@/components/animate-ui/icons/user";
 import { LiquidMenu } from "@/components/site/liquid-menu";
 import { NAV_ITEMS } from "@/components/site/nav-items";
 import { ResumeLink } from "@/components/site/resume-link";
+import { routes } from "@/lib/routes";
 
 const ICON_SIZE = 15;
 
 const ICONS = {
-  "/about": User,
-  "/work": Layers,
-  "/story": Compass,
-  "/contact": Send,
-  "/changelog": List,
+  [routes.about]: User,
+  [routes.work]: Layers,
+  [routes.story]: Compass,
+  [routes.contact]: Send,
+  [routes.changelog]: List,
 } as const;
 
 export function SiteNav({ visible }: { visible: boolean }) {
@@ -39,7 +40,7 @@ export function SiteNav({ visible }: { visible: boolean }) {
         inert={!visible}
       >
         <div className="hz-nav-inner">
-          <Link href="/" className="hz-nav-mark">
+          <Link href={routes.home} className="hz-nav-mark">
             <span className="hz-nav-dot" aria-hidden />
             Meet Bhatt
           </Link>

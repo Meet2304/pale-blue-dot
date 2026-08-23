@@ -11,6 +11,7 @@ import { MessageCircle } from "@/components/animate-ui/icons/message-circle";
 import { Send } from "@/components/animate-ui/icons/send";
 import { User } from "@/components/animate-ui/icons/user";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
+import { routes } from "@/lib/routes";
 
 /**
  * The end of the page.
@@ -29,12 +30,12 @@ import { FlickeringGrid } from "@/components/ui/flickering-grid";
 type FooterIcon = ComponentType<{ className?: string; size?: number }>;
 
 const PAGES = [
-  { href: "/about", label: "About" },
-  { href: "/work", label: "Work" },
-  { href: "/story", label: "Story" },
-  { href: "/contact", label: "Contact" },
-  { href: "/changelog", label: "Changelog" },
-  { href: "/resume", label: "Resume" },
+  { href: routes.about, label: "About" },
+  { href: routes.work, label: "Work" },
+  { href: routes.story, label: "Story" },
+  { href: routes.contact, label: "Contact" },
+  { href: routes.changelog, label: "Changelog" },
+  { href: routes.resume, label: "Resume" },
 ];
 
 /**
@@ -46,9 +47,9 @@ const ELSEWHERE: { href: string; label: string; Icon: FooterIcon }[] = [
   { href: "https://github.com/", label: "GitHub", Icon: LinkIcon },
   { href: "https://www.linkedin.com/", label: "LinkedIn", Icon: User },
   { href: "mailto:meetbhatt2304@gmail.com", label: "Email", Icon: Send },
-  { href: "/contact", label: "Contact", Icon: MessageCircle },
-  { href: "/work", label: "Work", Icon: Layers },
-  { href: "/story", label: "Story", Icon: Compass },
+  { href: routes.contact, label: "Contact", Icon: MessageCircle },
+  { href: routes.work, label: "Work", Icon: Layers },
+  { href: routes.story, label: "Story", Icon: Compass },
 ];
 
 export function SiteFooter() {

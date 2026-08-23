@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 
+import { routes } from "@/lib/routes";
+
 /**
  * The placeholder every route wears until its real page is designed.
  *
@@ -70,7 +72,7 @@ export function ComingSoon({
             {note}
           </p>
           <p style={{ marginTop: "var(--space-7)" }}>
-            <Link href="/" style={{ fontSize: "var(--text-body-s)" }}>
+            <Link href={routes.home} style={{ fontSize: "var(--text-body-s)" }}>
               Back to the beginning
             </Link>
           </p>

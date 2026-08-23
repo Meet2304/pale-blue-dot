@@ -1,15 +1,20 @@
+import { routes } from "@/lib/routes";
+
 /**
  * The site's whole internal link graph, in five single words.
  *
  * Single words because the bar is a tool, not a statement — "Story" rather than
  * "The Note", "Work" rather than "Selected Projects".
+ *
+ * `href` values come from `routes` and stay host-relative. Never prefix them
+ * with a domain: a custom host on Vercel would then leave the site.
  */
 export const NAV_ITEMS = [
-  { href: "/about", label: "About" },
-  { href: "/work", label: "Work" },
-  { href: "/story", label: "Story" },
-  { href: "/contact", label: "Contact" },
-  { href: "/changelog", label: "Changelog" },
+  { href: routes.about, label: "About" },
+  { href: routes.work, label: "Work" },
+  { href: routes.story, label: "Story" },
+  { href: routes.contact, label: "Contact" },
+  { href: routes.changelog, label: "Changelog" },
 ] as const;
 
 /**
@@ -19,4 +24,4 @@ export const NAV_ITEMS = [
  * 404 navigates away silently, which is a worse failure than an honest page.
  */
 export const RESUME_READY = false;
-export const RESUME_HREF = RESUME_READY ? "/resume.pdf" : "/resume";
+export const RESUME_HREF = RESUME_READY ? "/resume.pdf" : routes.resume;
