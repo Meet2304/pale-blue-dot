@@ -122,11 +122,7 @@ export function ResumeLink({ size }: { size: number }) {
           height="200%"
           colorInterpolationFilters="sRGB"
         >
-          <feGaussianBlur
-            in="SourceGraphic"
-            stdDeviation="9"
-            result="bloom"
-          />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="bloom" />
           <feTurbulence
             type="fractalNoise"
             baseFrequency="0.85"
@@ -134,24 +130,14 @@ export function ResumeLink({ size }: { size: number }) {
             stitchTiles="stitch"
             result="noise"
           />
-          <feColorMatrix
-            in="noise"
-            type="saturate"
-            values="0"
-            result="grain"
-          />
+          <feColorMatrix in="noise" type="saturate" values="0" result="grain" />
           <feComponentTransfer in="grain" result="film">
             <feFuncA type="linear" slope="0.22" />
           </feComponentTransfer>
           {/* Grain only where the bloom is. Unclipped, feTurbulence paints a
               square of film the size of the filter region — the box behind
               the button. */}
-          <feComposite
-            in="film"
-            in2="bloom"
-            operator="in"
-            result="dust"
-          />
+          <feComposite in="film" in2="bloom" operator="in" result="dust" />
           <feBlend in="bloom" in2="dust" mode="overlay" />
         </filter>
       </svg>
