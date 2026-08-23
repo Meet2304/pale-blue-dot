@@ -1,104 +1,166 @@
 "use client";
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
 import { Download } from "@/components/animate-ui/icons/download";
 import { RESUME_HREF, RESUME_READY } from "@/components/site/nav-items";
 
-/** Where the light rests when nothing is pointing at it: the bottom edge, middle. */
-const REST_X = "0";
-const REST_Y = "1";
+/** Resting place of the light: middle of the bottom edge. */
+const REST_X = 0;
+const REST_Y = 1;
+
+/** How far outside the button the glow still follows the cursor. */
+const NEAR = 64;
+
+function writeGlow(node: HTMLElement, x: number, y: number) {
+  node.style.setProperty("--hz-glow-x", x.toFixed(3));
+  node.style.setProperty("--hz-glow-y", y.toFixed(3));
+}
+
+function restGlow(node: HTMLElement) {
+  writeGlow(node, REST_X, REST_Y);
+  node.removeAttribute("data-near");
+}
+
+/**
+ * Project the cursor onto the button's outline. The glow is a circle centred
+ * on that point, so what you see is a crescent riding the edge, never a blob
+ * under the pointer.
+ */
+function followGlow(node: HTMLElement, clientX: number, clientY: number) {
+  const w = node.clientWidth;
+  const h = node.clientHeight;
+  /* display:none (the bar control below 880px) reports a 0×0 rect at (0, 0),
+     which would otherwise look like the cursor is "near" the origin. */
+  if (w === 0 || h === 0) return;
+
+  const rect = node.getBoundingClientRect();
+  const near =
+    clientX >= rect.left - NEAR &&
+    clientX <= rect.right + NEAR &&
+    clientY >= rect.top - NEAR &&
+    clientY <= rect.bottom + NEAR;
+
+  if (!near) {
+    if (node.hasAttribute("data-near")) restGlow(node);
+    return;
+  }
+
+  node.setAttribute("data-near", "");
+
+  /* Padding box, not border box: the glow host is laid out against that. */
+  const x = (clientX - rect.left - node.clientLeft) / (w / 2) - 1;
+  const y = (clientY - rect.top - node.clientTop) / (h / 2) - 1;
+  const reach = Math.max(Math.abs(x), Math.abs(y));
+  if (reach < 0.001) return;
+
+  writeGlow(node, x / reach, y / reach);
+}
 
 /**
  * The starry ground and the bloom are entirely CSS on .hz-resume — see
  * nav.css. All this has to do is be one hover (and tap) target, which is what
- * lets AnimateIcon slot onto it and animate the arrow from anywhere inside, and
- * tell the glow which point of the button's outline the cursor is nearest. The
- * tracking is a pointer effect only — see onPointerCancel below for why a touch
- * never gets to drive it.
+ * lets AnimateIcon slot onto it and animate the arrow from anywhere inside,
+ * and tell the glow which point of the button's outline the cursor is nearest.
+ *
+ * Tracking lives on the document, not on the control: the bloom is meant to
+ * wake as the cursor approaches, and a pointer listener on the button itself
+ * cannot see that. Touches are ignored — a finger cannot walk the light around
+ * without stealing the scroll, so the resting bloom is the whole effect there.
  */
 export function ResumeLink({ size }: { size: number }) {
   const [focused, setFocused] = useState(false);
-  const ref = useRef<HTMLAnchorElement>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+  const ditherId = `hz-rd-${useId().replace(/:/g, "")}`;
 
-  /* Written straight to the node rather than held in state: this fires on every
-     pointer move across the control, and the repo's rule is that nothing in a
-     hot path costs a render.
-
-     What goes out is a direction, not a position — a point on the button's
-     outline as a fraction of its own half-width and half-height, which is all
-     the CSS needs and means nothing here has to know how big the glow is or how
-     far past the button it is blown out. That mismatch was the old bug: this
-     handler mapped the cursor onto a box 14px larger than the button while the
-     glow had grown to 50px larger, so the light lagged the cursor. There is now
-     no second number to keep in step. */
-  const track = (event: PointerEvent<HTMLAnchorElement>) => {
+  useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
-    /* The padding box, not the border box: an absolutely positioned child is
-       laid out against its ancestor's padding box, so that is the rectangle the
-       glow host — and therefore the outline the light rides — is measured from.
-       One border-width out of true is invisible under a 9px blur, but it would
-       be a puzzle to anyone who came here later and did the arithmetic. */
-    const rect = node.getBoundingClientRect();
-    const w = node.clientWidth;
-    const h = node.clientHeight;
-    if (w === 0 || h === 0) return;
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      followGlow(node, event.clientX, event.clientY);
+    };
 
-    const x = (event.clientX - rect.left - node.clientLeft) / (w / 2) - 1;
-    const y = (event.clientY - rect.top - node.clientTop) / (h / 2) - 1;
+    const onLeave = () => restGlow(node);
 
-    /* Push the point outward along the ray from the centre until it meets the
-       outline, rather than dropping it on whichever edge is nearest. Nearest-
-       edge flips the moment the cursor crosses a diagonal, and the light would
-       jump straight across the button to the other side; a ray only ever slides
-       it around the outline, so every path between two points is a path the eye
-       can follow. Dividing by the larger of the two puts whichever axis the
-       cursor leans toward on ±1 — its edge — and leaves the other proportional,
-       which is the corner. */
-    const reach = Math.max(Math.abs(x), Math.abs(y));
-    /* Dead centre has no direction to speak of. Leaving the light where it was
-       is right: the cursor is a pixel from pointing somewhere definite again. */
-    if (reach < 0.001) return;
-
-    node.style.setProperty("--hz-glow-x", (x / reach).toFixed(3));
-    node.style.setProperty("--hz-glow-y", (y / reach).toFixed(3));
-  };
-
-  const recentre = () => {
-    const node = ref.current;
-    if (!node) return;
-    node.style.setProperty("--hz-glow-x", REST_X);
-    node.style.setProperty("--hz-glow-y", REST_Y);
-  };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("pointerleave", onLeave);
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
 
   return (
-    <AnimateIcon asChild animateOnHover animateOnTap animate={focused}>
-      <Link
-        ref={ref}
-        href={RESUME_HREF}
-        className="hz-resume"
-        onPointerMove={track}
-        onPointerLeave={recentre}
-        /* A touch gets exactly one pointermove before the browser decides the
-           drag is a pan, takes the gesture, and cancels the pointer — so the
-           light cannot be walked around with a finger, and it should not be left
-           wherever that one stray move put it. Recentring on cancel is what
-           returns it to the bottom edge, which is where the mobile card wants it
-           anyway: there is no hover on a phone, so the resting bloom is the
-           whole effect there. */
-        onPointerCancel={recentre}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
+    <span
+      ref={ref}
+      className="hz-resume-host"
+      style={{ ["--hz-glow-dither" as string]: `url("#${ditherId}")` }}
+    >
+      {/*
+        Sibling behind the chip, not a child of it. A CSS filter on a descendant
+        can composite above later siblings in Chromium, which is how the bloom
+        used to shine through the opaque plate. Sitting behind the painted link,
+        it can only wrap the outline.
+      */}
+      <span className="hz-resume-glow" aria-hidden />
+      <svg
+        className="hz-resume-dither-src"
+        aria-hidden
+        focusable={false}
+        width="0"
+        height="0"
       >
-        <span className="hz-resume-glow" aria-hidden />
-        <Download className="hz-nav-icon" size={size} />
-        <span>Resume</span>
-      </Link>
-    </AnimateIcon>
+        <filter
+          id={ditherId}
+          x="-50%"
+          y="-50%"
+          width="200%"
+          height="200%"
+          colorInterpolationFilters="sRGB"
+        >
+          <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="bloom" />
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.85"
+            numOctaves="3"
+            stitchTiles="stitch"
+            result="noise"
+          />
+          <feColorMatrix in="noise" type="saturate" values="0" result="grain" />
+          <feComponentTransfer in="grain" result="film">
+            <feFuncA type="linear" slope="0.22" />
+          </feComponentTransfer>
+          {/* Grain only where the bloom is. Unclipped, feTurbulence paints a
+              square of film the size of the filter region — the box behind
+              the button. */}
+          <feComposite in="film" in2="bloom" operator="in" result="dust" />
+          <feBlend in="bloom" in2="dust" mode="overlay" />
+        </filter>
+      </svg>
+      {/*
+        Own compositor layer, wrapping the motion link. A filter on the glow
+        sibling can still composite through the chip itself; this face sits
+        above that filter with an opaque fill, so the bloom can only wrap the
+        outline.
+      */}
+      <span className="hz-resume-face">
+        <AnimateIcon asChild animateOnHover animateOnTap animate={focused}>
+          <Link
+            href={RESUME_HREF}
+            className="hz-resume"
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
+          >
+            <Download className="hz-nav-icon" size={size} />
+            <span>Resume</span>
+          </Link>
+        </AnimateIcon>
+      </span>
+    </span>
   );
 }

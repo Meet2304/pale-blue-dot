@@ -196,25 +196,13 @@
  * gradient that fades out over its whole radius reads as a smudge at 1px, and
  * behind text that smudge is what makes the label look out of focus.
  *
- * They twinkle because the field is split across ::before and ::after with two
- * different periods (4.3s and 6.7s). The periods are far enough apart that the
- * layers drift in and out of phase for about half a minute before repeating, so
- * a two-keyframe animation reads as an unsynchronised field. */
-.hz-resume {
+ * They twinkle because a second field on ::after fades on a 6.7s loop. The
+ * chip itself is filled with --night-1000, and the bloom sits behind it as a
+ * sibling, so the light can only wrap the outline. */
+.hz-resume-host {
   position: relative;
   isolation: isolate;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  height: var(--control-h-md);
-  min-width: var(--control-h-md);
-  padding-inline: var(--space-5);
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-xl);
-  color: var(--text-muted);
-  font-size: var(--text-body-s);
-  white-space: nowrap;
   /* Declared here, not on .hz-resume-glow. A custom property set on an element
      beats the one it would inherit, so the glow having its own `--hz-glow-x`
      silently shadowed the value the pointer handler writes to this element — the
@@ -234,10 +222,42 @@
   --hz-glow-x: 0;
   --hz-glow-y: 1;
   transition:
-    color var(--dur-slow) var(--ease-out-soft),
-    border-color var(--dur-slow) var(--ease-out-soft),
     --hz-glow-x var(--dur-base) linear,
     --hz-glow-y var(--dur-base) linear;
+}
+
+.hz-resume-face {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  isolation: isolate;
+  transform: translateZ(0);
+  background-color: var(--night-1000);
+  border-radius: var(--radius-xl);
+}
+
+.hz-resume {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-h-md);
+  min-width: var(--control-h-md);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-xl);
+  /* Opaque fill, not a wash. The bloom is a filtered sibling; without a solid
+     plate Chromium will composite that filter through the chip. */
+  background-color: var(--night-1000);
+  color: var(--text-muted);
+  font-size: var(--text-body-s);
+  white-space: nowrap;
+  transition:
+    color var(--dur-slow) var(--ease-out-soft),
+    border-color var(--dur-slow) var(--ease-out-soft);
 }
 
 .hz-resume:hover,
@@ -257,20 +277,22 @@
   color: var(--text-strong);
 }
 
-/* Both star layers sit above the black ground and below the label. The button
-   itself does not clip, so the glow can spill past the edge. */
+/* The black plate sits on ::before and never fades, so the bloom behind the
+   chip cannot show through. Stars on that layer stay put; the ones on ::after
+   still twinkle. The button itself does not clip, so the glow can spill past
+   the edge. */
 .hz-resume::before,
 .hz-resume::after {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
 }
 
 .hz-resume::before {
-  z-index: -2;
   background-color: var(--night-1000);
   background-image:
     radial-gradient(
@@ -303,11 +325,9 @@
       rgba(198, 205, 255, 0.85) 0 50%,
       transparent 51%
     );
-  animation: hz-twinkle-a 4.3s var(--ease-in-out-calm) infinite;
 }
 
 .hz-resume::after {
-  z-index: -1;
   background-image:
     radial-gradient(
       circle 1.1px at 16% 84%,
@@ -342,16 +362,6 @@
   animation: hz-twinkle-b 6.7s var(--ease-in-out-calm) infinite;
 }
 
-@keyframes hz-twinkle-a {
-  0%,
-  100% {
-    opacity: 0.45;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 @keyframes hz-twinkle-b {
   0%,
   100% {
@@ -364,31 +374,37 @@
 
 /* The glow.
  *
- * There is no mask here, and that is the whole design. A `mask-image` clips to
- * its element's border box, so any bloom the shadows threw past that box was cut
- * off square — and because the mask's ellipse was far wider than the box, it was
- * still opaque when it reached the edge. Sliding --hz-glow-x toward one side
- * only pushed more of the light into the cut. Nothing below is masked, so
- * nothing below can clip.
- *
- * The taper comes from the shadows instead. A downward-offset shadow with a
- * negative spread on a rounded rect is naturally thickest under the bottom edge
- * and thins as it wraps the corners, which is the shape that was wanted in the
- * first place — and it falls off in the same direction the light is supposed to
- * come from. The pointer-following part is a separate soft ellipse that fades
- * to transparent on its own terms. */
+ * Sibling of the chip, z-index 0 — never a child, never a negative index.
+ * The chip's own fill is opaque --night-1000, so the inner half of the bloom
+ * is covered and only the outer half is seen. Do not mask this host: a
+ * mask-image clips to the border box and squares the spill. */
 .hz-resume-glow {
   position: absolute;
   inset: calc(var(--hz-glow-inset) * -1);
-  z-index: -3;
+  z-index: 0;
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--dur-slow) var(--ease-out-soft);
 }
 
-.hz-resume:hover .hz-resume-glow,
-.hz-resume:focus-visible .hz-resume-glow {
+.hz-resume-host:hover .hz-resume-glow,
+.hz-resume-host:focus-within .hz-resume-glow,
+.hz-resume-host[data-near] .hz-resume-glow {
   opacity: 1;
+}
+
+.hz-resume > .hz-nav-icon,
+.hz-resume > span:not(.hz-resume-glow) {
+  position: relative;
+  z-index: 2;
+}
+
+.hz-resume-dither-src {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* The lit edge, sitting exactly on the button's outline. Two shadows: a tight
@@ -409,24 +425,20 @@
 /* The part that follows the cursor: one small round bloom that rides the
    button's outline.
  *
- * It is a circle *centred on the edge*, not a smear parked under it. The glow
- * host sits at z-index -3 and the button's own black ground at -2, so the half
- * of the circle that falls inside the button is covered by the button and only
- * the outer half is ever seen — light coming from behind the edge rather than a
- * blob lying on top of it. Move the centre around the outline and the visible
- * crescent wraps with it, around the corners and up the sides, with nothing to
- * fade in or out at the turn.
+ * It is a circle *centred on the edge*, not a smear parked under it. The host
+ * sits at z-index 0 and the button's own black ground at 1, so the half of
+ * the circle that falls inside the button is covered by the button and only
+ * the outer half is ever seen — light coming from behind the edge rather than
+ * a blob lying on top of it.
  *
- * This is what the old rule could not do. It slid along `left` at a fixed
- * `bottom`, and a horizontal track has no way to leave the bottom edge: at the
- * ends of the control the light carried straight on into open space instead of
- * turning the corner, which read as a bar of light floating beside the button.
- * Two axes and a centred circle remove the track entirely.
+ * The dither filter (a fine fractal grain, the same texture the horizon uses)
+ * also does the blur, in one SVG pipeline so the grain is clipped to the bloom
+ * instead of filling a square the size of the filter region. --hz-glow-dither
+ * is the url(#) the component writes, unique per instance because the control
+ * is mounted twice (bar and liquid menu).
  *
- * `50% - var(--hz-glow-inset)` is the button's own half-size, since the host is
- * exactly that much larger on every side — which is the whole reason the inset
- * is a variable. A radial-gradient reaches transparent by its own last stop, so
- * there is still no edge anywhere for anything to clip against. */
+ * `50% - var(--hz-glow-inset)` is the button's own half-size, since the host
+ * is exactly that much larger on every side. */
 .hz-resume-glow::after {
   content: "";
   position: absolute;
@@ -442,7 +454,7 @@
     rgba(13, 123, 255, 0.3) 46%,
     transparent 100%
   );
-  filter: blur(9px);
+  filter: var(--hz-glow-dither, none);
 }
 
 /* --- Breakpoint ---------------------------------------------------------- */
@@ -457,7 +469,7 @@
 
 @media (max-width: 880px) {
   .hz-nav-list,
-  .hz-nav .hz-resume {
+  .hz-nav .hz-resume-host {
     display: none;
   }
 }
@@ -534,7 +546,7 @@ html.hz-nav-lock body {
   inset: 0;
   z-index: 59;
   border: 0;
-  background: rgba(0, 0, 0, 0.66);
+  background: #000;
   opacity: var(--liquid-p);
   pointer-events: none;
 }
@@ -551,6 +563,7 @@ html.hz-nav-lock body {
   display: grid;
   justify-items: center;
   align-items: end;
+  overflow-x: hidden;
   transform: translateX(-50%);
   contain: layout;
 }
@@ -561,14 +574,17 @@ html.hz-nav-lock body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Solid fallback if calc(--liquid-p) is dropped: the card must not go
-     see-through. Open lands at 0.98; closed keeps a little glass at 0.86. */
-  background: rgb(8, 9, 11);
-  background: rgba(8, 9, 11, calc(0.86 + 0.12 * var(--liquid-p)));
+  /* Opaque on purpose. Glass let the page show through the card; the menu
+     is a surface, not a window, so the night behind it stays behind it.
+     --night-800 rather than pure black so the card still reads as an object
+     against the star field. */
+  background: var(--night-800);
   box-shadow:
     0 0 0 1px rgba(63, 155, 255, calc(0.14 - 0.08 * var(--liquid-p))),
     0 0 14px rgba(13, 123, 255, calc(0.08 * (1 - var(--liquid-p))));
-  max-width: calc(100vw - 24px);
+  /* svw, not vw: 100vw includes the scrollbar and is what was pushing this
+     card a sliver past the screen, which is the horizontal bar. */
+  max-width: calc(100svw - 24px);
   max-height: calc(100dvh - 24px - env(safe-area-inset-bottom, 0px));
 }
 
@@ -591,20 +607,24 @@ html.hz-nav-lock body {
   padding: 20px 24px 0;
   list-style: none;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
 }
 
 .hz-liquid-link {
+  display: block;
+  max-width: 100%;
   opacity: clamp(0, calc((var(--liquid-p) - 0.22) / 0.5), 1);
   transform: translateY(calc((1 - var(--liquid-p)) * 8px));
   color: var(--text-muted);
   font-family: var(--font-text);
   font-size: 1.45rem;
   font-weight: var(--weight-medium);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   line-height: 1.15;
+  text-align: center;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .hz-liquid-link:hover,
@@ -616,17 +636,11 @@ html.hz-nav-lock body {
   color: var(--blue-300);
 }
 
-.hz-liquid .hz-resume {
+.hz-liquid .hz-resume-host {
   align-self: center;
   flex: none;
   width: calc(100% - 40px);
-  height: 52px;
   margin: 10px 0 16px;
-  padding-inline: var(--space-6);
-  gap: var(--space-3);
-  font-size: var(--text-body-l);
-  font-weight: var(--weight-medium);
-  letter-spacing: 0.04em;
   opacity: clamp(0, calc((var(--liquid-p) - 0.28) / 0.45), 1);
   transform: translateY(calc((1 - var(--liquid-p)) * 8px));
   /* The chip is bigger here, so the host sits closer in and the bloom runs
@@ -635,13 +649,27 @@ html.hz-nav-lock body {
   --hz-glow-size: 84px;
 }
 
+.hz-liquid .hz-resume-face {
+  width: 100%;
+}
+
+.hz-liquid .hz-resume {
+  width: 100%;
+  height: 52px;
+  padding-inline: var(--space-6);
+  gap: var(--space-3);
+  font-size: var(--text-body-l);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+}
+
 /* No hover on a phone, so the bloom is the resting state — that is what makes
    it the one control in the card that reads as an action. It rests under the
    bottom edge, the same place the desktop control returns to, and stays there:
    a touch gets one pointermove before the browser claims the gesture for
    panning, so the tracking never runs here. Nothing is lost — the resting bloom
    is what this control is on a phone. */
-.hz-liquid .hz-resume .hz-resume-glow {
+.hz-liquid .hz-resume-glow {
   opacity: var(--liquid-p);
 }
 
@@ -747,7 +775,6 @@ html.hz-nav-lock body {
     transform: none;
   }
 
-  .hz-resume::before,
   .hz-resume::after {
     animation: none;
     opacity: 0.8;
