@@ -20,6 +20,10 @@
   border: 0;
 }
 
+.hz-story-back {
+  display: none;
+}
+
 .hz-note-sky {
   display: flex;
   justify-content: center;
@@ -225,4 +229,28 @@
   line-height: 1.15;
   letter-spacing: 0.02em;
   color: var(--ink-200);
+}
+
+@media (max-width: 640px) {
+  .hz-story-back {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: calc(var(--nav-h) + var(--space-4)) var(--gutter) 0;
+    color: var(--text-muted);
+    font-size: var(--text-body-s);
+    border-bottom-color: transparent;
+  }
+
+  .hz-story-back:hover,
+  .hz-story-back:focus-visible {
+    color: var(--text-strong);
+    border-bottom-color: transparent;
+  }
+
+  .hz-note-sky {
+    padding-top: var(--space-5);
+  }
 }

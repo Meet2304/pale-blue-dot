@@ -9,6 +9,7 @@
 @import "../styles/horizon/base.css";
 @import "../styles/horizon/nav.css";
 @import "../styles/horizon/note.css";
+@import "../styles/horizon/launch.css";
 
 /* Dark-only. In Horizon the night is the canvas, not a preference. */
 :root {
