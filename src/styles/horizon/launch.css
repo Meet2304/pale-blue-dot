@@ -79,39 +79,50 @@
   text-wrap: balance;
 }
 
-/* A quiet progress sweep gives the construction state motion without adding
-   another line of copy. It reads as a horizon echo, not a loading bar. */
+/* A quiet light crosses a permanent horizon line without adding another line
+   of copy. The base never disappears; only the highlight travels, and it
+   resets while fully outside the line so the loop has no visible seam. */
 .hz-launch-title::after {
   content: "";
   display: block;
   width: clamp(5rem, 14vw, 8rem);
   height: 1px;
   margin: var(--space-5) auto 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(63, 155, 255, 0.2) 30%,
-    var(--blue-200) 50%,
-    rgba(63, 155, 255, 0.2) 70%,
-    transparent 100%
-  );
-  background-size: 220% 100%;
-  animation: hz-construction-sweep 4.8s var(--ease-in-out-calm) 1.1s infinite;
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(63, 155, 255, 0.4) 18%,
+      rgba(63, 155, 255, 0.4) 82%,
+      transparent
+    ),
+    linear-gradient(
+      90deg,
+      transparent,
+      var(--blue-100) 48%,
+      var(--blue-100) 52%,
+      transparent
+    );
+  background-position:
+    center,
+    -70% 0;
+  background-repeat: no-repeat;
+  background-size:
+    100% 100%,
+    38% 100%;
+  animation: hz-horizon-sweep 4.8s var(--ease-in-out-calm) 1.1s infinite;
 }
 
-@keyframes hz-construction-sweep {
-  0%,
-  12% {
-    opacity: 0.28;
-    background-position: 110% 0;
+@keyframes hz-horizon-sweep {
+  from {
+    background-position:
+      center,
+      -70% 0;
   }
-  48% {
-    opacity: 1;
-  }
-  82%,
-  100% {
-    opacity: 0.28;
-    background-position: -110% 0;
+  to {
+    background-position:
+      center,
+      170% 0;
   }
 }
 
