@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
+import { StoryLink } from "@/components/site/resume-link";
 import { SocialLogo } from "@/components/site/social-logo";
 import { routes } from "@/lib/routes";
 import { SOCIAL_LINKS } from "@/lib/socials";
@@ -21,10 +21,7 @@ export default function Home() {
         </h1>
 
         <div className="hz-launch-actions hz-rise">
-          <Link href={routes.story} className="hz-launch-story">
-            Read the story
-            <span aria-hidden>↗</span>
-          </Link>
+          <StoryLink href={routes.story} />
         </div>
 
         <nav className="hz-launch-socials" aria-label="Social profiles">

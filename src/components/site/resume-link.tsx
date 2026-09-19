@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
@@ -70,7 +70,14 @@ function followGlow(node: HTMLElement, clientX: number, clientY: number) {
  * cannot see that. Touches are ignored — a finger cannot walk the light around
  * without stealing the scroll, so the resting bloom is the whole effect there.
  */
-export function ResumeLink({ size }: { size: number }) {
+type HorizonActionLinkProps = {
+  href: string;
+  icon: ReactNode;
+  label: string;
+  download?: string;
+};
+
+function HorizonActionLink({ href, icon, label, download }: HorizonActionLinkProps) {
   const [focused, setFocused] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   const ditherId = `hz-rd-${useId().replace(/:/g, "")}`;
@@ -150,17 +157,42 @@ export function ResumeLink({ size }: { size: number }) {
       <span className="hz-resume-face">
         <AnimateIcon asChild animateOnHover animateOnTap animate={focused}>
           <Link
-            href={RESUME_HREF}
+            href={href}
             className="hz-resume"
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
+            {...(download ? { download } : {})}
           >
-            <Download className="hz-nav-icon" size={size} />
-            <span>Resume</span>
+            {icon}
+            <span>{label}</span>
           </Link>
         </AnimateIcon>
       </span>
     </span>
+  );
+}
+
+export function ResumeLink({ size }: { size: number }) {
+  return (
+    <HorizonActionLink
+      href={RESUME_HREF}
+      icon={<Download className="hz-nav-icon" size={size} />}
+      label="Resume"
+      {...(RESUME_READY ? { download: "Meet-Bhatt-Resume.pdf" } : {})}
+    />
+  );
+}
+
+export function StoryLink({ href }: { href: string }) {
+  return (
+    <HorizonActionLink
+      href={href}
+      icon={
+        <span className="hz-nav-icon hz-story-arrow" aria-hidden>
+          ↗
+        </span>
+      }
+      label="Read the story"
+    />
   );
 }
