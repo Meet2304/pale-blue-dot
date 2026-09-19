@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { routes } from "@/lib/routes";
+import { SOCIAL_LINKS } from "@/lib/socials";
 
 export const metadata: Metadata = {
   title: { absolute: "Pale Blue Dot — Coming Soon" },
@@ -24,6 +25,20 @@ export default function Home() {
             <span aria-hidden>↗</span>
           </Link>
         </div>
+
+        <nav className="hz-launch-socials" aria-label="Social profiles">
+          {SOCIAL_LINKS.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className="hz-launch-social hz-rise"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
       </section>
     </main>
   );
