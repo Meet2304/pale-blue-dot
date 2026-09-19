@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { StarField } from "@/components/horizon/star-field";
 import { SiteNav } from "@/components/site/site-nav";
-import { useHeroGate } from "@/components/site/use-hero-gate";
 import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 
 /**
@@ -16,6 +16,7 @@ import { ProgressiveBlur } from "@/components/ui/progressive-blur";
  * "when the footer arrives, get out of the way".
  */
 function useFooterInView(): boolean {
+  const pathname = usePathname();
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ function useFooterInView(): boolean {
 
     observer.observe(footer);
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
   return inView;
 }
@@ -67,7 +68,6 @@ function useNarrow(): boolean {
 }
 
 export function SiteChrome() {
-  const past = useHeroGate();
   const footerInView = useFooterInView();
   const narrow = useNarrow();
 
@@ -78,12 +78,8 @@ export function SiteChrome() {
       <a href="#content" className="hz-skip">
         Skip to content
       </a>
-      {/* While the hero is on screen this canvas is completely covered by the
-          runway's opaque black — and the scene above it is drawing a full-frame
-          gradient, a reflection stack and a noise volume. Not competing for that
-          frame is the most useful thing the star field can do. */}
-      <StarField paused={!past} />
-      <SiteNav visible={past} />
+      <StarField />
+      <SiteNav visible />
       {/* The veils fade; the blurs do not, and that split is the fix.
           `backdrop-filter` samples what is behind an element up to the nearest
           backdrop root, and any ancestor at opacity below 1 creates one — so a
@@ -95,24 +91,22 @@ export function SiteChrome() {
           frame behind them is black, so the un-faded arrival is invisible. */}
       <span
         className="hz-edge-veil hz-edge-veil--top"
-        data-visible={past ? "true" : "false"}
+        data-visible="true"
         aria-hidden
       />
-      {past && (
-        <ProgressiveBlur
-          className="hz-edge-blur hz-edge-blur--top"
-          direction="top"
-          layers={narrow ? 5 : 8}
-          intensity={narrow ? 3 : 2.4}
-        />
-      )}
+      <ProgressiveBlur
+        className="hz-edge-blur hz-edge-blur--top"
+        direction="top"
+        layers={narrow ? 5 : 8}
+        intensity={narrow ? 3 : 2.4}
+      />
 
       <span
         className="hz-edge-veil hz-edge-veil--bottom"
-        data-visible={past && !footerInView ? "true" : "false"}
+        data-visible={!footerInView ? "true" : "false"}
         aria-hidden
       />
-      {past && !footerInView && (
+      {!footerInView && (
         <ProgressiveBlur
           className="hz-edge-blur hz-edge-blur--bottom"
           direction="bottom"
