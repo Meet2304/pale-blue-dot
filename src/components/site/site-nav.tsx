@@ -23,7 +23,6 @@ export function SiteNav({ visible }: { visible: boolean }) {
     >
       <div className="hz-nav-inner">
         <Link href={routes.home} className="hz-nav-mark">
-          <span className="hz-nav-dot" aria-hidden />
           Pale Blue Dot
         </Link>
 

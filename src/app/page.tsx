@@ -6,7 +6,7 @@ import { routes } from "@/lib/routes";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
 export const metadata: Metadata = {
-  title: { absolute: "Pale Blue Dot — Coming Soon" },
+  title: { absolute: "Pale Blue Dot — Under Construction" },
   description:
     "Pale Blue Dot is an evolving record of what Meet Bhatt builds, learns, and chooses to pursue.",
 };
@@ -17,7 +17,7 @@ export default function Home() {
       <div className="hz-launch-glow" aria-hidden />
       <section className="hz-launch-content" aria-labelledby="launch-title">
         <h1 id="launch-title" className="hz-launch-title hz-rise">
-          Coming Soon
+          Under Construction
         </h1>
 
         <div className="hz-launch-actions hz-rise">
