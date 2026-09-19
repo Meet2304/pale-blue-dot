@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SocialLogo } from "@/components/site/social-logo";
 import { routes } from "@/lib/routes";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
@@ -32,10 +33,12 @@ export default function Home() {
               key={item.label}
               href={item.href}
               className="hz-launch-social hz-rise"
+              aria-label={item.label}
+              title={item.label}
               target="_blank"
               rel="noreferrer"
             >
-              {item.label}
+              <SocialLogo name={item.id} size={19} />
             </a>
           ))}
         </nav>
