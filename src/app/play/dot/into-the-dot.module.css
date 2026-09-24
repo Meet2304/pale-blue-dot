@@ -1,0 +1,408 @@
+/* Into the Dot — the photograph's own dusty blue, the black of the night side,
+   and sodium-lamp amber for everything people have lit. */
+.root {
+  --dt-dust: #56647d;
+  --dt-night: #000000;
+  --dt-amber: #ffc978;
+  --dt-warm: #ffe2b0;
+  --dt-paper: #f4efe6;
+  --dt-muted: #b5b0a6;
+  --dt-screen: #cfe3ff;
+
+  position: relative;
+  background: var(--dt-night);
+  color: var(--dt-paper);
+  font-family: var(--dt-face), Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 0. The photograph, placed so its dot is the centre of the screen. */
+.photo,
+.screenPhoto {
+  --pw: max(130vw, 173.4svh);
+  --ph: calc(var(--pw) * 0.75);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0d1624;
+}
+
+.photo img,
+.screenPhoto img {
+  position: absolute;
+  width: var(--pw);
+  height: var(--ph);
+  max-width: none;
+}
+
+/* 1. The planet, with the night side turned to us. */
+.earthWrap {
+  position: absolute;
+  inset: 0;
+}
+
+.earth {
+  position: absolute;
+  width: 72vmin;
+  height: 72vmin;
+  left: calc(50% - 22vmin - 36vmin);
+  top: calc(50% - 36vmin);
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 30%, rgba(0, 0, 0, 0.82) 52%, #000 64%),
+    radial-gradient(circle at 28% 40%, rgba(255, 255, 255, 0.55) 0 4%, transparent 10%),
+    radial-gradient(
+      ellipse at 22% 62%,
+      rgba(255, 255, 255, 0.35) 0 6%,
+      transparent 14%
+    ),
+    radial-gradient(circle at 30% 40%, #8ec0f0, #2f6db3 45%, #0d2a55 80%);
+  box-shadow: -1.5vmin 0 5vmin rgba(120, 180, 255, 0.35);
+}
+
+/* 2. The night side, close enough to see it's lit by people. */
+.night {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, #0a0a12, #000 70%);
+}
+
+.route {
+  fill: none;
+  stroke: var(--dt-warm);
+  stroke-width: 0.12;
+  stroke-dasharray: 0.6 0.5;
+  opacity: 0.8;
+}
+
+.cityLabel {
+  position: absolute;
+  width: 15rem;
+  margin: 0.8rem 0 0 0.8rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--dt-muted);
+}
+
+/* Labels on the right half hang left of their light, so they stay on screen. */
+.cityLabel[data-edge="right"] {
+  translate: -100% 0;
+  margin: 0.8rem 0 0 -0.8rem;
+  text-align: right;
+}
+
+.cityLabel b {
+  display: block;
+  font-weight: 600;
+  color: var(--dt-warm);
+}
+
+/* 3. One city, from a few kilometres up. */
+.city {
+  position: absolute;
+  inset: 0;
+  background: #030303;
+}
+
+.street line {
+  stroke: var(--dt-amber);
+  stroke-width: 0.06;
+  opacity: 0.35;
+}
+
+.avenue line {
+  stroke: var(--dt-amber);
+  stroke-width: 0.2;
+  opacity: 0.7;
+}
+
+.district {
+  fill: rgba(255, 201, 120, 0.1);
+  stroke: var(--dt-warm);
+  stroke-width: 0.15;
+}
+
+.districtLabel {
+  position: absolute;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--dt-warm);
+}
+
+/* 4. One building, one window still on. Cells are exactly a screen shrunk by
+   one step, so the lit one becomes the room. */
+.facade {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #0b0b0d;
+}
+
+.windows {
+  display: grid;
+  gap: 2.2vmin;
+}
+
+.windows span {
+  width: calc(100vw / 12);
+  height: calc(100svh / 12);
+  background: #121318;
+  box-shadow: inset 0 0 0 1px #1d1e24;
+}
+
+.windows span[data-state="dim"] {
+  background: #3a2c17;
+}
+
+.windows span[data-state="on"] {
+  background: #2a2119;
+  box-shadow:
+    0 0 3vmin rgba(255, 201, 120, 0.5),
+    inset 0 0 0 1px var(--dt-amber);
+}
+
+/* 5. The desk. */
+.desk {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 255, 255, 0.015) 0 3px,
+      transparent 3px 11px
+    ),
+    radial-gradient(circle at 50% 50%, #3a2a1c, #1a120b 75%);
+}
+
+.laptop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(100vw / 12 + 3vmin);
+  height: calc(100svh / 12 + 3vmin);
+  translate: -50% -50%;
+  border-radius: 0.8vmin;
+  background: #1b1c1f;
+  box-shadow:
+    0 0 0 1px #2c2d31,
+    0 0 6vmin rgba(207, 227, 255, 0.25);
+}
+
+.miniScreen {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100vw;
+  height: 100svh;
+  translate: -50% -50%;
+  scale: calc(1 / 12);
+}
+
+.sticky {
+  position: absolute;
+  width: 11rem;
+  padding: 0.9rem 1rem 1.1rem;
+  display: grid;
+  gap: 0.15rem;
+  background: #efe3b8;
+  color: #3a321f;
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.45);
+}
+
+.sticky b {
+  font-style: normal;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.mug {
+  position: absolute;
+  right: 24%;
+  top: 40%;
+  width: 7vmin;
+  height: 7vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a0f08 0 55%, #d9d4ca 58% 100%);
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* 6. The screen, which shows the photograph again. */
+.screen {
+  position: absolute;
+  inset: 0;
+}
+
+.screenPhoto {
+  inset: 0;
+}
+
+/* Scanlines, so the last layer reads as a screen and not as the start again. */
+.screenPhoto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+}
+
+/* Readout */
+.scale {
+  position: absolute;
+  z-index: 2;
+  top: 1.25rem;
+  right: 1.5rem;
+  display: grid;
+  gap: 0.15rem;
+  width: 12rem;
+  text-align: right;
+  text-shadow: 0 0 10px #000;
+}
+
+.scaleLabel {
+  font-size: 0.8rem;
+  color: var(--dt-muted);
+}
+
+.scaleValue {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.scaleBar {
+  display: block;
+  height: 1px;
+  margin-top: 0.35rem;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.scaleBar span {
+  display: block;
+  height: 100%;
+  background: var(--dt-paper);
+  transform-origin: 100% 50%;
+}
+
+/* Notes */
+.note {
+  position: absolute;
+  z-index: 2;
+  left: 6vw;
+  bottom: 8vh;
+  max-width: 32rem;
+  padding: 1.5rem 1.75rem;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(10px);
+  border-radius: 2px;
+  visibility: hidden;
+}
+
+.note p + p,
+.note h2 + p,
+.note h1 + p {
+  margin-top: 0.6rem;
+}
+
+.note ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.note strong {
+  color: var(--dt-warm);
+  font-weight: 500;
+}
+
+.kicker {
+  color: var(--dt-muted);
+  font-size: 0.95rem;
+}
+
+.big {
+  font-family: var(--dt-face), serif;
+  font-weight: 400;
+  font-size: clamp(2.25rem, 4.5vw, 3.75rem);
+  line-height: 1.02;
+  margin: 0.25rem 0 0.75rem;
+  font-variation-settings: "SOFT" 100;
+}
+
+.mid {
+  font-family: var(--dt-face), serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  margin-bottom: 0.6rem;
+}
+
+.links {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+}
+
+.links a,
+.links button {
+  color: var(--dt-paper);
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+
+.links button {
+  color: var(--dt-screen);
+}
+
+@media (max-width: 760px) {
+  .note {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    padding: 1.1rem 1.2rem;
+    font-size: 1rem;
+  }
+  .cityLabel {
+    width: 9rem;
+    font-size: 0.75rem;
+  }
+  .sticky {
+    width: 8rem;
+    font-size: 0.75rem;
+  }
+}

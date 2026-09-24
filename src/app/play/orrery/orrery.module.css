@@ -1,0 +1,367 @@
+/* Orrery — an engraved astronomical plate: indigo ground, brass work, ink the
+   colour of old paper, and a single pale blue body close to the centre. */
+.root {
+  --or-ground: #0a0e26;
+  --or-deep: #060819;
+  --or-brass: #c9a45c;
+  --or-ink: #ebe3cf;
+  --or-dim: #8f8b9e;
+  --or-line: rgba(201, 164, 92, 0.28);
+  --or-blue: #9cc8ff;
+
+  min-height: 100svh;
+  background: radial-gradient(
+    ellipse at 70% 50%,
+    #131a44 0%,
+    var(--or-ground) 45%,
+    var(--or-deep) 100%
+  );
+  color: var(--or-ink);
+  font-family: var(--or-face), Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-variant-numeric: oldstyle-nums;
+  overflow-x: clip;
+}
+
+.plate {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(18rem, 30rem) 1fr;
+  align-items: center;
+  gap: 2rem;
+  padding: 4rem 4vw 2rem 7vw;
+}
+
+.name {
+  font-style: italic;
+  color: var(--or-brass);
+  font-size: 1.1rem;
+}
+
+.line,
+.card h2 {
+  font-family: var(--or-face), Georgia, serif;
+}
+
+.line {
+  margin-top: 0.5rem;
+  font-weight: 400;
+  font-size: clamp(2.75rem, 5vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.reading {
+  margin-top: 2.5rem;
+  min-height: 19rem;
+  border-top: 1px solid var(--or-line);
+  padding-top: 1.5rem;
+}
+
+.card {
+  animation: or-ink 0.7s var(--ease-out-soft) both;
+}
+
+@keyframes or-ink {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+.card h2 {
+  font-weight: 400;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  margin-bottom: 0.9rem;
+}
+
+.card p + p {
+  margin-top: 0.75rem;
+}
+
+.card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.card li {
+  padding: 0.35rem 0;
+}
+
+.card a {
+  color: var(--or-brass);
+  text-underline-offset: 0.25em;
+}
+
+.caption {
+  font-style: italic;
+  color: var(--or-ink);
+  max-width: 28ch;
+}
+
+.hint {
+  color: var(--or-dim);
+  font-size: 1rem;
+}
+
+.move {
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+.pairs {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.6rem;
+  font-size: 1.02rem;
+}
+
+.pairs > div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 1rem;
+}
+
+.pairs dt {
+  font-style: italic;
+  color: var(--or-brass);
+}
+
+.pairs dd {
+  margin: 0;
+}
+
+.close {
+  margin-top: 1.5rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-style: italic;
+  color: var(--or-dim);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.close:hover {
+  color: var(--or-ink);
+}
+
+/* The model */
+.model {
+  position: relative;
+  justify-self: center;
+  width: min(92svh, 100%);
+  aspect-ratio: 1;
+}
+
+.orbits {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbits circle,
+.orbits ellipse {
+  fill: none;
+  stroke: var(--or-line);
+  stroke-width: 0.0025;
+  transition: stroke 0.4s;
+}
+
+.orbits .cometOrbit {
+  stroke-dasharray: 0.006 0.012;
+}
+
+.orbits .orbitOn {
+  stroke: var(--or-brass);
+}
+
+.engraved {
+  font-family: var(--or-face), Georgia, serif;
+  font-size: 0.021px;
+  font-style: italic;
+  letter-spacing: 0.0016px;
+  fill: var(--or-brass);
+}
+
+.sun,
+.body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sun {
+  width: 20%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    #f3dfae 0 27%,
+    var(--or-brass) 43%,
+    #7a5d2c 53%,
+    transparent 55%
+  );
+  /* The button is wider than the disc so the engraved ring is part of its
+     target; the disc itself is drawn by the gradient. */
+}
+
+.sun .bodyLabel {
+  position: static;
+  color: #2a1f0c;
+  font-size: 1rem;
+}
+
+.body {
+  width: var(--size);
+  height: var(--size);
+  translate: -50% -50%;
+}
+
+.orb {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 32%,
+    #fff8 0%,
+    var(--tone) 30%,
+    color-mix(in srgb, var(--tone), #000 65%) 100%
+  );
+  transition: scale 0.3s var(--ease-out-soft);
+}
+
+.orb[data-ring]::after {
+  content: "";
+  position: absolute;
+  left: -55%;
+  right: -55%;
+  top: 38%;
+  bottom: 38%;
+  border: 1px solid var(--or-brass);
+  border-radius: 50%;
+  transform: rotate(-18deg);
+}
+
+.body:hover .orb,
+.body:focus-visible .orb,
+.body[aria-pressed="true"] .orb {
+  scale: 1.35;
+}
+
+.body:focus-visible,
+.sun:focus-visible,
+.close:focus-visible {
+  outline: 1px solid var(--or-brass);
+  outline-offset: 6px;
+  border-radius: 50%;
+}
+
+.moon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--or-ink);
+  opacity: 0.7;
+}
+
+.bodyLabel {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  translate: 0 -50%;
+  white-space: nowrap;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--or-dim);
+  transition: color 0.3s;
+  pointer-events: none;
+}
+
+.body:hover .bodyLabel,
+.body:focus-visible .bodyLabel,
+.body[aria-pressed="true"] .bodyLabel {
+  color: var(--or-ink);
+}
+
+.comet {
+  --size: 7px;
+  --tone: #e8f1ff;
+}
+
+/* The tail always points away from the centre, as a real one would. */
+.comet::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70px;
+  height: 2px;
+  margin-top: -1px;
+  transform-origin: 0 50%;
+  transform: rotate(var(--tail, 0rad));
+  background: linear-gradient(90deg, rgba(232, 241, 255, 0.7), transparent);
+  pointer-events: none;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.5rem 7vw 2.5rem;
+  font-style: italic;
+  color: var(--or-dim);
+  font-size: 1rem;
+}
+
+.foot a {
+  color: var(--or-ink);
+  text-underline-offset: 0.25em;
+  text-decoration-color: var(--or-line);
+}
+
+.foot nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .plate {
+    grid-template-columns: 1fr;
+    padding: 5rem 1.25rem 2rem;
+  }
+  .model {
+    order: -1;
+    width: 100%;
+  }
+  .reading {
+    min-height: 0;
+  }
+  .bodyLabel {
+    font-size: 0.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}

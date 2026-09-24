@@ -1,0 +1,527 @@
+/* Voyager — palette taken from the photograph itself: the black, the scattered
+   sunlight that streaks it, and the one pale blue point. */
+.root {
+  --vy-void: #000000;
+  --vy-light: #efe9e1;
+  --vy-dim: #8a857f;
+  --vy-faint: #4a4744;
+  --vy-beam: #d9b8a0;
+  --vy-dot: #9ccaff;
+
+  position: relative;
+  background: var(--vy-void);
+  color: var(--vy-light);
+  font-family: var(--vy-text), Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.65;
+  overflow-x: clip;
+}
+
+.root > section {
+  position: relative;
+  z-index: 1;
+}
+
+/* Telemetry: the one piece of chrome, and it is information, not decoration. */
+.telemetry {
+  position: fixed;
+  z-index: 10;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: grid;
+  gap: 0.9rem;
+  width: 15rem;
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 300;
+  text-shadow:
+    0 0 14px #000,
+    0 0 4px #000;
+}
+
+.telemetry > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.tLabel {
+  font-size: 0.75rem;
+  color: var(--vy-dim);
+  letter-spacing: 0.02em;
+}
+
+.tValue {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--vy-light);
+}
+
+.tLeg {
+  font-size: 0.95rem;
+  color: var(--vy-beam);
+}
+
+@media (max-width: 760px) {
+  .telemetry {
+    top: auto;
+    bottom: 3.75rem;
+    right: 1rem;
+    left: 1rem;
+    width: auto;
+    grid-template-columns: 1.4fr 1fr;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.72);
+    border-top: 1px solid var(--vy-faint);
+  }
+  .telemetry > div:nth-child(2) {
+    display: none;
+  }
+}
+
+/* Launch */
+.hero {
+  min-height: 100svh;
+  padding: 22vh 7vw 14vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.trajectory {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.trajectory path {
+  fill: none;
+  stroke: var(--vy-beam);
+  stroke-width: 1.2;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0.6;
+}
+
+.homeDot {
+  position: absolute;
+  left: 9%;
+  top: 90%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--vy-dot);
+  box-shadow: 0 0 18px 4px rgba(156, 202, 255, 0.45);
+}
+
+.callsign {
+  font-family: var(--vy-display), sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  color: var(--vy-dim);
+}
+
+.heroLine {
+  margin-top: 1rem;
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 300;
+  font-size: clamp(3rem, 9vw, 8.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 11ch;
+  animation: vy-rise 1.6s var(--ease-out-soft) both;
+}
+
+.heroIntro {
+  margin-top: 2rem;
+  max-width: 36ch;
+  color: var(--vy-dim);
+  font-size: 1.2rem;
+  animation: vy-rise 1.6s 0.25s var(--ease-out-soft) both;
+}
+
+.cue {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  translate: -50% 0;
+  font-family: var(--vy-display), sans-serif;
+  font-size: 0.85rem;
+  color: var(--vy-dim);
+}
+
+@keyframes vy-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.why {
+  min-height: 90svh;
+  display: grid;
+  align-content: center;
+  padding: 0 7vw;
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 300;
+  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  line-height: 1.2;
+}
+
+.why p {
+  max-width: 22ch;
+}
+
+.whySub {
+  margin-top: 2rem;
+  font-family: var(--vy-text), serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--vy-dim);
+}
+
+/* Flybys: a planet fills one side, the log sits on the other. */
+.flyby {
+  min-height: 130svh;
+  display: flex;
+  align-items: center;
+  padding: 0 7vw;
+}
+
+.flyby[data-side="left"] {
+  justify-content: flex-end;
+}
+
+.flyText {
+  position: relative;
+  z-index: 1;
+  max-width: 30rem;
+}
+
+.flyKicker {
+  font-family: var(--vy-display), sans-serif;
+  font-size: 0.9rem;
+  color: var(--vy-beam);
+}
+
+.flyName {
+  margin-top: 0.25rem;
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 300;
+  font-size: clamp(2.5rem, 6vw, 4.75rem);
+  line-height: 1;
+}
+
+.flyMove {
+  margin-top: 1rem;
+  font-size: 1.35rem;
+  font-style: italic;
+}
+
+.log {
+  margin-top: 2.25rem;
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 0.9rem 1.25rem;
+  font-size: 1rem;
+}
+
+.log dt {
+  font-family: var(--vy-display), sans-serif;
+  font-size: 0.85rem;
+  color: var(--vy-dim);
+  padding-top: 0.2rem;
+}
+
+.log dd {
+  margin: 0;
+}
+
+.planet {
+  position: absolute;
+  top: 50%;
+  width: min(95vh, 80vw);
+  aspect-ratio: 1;
+  translate: 0 -50%;
+  border-radius: 50%;
+}
+
+.flyby[data-side="right"] .planet {
+  right: -28vw;
+}
+
+.flyby[data-side="left"] .planet {
+  left: -28vw;
+}
+
+/* Lit from the Sun's side, so each body has a terminator and a night side. */
+.planet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 35%,
+    transparent 20%,
+    rgba(0, 0, 0, 0.55) 52%,
+    #000 72%
+  );
+}
+
+.jupiter {
+  background: repeating-linear-gradient(
+    172deg,
+    #6b5646 0 4%,
+    #a88a6c 4% 7%,
+    #d8c3a5 7% 11%,
+    #8c6d55 11% 13%,
+    #c7ab8a 13% 18%
+  );
+}
+
+.saturn {
+  background: linear-gradient(170deg, #c9b58f, #9d8763 50%, #6e5d45);
+}
+
+.saturn::before {
+  content: "";
+  position: absolute;
+  left: -22%;
+  right: -22%;
+  top: 44%;
+  height: 12%;
+  border-radius: 50%;
+  border: 2px solid rgba(217, 184, 160, 0.45);
+  box-shadow: 0 0 0 6px rgba(217, 184, 160, 0.12);
+  transform: rotate(-14deg);
+  z-index: 1;
+}
+
+.uranus {
+  background: radial-gradient(circle at 40% 40%, #bfe3e6, #7eb6bd 60%, #4b7f86);
+}
+
+@media (max-width: 760px) {
+  .flyby .planet {
+    opacity: 0.45;
+  }
+  .log {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  .log dd {
+    margin-bottom: 0.9rem;
+  }
+}
+
+/* Instruments */
+.instruments,
+.heading {
+  padding: 22vh 7vw;
+}
+
+.sectionTitle {
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 300;
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  line-height: 1;
+}
+
+.sectionLede {
+  margin-top: 1rem;
+  max-width: 40ch;
+  color: var(--vy-dim);
+}
+
+/* The boom: one hairline that every instrument hangs from. */
+.boom {
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  border-top: 1px solid var(--vy-beam);
+  max-width: 64rem;
+}
+
+.instrument {
+  position: relative;
+  padding-top: 1.5rem;
+}
+
+.instrument::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1rem;
+  background: var(--vy-beam);
+}
+
+.instrument h3 {
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+
+.instrument ul {
+  margin-top: 0.6rem;
+  list-style: none;
+  padding: 0;
+  color: var(--vy-dim);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+@media (max-width: 760px) {
+  .boom {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.nowList {
+  margin-top: 2.5rem;
+  list-style: none;
+  padding: 0;
+  max-width: 36rem;
+  font-size: 1.3rem;
+}
+
+.nowList li {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--vy-faint);
+}
+
+/* The turn. */
+.turn {
+  height: 160svh;
+}
+
+.turnFrame {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* The scattered sunlight in the real frame: broad, soft, slightly tilted. */
+.beams {
+  position: absolute;
+  inset: -10%;
+  background: linear-gradient(
+    96deg,
+    transparent 18%,
+    rgba(217, 184, 160, 0.05) 24%,
+    transparent 30%,
+    rgba(217, 184, 160, 0.12) 46%,
+    rgba(217, 184, 160, 0.2) 52%,
+    rgba(217, 184, 160, 0.1) 57%,
+    transparent 64%,
+    rgba(217, 184, 160, 0.06) 78%,
+    transparent 84%
+  );
+  opacity: 0;
+  transition: opacity 3s var(--ease-in-out-calm);
+}
+
+.farDot {
+  position: absolute;
+  left: 53%;
+  top: 58%;
+  width: 3px;
+  height: 3px;
+  background: var(--vy-dot);
+  opacity: 0;
+  transition: opacity 2s 1.5s;
+}
+
+/* The circle NASA drew round it, so people could find it at all. */
+.ring {
+  position: absolute;
+  left: 53%;
+  top: 58%;
+  width: 34px;
+  height: 34px;
+  margin: -15.5px 0 0 -15.5px;
+  border: 1px solid rgba(239, 233, 225, 0.6);
+  border-radius: 50%;
+  opacity: 0;
+  scale: 2.4;
+  transition:
+    opacity 1.2s 3s,
+    scale 1.6s 3s var(--ease-out-soft);
+}
+
+.turnFrame[data-turned="true"] .beams,
+.turnFrame[data-turned="true"] .farDot,
+.turnFrame[data-turned="true"] .ring {
+  opacity: 1;
+}
+
+.turnFrame[data-turned="true"] .ring {
+  scale: 1;
+}
+
+.turnText {
+  position: absolute;
+  left: 7vw;
+  bottom: 12vh;
+  max-width: 28rem;
+  font-size: 1.2rem;
+  opacity: 0;
+  transition: opacity 1.6s 4s;
+}
+
+.turnFrame[data-turned="true"] .turnText {
+  opacity: 1;
+}
+
+.turnLead {
+  font-family: var(--vy-display), sans-serif;
+  font-weight: 300;
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  line-height: 1.05;
+  margin-bottom: 1rem;
+}
+
+.links {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-family: var(--vy-display), sans-serif;
+  font-size: 0.95rem;
+}
+
+.links a {
+  color: var(--vy-light);
+  text-decoration: underline;
+  text-decoration-color: var(--vy-faint);
+  text-underline-offset: 0.3em;
+}
+
+.links a:hover,
+.links a:focus-visible {
+  text-decoration-color: var(--vy-beam);
+}
+
+@media (max-width: 760px) {
+  .turnText {
+    bottom: 11rem;
+    right: 7vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroLine,
+  .heroIntro {
+    animation: none;
+  }
+  .beams,
+  .farDot,
+  .ring,
+  .turnText {
+    transition: none;
+  }
+}

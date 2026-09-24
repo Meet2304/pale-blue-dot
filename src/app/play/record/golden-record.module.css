@@ -1,0 +1,378 @@
+/* Golden Record — gold-plated copper and the lines cut into it. The only other
+   colour is the blue of the dot, at the centre of the map on the sleeve. */
+.root {
+  --gr-black: #000000;
+  --gr-gold: #c9a24e;
+  --gr-gold-hi: #f0d68f;
+  --gr-gold-lo: #6e5421;
+  --gr-ivory: #f3ead3;
+  --gr-dim: #9c9076;
+  --gr-faint: #4a4234;
+  --gr-blue: #9cc8ff;
+
+  min-height: 100svh;
+  background: radial-gradient(ellipse at 30% 55%, #17120a 0%, var(--gr-black) 65%);
+  color: var(--gr-ivory);
+  font-family: var(--gr-text), sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  padding: 5.5rem 5vw 3rem;
+  overflow-x: clip;
+}
+
+.head {
+  max-width: 60rem;
+}
+
+.title {
+  font-family: var(--gr-display), serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(2.25rem, 4.6vw, 4.25rem);
+  line-height: 1.02;
+  color: var(--gr-gold-hi);
+}
+
+.by {
+  margin-top: 0.6rem;
+  color: var(--gr-dim);
+}
+
+.stage {
+  margin-top: 2.5rem;
+  display: grid;
+  grid-template-columns: auto minmax(20rem, 1fr);
+  gap: 4vw;
+  align-items: start;
+}
+
+/* The deck */
+.deck {
+  position: relative;
+  width: min(70svh, 44vw);
+  aspect-ratio: 1;
+}
+
+.platter {
+  position: absolute;
+  inset: 4%;
+  perspective: 1400px;
+  animation: gr-flip 1.1s var(--ease-out-soft) both;
+}
+
+/* A new side turns into view edge-on, as if the record were being flipped. */
+@keyframes gr-flip {
+  from {
+    transform: rotateY(90deg);
+  }
+}
+
+.disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(
+      circle,
+      transparent 0 1.5px,
+      rgba(0, 0, 0, 0.16) 1.5px 2.4px
+    ),
+    conic-gradient(
+      from 20deg,
+      var(--gr-gold-lo),
+      var(--gr-gold-hi) 12%,
+      var(--gr-gold) 25%,
+      var(--gr-gold-lo) 40%,
+      var(--gr-gold) 55%,
+      var(--gr-gold-hi) 62%,
+      var(--gr-gold-lo) 78%,
+      var(--gr-gold) 90%,
+      var(--gr-gold-lo)
+    );
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.8),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+  animation: gr-spin linear infinite;
+}
+
+@keyframes gr-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.grooves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.grooves circle {
+  fill: none;
+}
+
+/* Each track is a slightly brighter band; the gaps between them are the dark
+   rings you'd drop a needle into. */
+.band {
+  stroke: rgba(255, 240, 200, 0.07);
+}
+
+.edge {
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 0.006;
+}
+
+.label {
+  position: absolute;
+  inset: 31%;
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  background: radial-gradient(circle, var(--gr-black) 0 4%, #1c160b 5% 100%);
+  box-shadow: inset 0 0 0 1px var(--gr-gold-lo);
+}
+
+.labelName {
+  font-family: var(--gr-display), serif;
+  font-style: italic;
+  font-size: clamp(0.9rem, 1.5vw, 1.25rem);
+  color: var(--gr-gold-hi);
+  translate: 0 -1.4rem;
+}
+
+.labelSide {
+  font-size: 0.75rem;
+  color: var(--gr-dim);
+  translate: 0 1.2rem;
+}
+
+.arm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  transform-origin: 88% 10%;
+  transition: rotate 1.6s var(--ease-in-out-calm);
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.7));
+}
+
+.pivot {
+  fill: #2a241a;
+  stroke: var(--gr-gold);
+  stroke-width: 0.6;
+}
+
+.armLine {
+  fill: none;
+  stroke: #d8d2c4;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
+.head2 {
+  fill: #d8d2c4;
+}
+
+/* The sleeve covers the record until the page is ready, then slides away. */
+.sleeve {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 45%),
+    linear-gradient(160deg, var(--gr-gold-hi), var(--gr-gold) 40%, var(--gr-gold-lo));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+  transition:
+    translate 1.5s var(--ease-in-out-calm),
+    opacity 1.5s var(--ease-in-out-calm);
+  z-index: 2;
+}
+
+.sleeve[data-open="true"] {
+  translate: -115% 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.art {
+  width: 100%;
+  height: 100%;
+}
+
+.art path,
+.art circle {
+  fill: none;
+  stroke: #3b2c0f;
+  stroke-width: 0.7;
+}
+
+.art .fill {
+  fill: #3b2c0f;
+}
+
+.art .blue {
+  fill: var(--gr-blue);
+  stroke: #3b2c0f;
+}
+
+/* Tracklist */
+.side {
+  min-width: 0;
+}
+
+.tracks {
+  list-style: none;
+  padding: 0;
+  max-width: 30rem;
+}
+
+.tracks li[data-first]::before {
+  display: block;
+  margin: 1.25rem 0 0.4rem;
+  font-family: var(--gr-display), serif;
+  font-style: italic;
+  color: var(--gr-gold);
+}
+
+.tracks li[data-first="A"]::before {
+  content: "Side A, where it comes from";
+  margin-top: 0;
+}
+
+.tracks li[data-first="B"]::before {
+  content: "Side B, what it's for";
+}
+
+.track {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.75rem 1fr auto;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--gr-faint);
+  color: var(--gr-dim);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.track:hover,
+.track:focus-visible {
+  color: var(--gr-ivory);
+}
+
+.track[aria-current="true"] {
+  color: var(--gr-gold-hi);
+}
+
+.track:focus-visible,
+.control:focus-visible {
+  outline: 1px solid var(--gr-gold);
+  outline-offset: 3px;
+}
+
+.tNum,
+.tLen {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Liner notes */
+.liner {
+  margin-top: 2rem;
+  max-width: 34rem;
+}
+
+.linerHead {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.linerHead h2 {
+  font-family: var(--gr-display), serif;
+  font-weight: 400;
+  font-size: 1.9rem;
+  margin-right: auto;
+}
+
+.control {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--gr-dim);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+  text-decoration-color: var(--gr-faint);
+}
+
+.control:hover {
+  color: var(--gr-ivory);
+}
+
+.scope {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin: 0.75rem 0 1rem;
+  border-top: 1px solid var(--gr-faint);
+  border-bottom: 1px solid var(--gr-faint);
+}
+
+.text p + p {
+  margin-top: 0.6rem;
+}
+
+.word {
+  opacity: 0.16;
+  transition: opacity 0.5s;
+}
+
+.word[data-heard="true"] {
+  opacity: 1;
+}
+
+.links {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.links a {
+  color: var(--gr-gold-hi);
+  text-underline-offset: 0.3em;
+}
+
+@media (max-width: 900px) {
+  .root {
+    padding: 5rem 1.25rem 3rem;
+  }
+  .stage {
+    grid-template-columns: 1fr;
+  }
+  .deck {
+    width: min(100%, 26rem);
+    justify-self: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disc,
+  .platter {
+    animation: none;
+  }
+  .arm,
+  .sleeve,
+  .word {
+    transition: none;
+  }
+}

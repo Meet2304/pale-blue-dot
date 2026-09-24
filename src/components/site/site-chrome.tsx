@@ -68,8 +68,12 @@ function useNarrow(): boolean {
 }
 
 export function SiteChrome() {
+  const pathname = usePathname();
   const footerInView = useFooterInView();
   const narrow = useNarrow();
+
+  /* The /play concepts each bring their own sky and their own chrome. */
+  if (pathname.startsWith("/play")) return null;
 
   return (
     <>

@@ -52,6 +52,9 @@ export function SiteFooter() {
     return () => observer.disconnect();
   }, []);
 
+  /* The /play concepts each bring their own world, footer included. */
+  if (pathname.startsWith("/play")) return null;
+
   return (
     <footer
       data-site-footer
