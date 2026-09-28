@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { StarField } from "@/components/horizon/star-field";
 import { SiteNav } from "@/components/site/site-nav";
 import { ProgressiveBlur } from "@/components/ui/progressive-blur";
+import { isTerminalRoute } from "@/lib/routes";
 
 /**
  * Whether the footer is on screen.
@@ -68,6 +69,22 @@ function useNarrow(): boolean {
 }
 
 export function SiteChrome() {
+  const pathname = usePathname();
+
+  /* The Terminal pages bring their own sky and their own controls; only the
+     skip link carries over. */
+  if (isTerminalRoute(pathname)) {
+    return (
+      <a href="#content" className="hz-skip">
+        Skip to content
+      </a>
+    );
+  }
+
+  return <HorizonChrome />;
+}
+
+function HorizonChrome() {
   const footerInView = useFooterInView();
   const narrow = useNarrow();
 

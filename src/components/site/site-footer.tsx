@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 import { SocialLogo } from "@/components/site/social-logo";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
-import { routes } from "@/lib/routes";
+import { isTerminalRoute, routes } from "@/lib/routes";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
 const PAGES = [
@@ -20,6 +20,16 @@ const PAGES = [
  */
 export function SiteFooter() {
   const pathname = usePathname();
+
+  /* The Terminal pages end on their own terms. Returning here, rather than
+     after the hooks below, means the footer mounts fresh on arrival from one of
+     them, so its measuring effects run against real nodes. */
+  if (isTerminalRoute(pathname)) return null;
+
+  return <Footer pathname={pathname} />;
+}
+
+function Footer({ pathname }: { pathname: string }) {
   const [narrow, setNarrow] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
   const roomRef = useRef<HTMLDivElement>(null);

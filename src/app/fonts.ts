@@ -1,4 +1,11 @@
-import { Anton, Archivo, Hanken_Grotesk, Marcellus } from "next/font/google";
+import {
+  Anton,
+  Archivo,
+  Hanken_Grotesk,
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
+  Marcellus,
+} from "next/font/google";
 
 /**
  * The site's four faces.
@@ -51,3 +58,28 @@ export const fontVariables = [
   archivo.variable,
   anton.variable,
 ].join(" ");
+
+/**
+ * IBM Plex, the Terminal system's two voices: Sans (200 to 500) speaks, Mono
+ * labels, reads out, and draws every glyph on the universe's canvas.
+ *
+ * Declared here and nowhere else. Declaring one family in several files with
+ * different options made next/font issue overlapping queries, which broke
+ * cold builds on Vercel. Kept out of `fontVariables`: only the pages built on
+ * Terminal (the home page and `/work/*`) apply `plexVariables`.
+ */
+export const plexSans = IBM_Plex_Sans({
+  variable: "--plex-sans",
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500"],
+  display: "swap",
+});
+
+export const plexMono = IBM_Plex_Mono({
+  variable: "--plex-mono",
+  subsets: ["latin"],
+  weight: ["300", "400"],
+  display: "swap",
+});
+
+export const plexVariables = `${plexSans.variable} ${plexMono.variable}`;
