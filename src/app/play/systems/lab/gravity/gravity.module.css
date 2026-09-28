@@ -1,0 +1,33 @@
+/* Gravity: an engineered, square, gridded system. The physics supplies the
+   strangeness; the chrome stays exact. */
+.root {
+  --bg: #000000;
+  --fg: #eef0f4;
+  --soft: #a3a8b4;
+  --mute: #646977;
+  --line: #1b1e27;
+  --surface: #06070a;
+  --font-display: var(--gv-sans), sans-serif;
+  --font-text: var(--gv-sans), sans-serif;
+  --font-mono: var(--gv-mono), monospace;
+  --display-weight: 300;
+  --display-tracking: -0.055em;
+  --r-control: 2px;
+  --r-panel: 4px;
+  --r-tag: 2px;
+  --on-accent: #000000;
+  --section-rule: 1px dashed #1f232d;
+  /* The panel sits on the same spacetime grid as the hero. */
+  --panel-texture:
+    linear-gradient(rgba(120, 130, 150, 0.07) 1px, transparent 1px) 0 0 / 23px 23px,
+    linear-gradient(90deg, rgba(120, 130, 150, 0.07) 1px, transparent 1px) 0 0 / 23px
+      23px;
+
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+  transition:
+    --accent 900ms,
+    --accent-dim 900ms,
+    --accent-soft 900ms;
+}

@@ -1,0 +1,28 @@
+/* Nebula Ink: soft, round, gaseous. The chrome is made of the same medium. */
+.root {
+  --bg: #000000;
+  --fg: #f1f2f6;
+  --soft: #aeb1bd;
+  --mute: #6d7080;
+  --line: rgba(255, 255, 255, 0.09);
+  --surface: rgba(20, 22, 32, 0.55);
+  --font-display: var(--ni-sans), sans-serif;
+  --font-text: var(--ni-sans), sans-serif;
+  --font-mono: var(--ni-mono), monospace;
+  --display-weight: 500;
+  --display-tracking: -0.045em;
+  --r-control: 999px;
+  --r-panel: 24px;
+  --r-tag: 999px;
+  --on-accent: #000000;
+  --section-rule: none;
+  --panel-texture: radial-gradient(
+    120% 80% at 0% 100%,
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent 60%
+  );
+
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+}

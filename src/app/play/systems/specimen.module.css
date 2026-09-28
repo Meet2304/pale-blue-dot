@@ -1,0 +1,297 @@
+/* Structure shared by all five specimens. Nothing here decides colour, type,
+   radius or motion; each system's skin does. */
+
+.root {
+  min-height: 100svh;
+  overflow-x: clip;
+}
+
+/* The site's base styles set every heading in Marcellus. This reset has the
+   same specificity as that rule (one element), so it wins by coming later,
+   while any skin class still wins over it. */
+:where(.root) :is(h1, h2, h3, h4) {
+  font-family: inherit;
+  font-weight: inherit;
+  color: inherit;
+  letter-spacing: normal;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+}
+
+.field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.heroText {
+  position: absolute;
+  z-index: 1;
+  left: 6vw;
+  bottom: 9vh;
+  max-width: 30rem;
+  pointer-events: none;
+}
+
+.heroText button,
+.heroText a {
+  pointer-events: auto;
+}
+
+.shapes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.chip,
+.navItem,
+.btnPrimary,
+.btnSecondary,
+.btnQuiet,
+.btnIcon {
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Sections */
+.section {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: 2rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 5.5rem 6vw;
+}
+
+.sectionBody {
+  min-width: 0;
+}
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.principle p {
+  margin-top: 0.5rem;
+}
+
+.swatches,
+.radii {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 1.5rem 1.25rem;
+}
+
+.swatch,
+.radius {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.swatchChip,
+.radiusBox {
+  display: block;
+  height: 5.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.typeStack {
+  display: grid;
+  gap: 1.75rem;
+  margin-top: 1.5rem;
+}
+
+.typeRow {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: baseline;
+}
+
+.componentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3rem 2.5rem;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.cellTitle {
+  margin-bottom: 1.25rem;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.navDot {
+  width: 10px;
+  height: 10px;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+}
+
+.panel {
+  max-width: 34rem;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.pairs {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.25rem 0 1.75rem;
+}
+
+.pairs > div {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.pairs dd {
+  margin: 0;
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.iconDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: block;
+}
+
+.motion {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.motionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: center;
+}
+
+.motionMeta {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.track {
+  position: relative;
+  height: 2.5rem;
+}
+
+.trackDot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  translate: 0 -50%;
+  animation: specimen-travel var(--dur) var(--ease) infinite alternate;
+}
+
+@keyframes specimen-travel {
+  to {
+    left: calc(100% - var(--dot, 12px));
+  }
+}
+
+.textureWrap {
+  margin-top: 1.5rem;
+  height: 12rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.texture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.footer {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 3rem 6vw 6rem;
+}
+
+@media (max-width: 860px) {
+  .section {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    padding: 4rem 1.25rem;
+  }
+  .principles,
+  .componentGrid {
+    grid-template-columns: 1fr;
+  }
+  .motionRow {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .heroText {
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: 6vh;
+  }
+  .pairs > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trackDot {
+    animation: none;
+  }
+}

@@ -1,0 +1,330 @@
+/* One Bit: three levels on a pixel grid. Square, stepped, exact. */
+.root {
+  --black: #000000;
+  --haze: #4d7fd9;
+  --signal: #eef3ff;
+  --dot: #9cc8ff;
+  --line: #1d2638;
+  --muted: #8a96ad;
+  /* Dither fills on a 2px grid, crisp at 1x and 2x. */
+  --d25: conic-gradient(var(--signal) 0 25%, transparent 0 100%) 0 0 / 4px 4px;
+  --d50: repeating-conic-gradient(var(--signal) 0 25%, transparent 0 50%) 0 0 / 4px 4px;
+  --d25-haze: conic-gradient(var(--haze) 0 25%, transparent 0 100%) 0 0 / 4px 4px;
+
+  background: var(--black);
+  color: var(--signal);
+  font-family: var(--ob-mono), monospace;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.number,
+.idea,
+.lede,
+.fontNames,
+.principle p,
+.swatchRole,
+.typeLabel,
+.tCaption {
+  color: var(--muted);
+}
+
+.number {
+  font-size: 0.8125rem;
+}
+
+.name {
+  margin-top: 0.4rem;
+  font-weight: 200;
+  font-variation-settings: "wdth" 125;
+  font-size: clamp(2.8rem, 6vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.tagline {
+  margin-top: 0.6rem;
+  color: var(--haze);
+  font-size: 1.05rem;
+}
+
+.idea {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  max-width: 30rem;
+}
+
+/* Controls: square, 1px, and every state is a dither level. */
+.chip,
+.navItem,
+.btnSecondary {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--black);
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+/* Hover fills in frames: 25% haze, then 25% signal, and holds. */
+.chip:hover,
+.navItem:hover,
+.btnSecondary:hover {
+  color: var(--signal);
+  border-color: var(--signal);
+  animation: ob-fill 180ms steps(1) forwards;
+}
+
+@keyframes ob-fill {
+  0% {
+    background: var(--d25-haze), var(--black);
+  }
+  50%,
+  100% {
+    background: var(--d25), var(--black);
+  }
+}
+
+.chip[aria-pressed="true"],
+.navItem[aria-pressed="true"] {
+  color: var(--black);
+  background: var(--signal);
+  border-color: var(--signal);
+  animation: none;
+}
+
+.chip:focus-visible,
+.navItem:focus-visible,
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.btnQuiet:focus-visible,
+.btnIcon:focus-visible,
+.link:focus-visible {
+  outline: 2px dashed var(--haze);
+  outline-offset: 3px;
+}
+
+.section {
+  border-top: 1px solid var(--line);
+}
+
+.sectionTitle {
+  font-weight: 200;
+  font-variation-settings: "wdth" 125;
+  font-size: 1.35rem;
+}
+
+.principle h3 {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.principle p {
+  font-size: 0.875rem;
+}
+
+.swatchChip {
+  border: 1px solid var(--line);
+}
+
+.radiusBox {
+  border: 1px solid var(--signal);
+  background: var(--d25-haze), var(--black);
+}
+
+.swatchName {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.swatchHex {
+  color: var(--haze);
+  font-size: 0.8125rem;
+}
+
+.swatchRole {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.typeLabel {
+  font-size: 0.75rem;
+}
+
+.tDisplay {
+  font-weight: 200;
+  font-variation-settings: "wdth" 125;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.tTitle {
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.tBody {
+  max-width: 36rem;
+}
+
+.tCaption {
+  font-size: 0.75rem;
+}
+
+.cellTitle {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--haze);
+}
+
+.btnPrimary {
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--signal);
+  background: var(--signal);
+  color: var(--black);
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+/* The primary "lights up" the only way this system can: by revealing the
+   dither beneath it. */
+.btnPrimary:hover {
+  background: var(--d50), var(--haze);
+  color: var(--black);
+}
+
+.btnPrimary:active {
+  background: var(--haze);
+  border-color: var(--haze);
+}
+
+.btnSecondary {
+  padding: 0.7rem 1.2rem;
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.btnQuiet {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--haze);
+  font-size: 0.8125rem;
+}
+
+.btnQuiet::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--haze);
+}
+
+.btnQuiet:hover {
+  color: var(--signal);
+}
+
+.btnQuiet:hover::before {
+  background: var(--signal);
+}
+
+.btnIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line);
+  background: var(--black);
+}
+
+.btnIcon:hover {
+  border-color: var(--signal);
+  background: var(--d25-haze), var(--black);
+}
+
+.iconDot,
+.navDot {
+  background: var(--dot);
+}
+
+.nav {
+  border: 1px solid var(--line);
+  padding: 0.35rem;
+  width: fit-content;
+  gap: 0;
+}
+
+.nav .navItem:not([aria-pressed="true"]) {
+  border-color: transparent;
+}
+
+.navDot {
+  margin-left: 0.5rem;
+}
+
+.panel {
+  border: 1px solid var(--signal);
+  padding: 0 1.5rem 1.5rem;
+  background: var(--black);
+}
+
+/* A dithered header band: the panel's only decoration. */
+.panelHead {
+  margin: 0 -1.5rem;
+  padding: 0.6rem 1.5rem;
+  background: var(--d25-haze), var(--black);
+  border-bottom: 1px solid var(--signal);
+}
+
+.tag {
+  padding: 0.05rem 0.5rem;
+  background: var(--signal);
+  color: var(--black);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.panelTitle {
+  margin-top: 1.25rem;
+  font-weight: 200;
+  font-variation-settings: "wdth" 125;
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.pairs dt {
+  color: var(--haze);
+  font-size: 0.8125rem;
+}
+
+.pairs dd {
+  font-size: 0.875rem;
+}
+
+/* Links are underlined by a dotted rule that fills solid on hover. */
+.link {
+  color: var(--signal);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  padding-bottom: 3px;
+  background: repeating-linear-gradient(90deg, var(--haze) 0 2px, transparent 2px 4px) 0
+    100% / 100% 2px no-repeat;
+}
+
+.link:hover {
+  background: linear-gradient(var(--signal), var(--signal)) 0 100% / 100% 2px no-repeat;
+}
+
+.track {
+  background: repeating-linear-gradient(90deg, var(--line) 0 3px, transparent 3px 6px)
+    center / 100% 1px no-repeat;
+}
+
+.trackDot {
+  --dot: 12px;
+  width: 12px;
+  height: 12px;
+  background: var(--signal);
+}
+
+.textureWrap {
+  border: 1px solid var(--line);
+}

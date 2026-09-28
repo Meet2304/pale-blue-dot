@@ -1,0 +1,358 @@
+/* Stardust — emitted light on true black. Pills, glass and halos. */
+.root {
+  --void: #000000;
+  --starlight: #eef2fb;
+  --pale: #9cc8ff;
+  --nebula: #b3a4ff;
+  --dust: #7c8499;
+  --hair: #1f2433;
+  --gather: cubic-bezier(0.16, 1, 0.3, 1);
+  --answer: 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  background: var(--void);
+  color: var(--starlight);
+  font-family: var(--font-hanken), sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+.number {
+  color: var(--dust);
+  font-size: 0.875rem;
+}
+
+.name {
+  margin-top: 0.25rem;
+  font-family: var(--sd-display), serif;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 7vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 40px rgba(156, 200, 255, 0.35);
+}
+
+.tagline {
+  margin-top: 0.4rem;
+  font-family: var(--sd-display), serif;
+  font-style: italic;
+  font-size: 1.7rem;
+  color: var(--pale);
+}
+
+.idea {
+  margin-top: 1rem;
+  color: var(--dust);
+  max-width: 28rem;
+}
+
+/* Chips and the nav share one pill language. */
+.chip,
+.navItem {
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--dust);
+  font-size: 0.875rem;
+  backdrop-filter: blur(8px);
+  transition:
+    color var(--answer),
+    border-color var(--answer),
+    box-shadow var(--answer),
+    background var(--answer);
+}
+
+.chip:hover,
+.navItem:hover {
+  color: var(--starlight);
+  border-color: #3a4260;
+}
+
+.chip[aria-pressed="true"],
+.navItem[aria-pressed="true"] {
+  color: var(--void);
+  background: var(--starlight);
+  border-color: var(--starlight);
+  box-shadow:
+    0 0 18px rgba(223, 232, 255, 0.45),
+    0 0 48px rgba(156, 200, 255, 0.25);
+}
+
+.chip:focus-visible,
+.navItem:focus-visible,
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.btnQuiet:focus-visible,
+.btnIcon:focus-visible,
+.link:focus-visible {
+  outline: 1px solid var(--pale);
+  outline-offset: 4px;
+}
+
+/* Sections */
+.section {
+  border-top: 1px solid var(--hair);
+}
+
+.sectionTitle {
+  font-family: var(--sd-display), serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--starlight);
+}
+
+.principle h3 {
+  font-family: var(--sd-display), serif;
+  font-weight: 400;
+  font-size: 1.6rem;
+}
+
+.principle p,
+.lede,
+.fontNames {
+  color: var(--dust);
+}
+
+.swatchChip {
+  border-radius: 22px;
+  border: 1px solid var(--hair);
+  box-shadow: 0 0 36px rgba(156, 200, 255, 0.08);
+}
+
+.radiusBox {
+  border: 1px solid #3a4260;
+  background: radial-gradient(
+    circle at 50% 120%,
+    rgba(156, 200, 255, 0.18),
+    transparent 70%
+  );
+}
+
+.swatchName {
+  font-weight: 500;
+}
+
+.swatchHex {
+  color: var(--pale);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatchRole {
+  color: var(--dust);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.typeLabel {
+  color: var(--dust);
+  font-size: 0.8125rem;
+}
+
+.tDisplay {
+  font-family: var(--sd-display), serif;
+  font-weight: 300;
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  line-height: 1;
+}
+
+.tTitle {
+  font-family: var(--sd-display), serif;
+  font-weight: 400;
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+.tBody {
+  max-width: 34rem;
+}
+
+.tCaption {
+  color: var(--dust);
+  font-size: 0.8125rem;
+}
+
+.cellTitle {
+  font-family: var(--sd-display), serif;
+  font-weight: 400;
+  font-size: 1.35rem;
+  color: var(--dust);
+}
+
+/* Buttons */
+.btnPrimary {
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  border: 0;
+  background: var(--starlight);
+  color: var(--void);
+  font-weight: 500;
+  box-shadow: 0 0 0 0 rgba(156, 200, 255, 0);
+  transition:
+    box-shadow 700ms var(--gather),
+    transform var(--answer);
+}
+
+.btnPrimary:hover {
+  box-shadow:
+    0 0 22px rgba(223, 232, 255, 0.55),
+    0 0 70px rgba(156, 200, 255, 0.35);
+}
+
+.btnPrimary:active {
+  transform: scale(0.97);
+}
+
+.btnSecondary {
+  padding: 0.72rem 1.45rem;
+  border-radius: 999px;
+  border: 1px solid #3a4260;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--starlight);
+  backdrop-filter: blur(8px);
+  transition:
+    border-color var(--answer),
+    box-shadow var(--answer);
+}
+
+.btnSecondary:hover {
+  border-color: var(--pale);
+  box-shadow: 0 0 24px rgba(156, 200, 255, 0.2);
+}
+
+.btnQuiet {
+  padding: 0.5rem 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--dust);
+  transition: color var(--answer);
+}
+
+.btnQuiet::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pale);
+  box-shadow: 0 0 10px var(--pale);
+}
+
+.btnQuiet:hover {
+  color: var(--starlight);
+}
+
+.btnIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid #3a4260;
+  background: none;
+  transition: box-shadow var(--answer);
+}
+
+.btnIcon:hover {
+  box-shadow: 0 0 22px rgba(156, 200, 255, 0.35);
+}
+
+.iconDot,
+.navDot {
+  background: var(--pale);
+  box-shadow:
+    0 0 8px var(--pale),
+    0 0 22px rgba(156, 200, 255, 0.6);
+}
+
+.nav {
+  padding: 0.35rem;
+  border-radius: 28px;
+  border: 1px solid var(--hair);
+  width: fit-content;
+}
+
+.nav .navItem:not([aria-pressed="true"]) {
+  border-color: transparent;
+  background: none;
+}
+
+.navDot {
+  margin-left: 0.6rem;
+}
+
+/* The case panel is glass over the sky. */
+.panel {
+  padding: 1.75rem 2rem 2rem;
+  border-radius: 22px;
+  border: 1px solid var(--hair);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(156, 200, 255, 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(14px);
+}
+
+.tag {
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--nebula);
+  border: 1px solid rgba(179, 164, 255, 0.35);
+}
+
+.panelTitle {
+  margin-top: 0.9rem;
+  font-family: var(--sd-display), serif;
+  font-weight: 400;
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.pairs dt {
+  color: var(--pale);
+  font-size: 0.875rem;
+}
+
+.pairs dd {
+  color: var(--starlight);
+}
+
+.link {
+  color: var(--starlight);
+  text-decoration: underline;
+  text-decoration-color: #3a4260;
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color var(--answer);
+}
+
+.link:hover {
+  text-decoration-color: var(--pale);
+}
+
+/* Motion demo */
+.track {
+  border-radius: 999px;
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--hair) 12%,
+      var(--hair) 88%,
+      transparent
+    )
+    center / 100% 1px no-repeat;
+}
+
+.trackDot {
+  --dot: 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--starlight);
+  box-shadow:
+    0 0 10px var(--pale),
+    0 0 30px rgba(156, 200, 255, 0.6);
+}
+
+.textureWrap {
+  border-radius: 22px;
+  border: 1px solid var(--hair);
+}

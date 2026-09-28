@@ -1,0 +1,28 @@
+/* Terminal Earth: a mission terminal. Plex, mono readouts, faint scanlines. */
+.root {
+  --bg: #000000;
+  --fg: #e9edf2;
+  --soft: #a0a8b4;
+  --mute: #616a77;
+  --line: #19202a;
+  --surface: #05080c;
+  --font-display: var(--te-sans), sans-serif;
+  --font-text: var(--te-sans), sans-serif;
+  --font-mono: var(--te-mono), monospace;
+  --display-weight: 300;
+  --display-tracking: -0.03em;
+  --r-control: 6px;
+  --r-panel: 8px;
+  --r-tag: 4px;
+  --on-accent: #000000;
+  --section-rule: 1px solid #141a22;
+  --panel-texture: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.022) 0 1px,
+    transparent 1px 3px
+  );
+
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+}

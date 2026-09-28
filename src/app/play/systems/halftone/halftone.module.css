@@ -1,0 +1,372 @@
+/* Halftone Atlas: two plates, dots for tone, set like a printed star chart. */
+.root {
+  --black: #000000;
+  --paper: #eceff4;
+  --spot: #0d7bff;
+  --graphite: #8a93a6;
+  --rule: #232a3a;
+  --register: 260ms cubic-bezier(0.3, 0, 0, 1);
+  /* Halftone fills: a dot screen in either plate. */
+  --screen-paper: radial-gradient(circle, var(--paper) 1.1px, transparent 1.4px) 0 0 /
+    5px 5px;
+  --screen-spot: radial-gradient(circle, var(--spot) 1.3px, transparent 1.6px) 0 0 / 5px
+    5px;
+
+  background: var(--black);
+  color: var(--paper);
+  font-family: var(--ht-text), Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.number,
+.idea,
+.lede,
+.fontNames,
+.principle p,
+.swatchRole,
+.typeLabel,
+.tCaption {
+  color: var(--graphite);
+}
+
+.number {
+  font-family: var(--ht-display), sans-serif;
+  font-size: 0.8125rem;
+}
+
+.name,
+.sectionTitle,
+.tDisplay,
+.tTitle,
+.panelTitle,
+.principle h3,
+.cellTitle {
+  font-family: var(--ht-display), sans-serif;
+}
+
+/* The plate title: heavy and condensed, with the spot plate printed behind it. */
+.name {
+  margin-top: 0.3rem;
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: clamp(3.2rem, 7vw, 6.4rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-shadow: 3px 3px 0 var(--spot);
+}
+
+.tagline {
+  margin-top: 0.7rem;
+  font-style: italic;
+  font-size: 1.35rem;
+}
+
+.idea {
+  margin-top: 0.8rem;
+  max-width: 28rem;
+  font-size: 1.05rem;
+}
+
+.chip,
+.navItem {
+  padding: 0.4rem 0.85rem;
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  background: var(--black);
+  color: var(--graphite);
+  font-family: var(--ht-display), sans-serif;
+  font-size: 0.875rem;
+  transition:
+    color var(--register),
+    border-color var(--register);
+}
+
+.chip:hover,
+.navItem:hover {
+  color: var(--paper);
+  border-color: var(--graphite);
+  background: var(--screen-spot), var(--black);
+}
+
+.chip[aria-pressed="true"],
+.navItem[aria-pressed="true"] {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--black);
+  box-shadow: 3px 3px 0 var(--spot);
+}
+
+.chip:focus-visible,
+.navItem:focus-visible,
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.btnQuiet:focus-visible,
+.btnIcon:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--spot);
+  outline-offset: 3px;
+}
+
+/* Sections are ruled like plates, with a registration mark at the start. */
+.section {
+  border-top: 1px solid var(--rule);
+  position: relative;
+}
+
+.section::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 6vw;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--graphite);
+  background:
+    linear-gradient(var(--graphite), var(--graphite)) center / 1px 100% no-repeat,
+    linear-gradient(var(--graphite), var(--graphite)) center / 100% 1px no-repeat,
+    var(--black);
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-variation-settings: "wdth" 75;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.principle h3 {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.swatchChip {
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  position: relative;
+}
+
+/* Each swatch shows its colour as a solid and as a screen. */
+.swatchChip::after {
+  content: "";
+  position: absolute;
+  inset: 55% 0 0;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.55) 1.4px, transparent 1.7px) 0
+    0 / 5px 5px;
+}
+
+.radiusBox {
+  border: 1px solid var(--paper);
+  background: var(--screen-spot);
+}
+
+.swatchName {
+  font-family: var(--ht-display), sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.swatchHex {
+  font-family: var(--ht-display), sans-serif;
+  color: var(--spot);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatchRole {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.typeLabel {
+  font-family: var(--ht-display), sans-serif;
+  font-size: 0.75rem;
+}
+
+.tDisplay {
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 0.95;
+  text-shadow: 2px 2px 0 var(--spot);
+}
+
+.tTitle {
+  font-weight: 700;
+  font-size: 1.9rem;
+}
+
+.tBody {
+  max-width: 34rem;
+}
+
+.tCaption {
+  font-style: italic;
+  font-size: 0.9375rem;
+}
+
+.cellTitle {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--graphite);
+}
+
+/* Buttons: the spot plate sits under the paper plate, out of register, and
+   slides home on hover. */
+.btnPrimary,
+.btnSecondary {
+  position: relative;
+  isolation: isolate;
+  padding: 0.7rem 1.25rem;
+  border-radius: 4px;
+  font-family: var(--ht-display), sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btnPrimary {
+  border: 0;
+  background: var(--paper);
+  color: var(--black);
+}
+
+.btnPrimary::after,
+.btnSecondary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 4px;
+  background: var(--screen-spot);
+  translate: 4px 4px;
+  transition: translate var(--register);
+}
+
+.btnPrimary:hover::after,
+.btnSecondary:hover::after {
+  translate: 0 0;
+}
+
+.btnPrimary:hover {
+  background: var(--spot);
+  color: var(--paper);
+}
+
+.btnSecondary {
+  border: 1px solid var(--paper);
+  background: var(--black);
+  color: var(--paper);
+}
+
+.btnQuiet {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  font-family: var(--ht-display), sans-serif;
+  font-size: 0.95rem;
+  background: radial-gradient(circle, var(--spot) 1.2px, transparent 1.5px) 0 100% / 5px
+    5px repeat-x;
+}
+
+.btnQuiet:hover {
+  background-image: radial-gradient(circle, var(--paper) 1.2px, transparent 1.5px);
+}
+
+.btnIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--paper);
+  background: var(--black);
+}
+
+.btnIcon:hover {
+  background: var(--screen-spot), var(--black);
+}
+
+.iconDot,
+.navDot {
+  background: var(--paper);
+  box-shadow: 2px 2px 0 var(--spot);
+}
+
+.nav {
+  gap: 0.35rem;
+}
+
+.panel {
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  padding: 1.5rem 1.75rem 1.75rem;
+  background:
+    radial-gradient(circle, rgba(13, 123, 255, 0.35) 1px, transparent 1.3px) 0 0 / 7px
+      7px,
+    var(--black);
+  background-size:
+    7px 7px,
+    auto;
+  mask-image: none;
+}
+
+.tag {
+  padding: 0.05rem 0.6rem;
+  border-radius: 999px;
+  background: var(--spot);
+  color: var(--paper);
+  font-family: var(--ht-display), sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.panelTitle {
+  margin-top: 0.8rem;
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: 2.4rem;
+  line-height: 1;
+  text-shadow: 2px 2px 0 var(--spot);
+}
+
+.pairs {
+  padding: 1rem 1.1rem;
+  background: var(--black);
+  border-radius: 4px;
+}
+
+.pairs dt {
+  font-family: var(--ht-display), sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--spot);
+}
+
+.link {
+  color: var(--paper);
+  font-family: var(--ht-display), sans-serif;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-decoration-color: var(--spot);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3em;
+}
+
+.track {
+  background: radial-gradient(circle, var(--rule) 1px, transparent 1.3px) center / 6px
+    6px repeat-x;
+}
+
+.trackDot {
+  --dot: 14px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--spot);
+}
+
+.textureWrap {
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+}

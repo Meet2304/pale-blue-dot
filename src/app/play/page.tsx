@@ -54,6 +54,11 @@ export default function PlayIndex() {
           </li>
         ))}
       </ol>
+      <p className={styles.lede} style={{ marginTop: "3rem" }}>
+        The current direction: <Link href="/play/universe">the universe</Link>. Then,
+        the visual language: <Link href="/play/systems">design systems</Link> built from
+        particles and dither.
+      </p>
     </main>
   );
 }

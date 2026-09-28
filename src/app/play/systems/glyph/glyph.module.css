@@ -1,0 +1,346 @@
+/* Glyph: the machine writes in mono, the person speaks in serif. */
+.root {
+  --black: #000000;
+  --dim: #34405e;
+  --blue: #8fb4ff;
+  --bright: #f2f5ff;
+  --grey: #7f8aa3;
+  --raise: #0c111d;
+
+  background: var(--black);
+  color: var(--bright);
+  font-family: var(--gl-mono), monospace;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.number,
+.idea,
+.lede,
+.fontNames,
+.principle p,
+.swatchRole,
+.typeLabel,
+.tCaption {
+  color: var(--grey);
+}
+
+.number {
+  font-size: 0.8125rem;
+}
+
+.name,
+.tagline,
+.sectionTitle,
+.tDisplay,
+.tTitle,
+.panelTitle,
+.principle h3 {
+  font-family: var(--gl-serif), serif;
+}
+
+.name {
+  margin-top: 0.2rem;
+  font-size: clamp(4rem, 9vw, 8rem);
+  line-height: 0.9;
+}
+
+.tagline {
+  font-style: italic;
+  font-size: 1.8rem;
+  color: var(--blue);
+}
+
+.idea {
+  margin-top: 0.9rem;
+  max-width: 30rem;
+  font-size: 0.875rem;
+}
+
+/* A blinking block caret after the name: the one idle animation. */
+.name::after {
+  content: "";
+  display: inline-block;
+  width: 0.08em;
+  height: 0.75em;
+  margin-left: 0.08em;
+  background: var(--blue);
+  animation: gl-caret 1060ms steps(2) infinite;
+}
+
+@keyframes gl-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.chip,
+.navItem {
+  padding: 0.35rem 0.75rem;
+  border-radius: 2px;
+  border: 1px solid var(--dim);
+  background: var(--black);
+  color: var(--grey);
+  font-size: 0.8125rem;
+}
+
+.chip:hover,
+.navItem:hover {
+  color: var(--bright);
+  border-color: var(--blue);
+}
+
+.chip[aria-pressed="true"],
+.navItem[aria-pressed="true"] {
+  color: var(--black);
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.chip:focus-visible,
+.navItem:focus-visible,
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.btnQuiet:focus-visible,
+.btnIcon:focus-visible,
+.link:focus-visible {
+  outline: 1px solid var(--bright);
+  outline-offset: 3px;
+}
+
+/* Section rules are drawn in characters, not lines. */
+.section {
+  position: relative;
+}
+
+.section::before {
+  content: "· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·";
+  position: absolute;
+  top: 0;
+  left: 6vw;
+  right: 6vw;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.sectionTitle {
+  font-style: italic;
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.principle h3 {
+  font-size: 1.6rem;
+}
+
+.principle p {
+  font-size: 0.8125rem;
+}
+
+.swatchChip {
+  border-radius: 2px;
+  border: 1px solid var(--dim);
+}
+
+.radiusBox {
+  border: 1px solid var(--blue);
+  background: var(--raise);
+}
+
+.swatchName {
+  font-size: 0.875rem;
+}
+
+.swatchHex {
+  color: var(--blue);
+  font-size: 0.8125rem;
+}
+
+.swatchRole {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.typeLabel {
+  font-size: 0.75rem;
+}
+
+.tDisplay {
+  font-size: clamp(2.6rem, 5vw, 4.5rem);
+  line-height: 1;
+}
+
+.tTitle {
+  font-style: italic;
+  font-size: 2.2rem;
+  line-height: 1.05;
+}
+
+.tBody {
+  max-width: 38rem;
+  font-size: 0.9375rem;
+}
+
+.tCaption {
+  font-size: 0.75rem;
+}
+
+.cellTitle {
+  font-size: 0.8125rem;
+  color: var(--blue);
+}
+
+.btnPrimary,
+.btnSecondary {
+  padding: 0.65rem 1.1rem;
+  border-radius: 2px;
+  font-size: 0.8125rem;
+  font-variant-ligatures: none;
+}
+
+.btnPrimary {
+  border: 1px solid var(--blue);
+  background: var(--blue);
+  color: var(--black);
+}
+
+.btnPrimary:hover {
+  background: var(--bright);
+  border-color: var(--bright);
+}
+
+.btnSecondary {
+  border: 1px solid var(--dim);
+  background: var(--black);
+  color: var(--bright);
+}
+
+.btnSecondary:hover {
+  border-color: var(--blue);
+}
+
+/* The quiet action shows a caret on hover, as if about to be typed. */
+.btnQuiet {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font-size: 0.8125rem;
+}
+
+.btnQuiet::after {
+  content: "";
+  width: 0.55em;
+  height: 1.1em;
+  background: var(--blue);
+  opacity: 0;
+}
+
+.btnQuiet:hover::after,
+.btnQuiet:focus-visible::after {
+  opacity: 1;
+  animation: gl-caret 1060ms steps(2) infinite;
+}
+
+.btnIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 2px;
+  border: 1px solid var(--dim);
+  background: var(--black);
+}
+
+.btnIcon:hover {
+  border-color: var(--blue);
+}
+
+.iconDot,
+.navDot {
+  background: var(--blue);
+}
+
+.nav {
+  gap: 0.35rem;
+}
+
+.panel {
+  border-radius: 4px;
+  border: 1px solid var(--dim);
+  padding: 1.5rem 1.75rem 1.75rem;
+  background: var(--raise);
+}
+
+.tag {
+  padding: 0 0.4rem;
+  border-radius: 2px;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-size: 0.75rem;
+}
+
+.panelTitle {
+  margin-top: 0.8rem;
+  font-style: italic;
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.pairs dt {
+  color: var(--blue);
+  font-size: 0.75rem;
+}
+
+.pairs dd {
+  font-size: 0.875rem;
+}
+
+/* Links are underlined in dots, a row of the faintest glyph. */
+.link {
+  color: var(--bright);
+  font-size: 0.8125rem;
+  text-decoration: underline dotted var(--blue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.35em;
+}
+
+.link:hover {
+  text-decoration-style: solid;
+}
+
+.track {
+  position: relative;
+}
+
+.track::before {
+  content: "· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·";
+  position: absolute;
+  inset: 50% 0 auto;
+  translate: 0 -50%;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.trackDot {
+  --dot: 10px;
+  width: 10px;
+  height: 18px;
+  background: var(--blue);
+}
+
+.textureWrap {
+  border-radius: 4px;
+  border: 1px solid var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .name::after,
+  .btnQuiet:hover::after {
+    animation: none;
+  }
+}

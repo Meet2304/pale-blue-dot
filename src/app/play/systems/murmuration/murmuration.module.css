@@ -1,0 +1,349 @@
+/* Murmuration: stipple that flows, coloured along one ramp from violet to gold. */
+.root {
+  --night: #030208;
+  --deep: #3b2a8f;
+  --violet: #7a5cff;
+  --blue: #4f9dff;
+  --pale: #bfe0ff;
+  --gold: #f3d49b;
+  --moon: #f5f3ff;
+  --mist: #9d98b8;
+  --hair: #231d3d;
+  --ramp: linear-gradient(
+    110deg,
+    var(--deep),
+    var(--violet) 30%,
+    var(--blue) 55%,
+    var(--pale) 78%,
+    var(--gold)
+  );
+  --answer: 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  background: var(--night);
+  color: var(--moon);
+  font-family: var(--mm-text), sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+.number,
+.idea,
+.lede,
+.fontNames,
+.principle p,
+.swatchRole,
+.typeLabel,
+.tCaption {
+  color: var(--mist);
+}
+
+.number {
+  font-size: 0.8125rem;
+}
+
+.name,
+.sectionTitle,
+.tDisplay,
+.tTitle,
+.panelTitle,
+.principle h3 {
+  font-family: var(--mm-display), serif;
+}
+
+/* The name is filled with the ramp, the only type that is. */
+.name {
+  margin-top: 0.3rem;
+  /* Sized to fit its box: the ramp only paints inside it, so any overflow
+     would render invisible. */
+  width: fit-content;
+  max-width: 100%;
+  font-size: clamp(2.6rem, 5.2vw, 5rem);
+  line-height: 1;
+  padding-bottom: 0.08em;
+  background: var(--ramp);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline {
+  margin-top: 0.4rem;
+  font-size: 1.3rem;
+  color: var(--gold);
+}
+
+.idea {
+  margin-top: 0.8rem;
+  max-width: 29rem;
+}
+
+.chip,
+.navItem {
+  padding: 0.45rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: rgba(3, 2, 8, 0.6);
+  color: var(--mist);
+  font-size: 0.875rem;
+  backdrop-filter: blur(10px);
+  transition:
+    color var(--answer),
+    border-color var(--answer),
+    background var(--answer);
+}
+
+.chip:hover,
+.navItem:hover {
+  color: var(--moon);
+  border-color: var(--violet);
+}
+
+/* Selected: a gradient ring, drawn by layering the ramp under a solid fill. */
+.chip[aria-pressed="true"],
+.navItem[aria-pressed="true"] {
+  color: var(--moon);
+  border-color: transparent;
+  background:
+    linear-gradient(var(--night), var(--night)) padding-box,
+    var(--ramp) border-box;
+}
+
+.chip:focus-visible,
+.navItem:focus-visible,
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.btnQuiet:focus-visible,
+.btnIcon:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 3px;
+}
+
+.section {
+  position: relative;
+}
+
+/* Section rules are a thread of the ramp, fading at both ends. */
+.section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 6vw;
+  right: 6vw;
+  height: 1px;
+  background: var(--ramp);
+  opacity: 0.35;
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+}
+
+.sectionTitle {
+  font-size: 2.1rem;
+  line-height: 1.05;
+}
+
+.principle h3 {
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.swatchChip {
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+}
+
+.radiusBox {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--night), var(--night)) padding-box,
+    var(--ramp) border-box;
+}
+
+.swatchName {
+  font-weight: 600;
+}
+
+.swatchHex {
+  color: var(--violet);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatchRole {
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.typeLabel {
+  font-size: 0.8125rem;
+}
+
+.tDisplay {
+  font-size: clamp(2.4rem, 4.8vw, 4rem);
+  line-height: 1.02;
+}
+
+.tTitle {
+  font-size: 2rem;
+}
+
+.tBody {
+  max-width: 34rem;
+}
+
+.tCaption {
+  font-size: 0.8125rem;
+}
+
+.cellTitle {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--mist);
+}
+
+.btnPrimary {
+  padding: 0.75rem 1.4rem;
+  border-radius: 14px;
+  border: 0;
+  background: var(--ramp);
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+  color: var(--night);
+  font-weight: 600;
+  transition: background-position 900ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+
+/* Hover carries the colour along the ramp toward gold: arrival. */
+.btnPrimary:hover {
+  background-position: 100% 50%;
+}
+
+.btnSecondary {
+  padding: 0.72rem 1.35rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--night), var(--night)) padding-box,
+    var(--ramp) border-box;
+  color: var(--moon);
+  font-weight: 500;
+  transition: box-shadow var(--answer);
+}
+
+.btnSecondary:hover {
+  box-shadow: 0 0 30px rgba(122, 92, 255, 0.35);
+}
+
+.btnQuiet {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--moon);
+  position: relative;
+}
+
+.btnQuiet::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.2rem;
+  height: 1px;
+  background: var(--ramp);
+  transform-origin: left;
+  transform: scaleX(0.35);
+  transition: transform 600ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+
+.btnQuiet:hover::after {
+  transform: scaleX(1);
+}
+
+.btnIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--night), var(--night)) padding-box,
+    var(--ramp) border-box;
+}
+
+.iconDot,
+.navDot {
+  background: var(--pale);
+  box-shadow: 0 0 12px var(--blue);
+}
+
+.nav {
+  gap: 0.35rem;
+}
+
+.panel {
+  border-radius: 28px 28px 28px 6px;
+  border: 1px solid transparent;
+  padding: 1.75rem 2rem 2rem;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(122, 92, 255, 0.18), transparent 55%)
+      padding-box,
+    linear-gradient(#07051a, #07051a) padding-box,
+    linear-gradient(
+        160deg,
+        rgba(122, 92, 255, 0.6),
+        transparent 40%,
+        transparent 70%,
+        rgba(243, 212, 155, 0.5)
+      )
+      border-box;
+}
+
+.tag {
+  padding: 0.1rem 0.7rem;
+  border-radius: 14px;
+  background: rgba(122, 92, 255, 0.18);
+  color: var(--pale);
+  font-size: 0.8125rem;
+}
+
+.panelTitle {
+  margin-top: 0.9rem;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.pairs dt {
+  color: var(--gold);
+  font-size: 0.875rem;
+}
+
+.link {
+  color: var(--moon);
+  text-decoration: underline;
+  text-decoration-color: var(--violet);
+  text-underline-offset: 0.3em;
+}
+
+.link:hover {
+  text-decoration-color: var(--gold);
+}
+
+.track {
+  background: var(--ramp) center / 100% 1px no-repeat;
+  opacity: 0.9;
+}
+
+.trackDot {
+  --dot: 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--moon);
+  box-shadow:
+    -14px 0 0 -3px rgba(191, 224, 255, 0.35),
+    -26px 0 0 -4px rgba(122, 92, 255, 0.2),
+    0 0 14px var(--violet);
+}
+
+.textureWrap {
+  border-radius: 28px 28px 28px 6px;
+  border: 1px solid var(--hair);
+}

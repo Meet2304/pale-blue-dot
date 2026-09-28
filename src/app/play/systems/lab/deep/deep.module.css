@@ -1,0 +1,39 @@
+/* Deep Field: cinematic and calm. Wide light type; panels lit by bokeh. */
+.root {
+  --bg: #000000;
+  --fg: #f0f1f6;
+  --soft: #a9acba;
+  --mute: #686b7c;
+  --line: #1a1b25;
+  --surface: #07070c;
+  --font-display: var(--df-sans), sans-serif;
+  --font-text: var(--df-sans), sans-serif;
+  --font-mono: var(--df-mono), monospace;
+  --display-weight: 200;
+  --display-tracking: -0.04em;
+  --r-control: 12px;
+  --r-panel: 20px;
+  --r-tag: 8px;
+  --on-accent: #000000;
+  --section-rule: 1px solid #13141c;
+  --panel-texture:
+    radial-gradient(
+      circle at 88% 18%,
+      color-mix(in srgb, var(--accent) 22%, transparent) 0 22px,
+      transparent 60px
+    ),
+    radial-gradient(
+      circle at 70% 8%,
+      color-mix(in srgb, var(--accent) 12%, transparent) 0 10px,
+      transparent 34px
+    ),
+    radial-gradient(
+      circle at 96% 42%,
+      rgba(255, 255, 255, 0.05) 0 14px,
+      transparent 40px
+    );
+
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+}

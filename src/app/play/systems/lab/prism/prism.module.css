@@ -1,0 +1,27 @@
+/* Prism: frosted glass, a thin spectral edge, and categories always in
+   rainbow order. */
+.root {
+  --bg: #000000;
+  --fg: #f3f4f7;
+  --soft: #aeb2bd;
+  --mute: #6b6f7b;
+  --line: rgba(255, 255, 255, 0.1);
+  --surface: rgba(255, 255, 255, 0.03);
+  --font-display: var(--pr-sans), sans-serif;
+  --font-text: var(--pr-sans), sans-serif;
+  --font-mono: var(--pr-mono), monospace;
+  --display-weight: 400;
+  --display-tracking: -0.04em;
+  --r-control: 10px;
+  --r-panel: 18px;
+  --r-tag: 999px;
+  --on-accent: #000000;
+  --section-rule: 1px solid rgba(255, 255, 255, 0.06);
+  /* A hairline of spectrum along the top of every panel. */
+  --panel-texture: linear-gradient(90deg, #f0a0a8, #e8c27a, #6fd6c8, #8ab8ff, #c3a1ff)
+    top / 100% 1px no-repeat;
+
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+}
