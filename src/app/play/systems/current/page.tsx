@@ -4,10 +4,10 @@ import {
   Geist,
   Geist_Mono,
   Hanken_Grotesk,
-  IBM_Plex_Mono,
   Instrument_Sans,
 } from "next/font/google";
 
+import { plexMono } from "../../plex";
 import { CurrentSystem, type Pairing } from "./current-system";
 
 /* Three quiet pairings to compare. Each is a plain sans with a mono beside it:
@@ -21,11 +21,6 @@ const fragment = Fragment_Mono({
   variable: "--cr-fragment",
 });
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--cr-hanken" });
-const plex = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  variable: "--cr-plex",
-});
 
 const PAIRINGS: Pairing[] = [
   {
@@ -44,14 +39,14 @@ const PAIRINGS: Pairing[] = [
     key: "hanken",
     label: "Hanken Grotesk + IBM Plex Mono",
     sans: "--cr-hanken",
-    mono: "--cr-plex",
+    mono: "--plex-mono",
   },
 ];
 
 export const metadata: Metadata = { title: "Current", robots: { index: false } };
 
 export default function CurrentPage() {
-  const fonts = [geist, geistMono, instrument, fragment, hanken, plex]
+  const fonts = [geist, geistMono, instrument, fragment, hanken, plexMono]
     .map((f) => f.variable)
     .join(" ");
   return (

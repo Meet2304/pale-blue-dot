@@ -6,9 +6,9 @@
   --mute: #616a77;
   --line: #19202a;
   --surface: #05080c;
-  --font-display: var(--te-sans), sans-serif;
-  --font-text: var(--te-sans), sans-serif;
-  --font-mono: var(--te-mono), monospace;
+  --font-display: var(--plex-sans), sans-serif;
+  --font-text: var(--plex-sans), sans-serif;
+  --font-mono: var(--plex-mono), monospace;
   --display-weight: 300;
   --display-tracking: -0.03em;
   --r-control: 6px;

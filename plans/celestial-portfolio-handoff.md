@@ -423,11 +423,15 @@ is calm; Meet approves the Earth → map → years → home journey.
 5. **Faded trails** (`rgba(0,0,0,a)` over the last frame) leave ghost pixels at 2–3/255; use a
    full clear, or `filter: contrast(1.035)` on the canvas.
 6. **next/font:** `axes` can't be combined with an explicit `weight` list.
-7. **Turbopack** occasionally serves a stale font-module error after new fonts are added;
+7. **Load each Google font family once.** IBM Plex is declared once in
+   `src/app/play/plex.ts` and imported everywhere. Declaring the same family in several files
+   with different options broke Vercel's cold build ("next/font/google queries have exactly
+   one entry"). Keep it that way in production (for example, one `fonts.ts`).
+8. **Turbopack** occasionally serves a stale font-module error after new fonts are added;
    delete `.next` and restart.
-8. **Windows paths** contain spaces (`Projects_Ad Astra`); Git Bash rewrites leading `/` in
+9. **Windows paths** contain spaces (`Projects_Ad Astra`); Git Bash rewrites leading `/` in
    arguments into Windows paths.
-9. **Next's dev indicator** sits bottom-left; keep fixed UI away from that corner.
+10. **Next's dev indicator** sits bottom-left; keep fixed UI away from that corner.
 
 ---
 

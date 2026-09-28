@@ -32,9 +32,9 @@
   --fg: #e8ebf0;
   --soft: #a2a8b4;
   --mute: #646b78;
-  --font-display: var(--tm-sans), sans-serif;
-  --font-text: var(--tm-sans), sans-serif;
-  --font-mono: var(--tm-mono), monospace;
+  --font-display: var(--plex-sans), sans-serif;
+  --font-text: var(--plex-sans), sans-serif;
+  --font-mono: var(--plex-mono), monospace;
 
   /* The light: a highlight up and to the left, a shadow down and to the
      right. The highlight is tinted by the accent, so the room glows with

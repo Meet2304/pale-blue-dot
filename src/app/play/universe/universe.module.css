@@ -6,8 +6,8 @@
   --soft: #a3a9b4;
   --mute: #6a717d;
   --hair: rgb(255 255 255 / 0.09);
-  --font-sans: var(--uv-sans), sans-serif;
-  --font-mono: var(--uv-mono), monospace;
+  --font-sans: var(--plex-sans), sans-serif;
+  --font-mono: var(--plex-mono), monospace;
   --kind: #9cc8ff;
   --kind-soft: #cfe3ff;
 
