@@ -11,13 +11,14 @@
 
 ## Links
 
-| What                       | Where                                                                                                |
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Branch                     | `play` on `github.com/Meet2304/pale-blue-dot`: <https://github.com/Meet2304/pale-blue-dot/tree/play> |
-| **The demo (the concept)** | Route **`/play/universe`**. Locally: <http://localhost:3107/play/universe>                           |
-| Body specimens             | Route **`/play/universe/bodies`**: each celestial body alone and large, with the scanner             |
-| Demo source                | `src/app/play/universe/`                                                                             |
-| Everything explored before | `/play` (five site concepts) and `/play/systems` (design-system explorations)                        |
+| What                       | Where                                                                                                                                                                                                                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch                     | `play` on `github.com/Meet2304/pale-blue-dot`: <https://github.com/Meet2304/pale-blue-dot/tree/play>                                                                                                                                                                                                              |
+| **The demo (the concept)** | Route **`/play/universe`**. Locally: <http://localhost:3107/play/universe>                                                                                                                                                                                                                                        |
+| **Live preview**           | <https://pale-blue-dot-git-play-meets-projects-ffe33866.vercel.app/play/universe>: the Vercel preview of the `play` branch, which follows the branch. It sits behind Vercel deployment protection, so sign in to Meet's Vercel team or ask him for a share link. Don't change protection settings without asking. |
+| Body specimens             | Route **`/play/universe/bodies`**: each celestial body alone and large, with the scanner                                                                                                                                                                                                                          |
+| Demo source                | `src/app/play/universe/`                                                                                                                                                                                                                                                                                          |
+| Everything explored before | `/play` (five site concepts) and `/play/systems` (design-system explorations)                                                                                                                                                                                                                                     |
 
 To run it:
 
