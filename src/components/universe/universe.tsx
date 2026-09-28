@@ -14,6 +14,7 @@ import { CONTACT, COLLECTIONS, UNITS, type Kind, type Unit } from "@/content/wor
 import { routes } from "@/lib/routes";
 
 import { KINDS, KIND_ORDER, kindColors } from "./encoding";
+import { Greeting, Intro } from "./intro";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
 
@@ -27,9 +28,25 @@ const kindVars = (k: Kind) => {
 
 const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* The opening plays once per visit: on every fresh load, but not again when
+   someone comes back to the home page from /story or a unit's page within
+   the same visit. Module state lives exactly that long. */
+let introPlayed = false;
+
+type IntroPhase = "intro" | "landing" | "done";
+
 export function Universe() {
   const [filter, setFilter] = useState<Kind | "all">("all");
   const [active, setActive] = useState(0);
+  const [intro, setIntro] = useState<IntroPhase>(() =>
+    introPlayed ? "done" : "intro",
+  );
+  const greetingRef = useRef<HTMLParagraphElement>(null);
+  const onLand = useCallback(() => setIntro("landing"), []);
+  const onIntroDone = useCallback(() => {
+    introPlayed = true;
+    setIntro("done");
+  }, []);
   const hoverRef = useRef<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   /* Where the last jump was headed, and when: a second key press during a
@@ -93,7 +110,10 @@ export function Universe() {
   };
 
   return (
-    <main id="content" className={s.root}>
+    <main id="content" className={s.root} data-intro={intro}>
+      {intro !== "done" && (
+        <Intro target={greetingRef} onLand={onLand} onDone={onIntroDone} />
+      )}
       <section
         ref={sectionRef}
         data-universe
@@ -147,12 +167,14 @@ export function Universe() {
 
         <div className={s.chapters}>
           <Chapter>
-            <p className={s.kicker}>Meet Bhatt</p>
-            <h1 className={s.hero}>What&apos;s missing, I make.</h1>
-            <p className={s.lede}>
+            <Greeting ref={greetingRef} className={s.greeting} />
+            <h1 className={`${s.hero} ${s.reveal}`}>
+              Adding light to the pale blue dot.
+            </h1>
+            <p className={`${s.lede} ${s.reveal}`}>
               AI engineer and product builder. MS in AI Engineering at Carnegie Mellon.
             </p>
-            <p className={s.hint}>scroll to pull back</p>
+            <p className={`${s.hint} ${s.reveal}`}>scroll to pull back</p>
           </Chapter>
 
           <Chapter>

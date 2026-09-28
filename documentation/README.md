@@ -2,6 +2,7 @@
 
 Dated notes about notable changes to this repo. Newest first.
 
+- [2026-09-28 — Hero: the greeting, and a new line](./2026-09-28-hero-greeting.md)
 - [2026-09-28 — The universe replaces the coming-soon page](./2026-09-28-universe-home.md)
 - [2026-08-23 — Story page, on any host](./2026-08-23-story-page-any-host.md)
 - [2026-08-23 — Resume glow stays outside an opaque chip](./2026-08-23-resume-glow-opaque-chip.md)

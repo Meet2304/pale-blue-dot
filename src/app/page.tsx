@@ -5,7 +5,7 @@ import { Universe } from "@/components/universe/universe";
 import { plexVariables } from "./fonts";
 
 export const metadata: Metadata = {
-  title: { absolute: "Meet Bhatt — What’s missing, I make." },
+  title: { absolute: "Meet Bhatt — Adding light to the pale blue dot." },
   description:
     "Meet Bhatt, AI engineer and product builder. Everything he has worked on, drawn as one universe around the pale blue dot.",
 };

@@ -10,6 +10,10 @@
   --font-mono: var(--plex-mono), monospace;
   --kind: #9cc8ff;
   --kind-soft: #cfe3ff;
+  /* Earth's pale blue (EARTH_COLORS: accent, soft, near-white). */
+  --earth: #92cbfb;
+  --earth-soft: #c9e2f8;
+  --earth-white: #eff6fd;
 
   background: #000;
   color: var(--fg);
@@ -208,11 +212,163 @@
 }
 
 .hero {
-  margin-top: 0.5rem;
+  margin-top: 0.9rem;
   font-weight: 200;
-  font-size: clamp(3rem, 6.4vw, 5.8rem);
-  line-height: 0.95;
+  font-size: clamp(2.8rem, 5vw, 4.6rem);
+  line-height: 0.98;
   letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.chapter:first-child .column {
+  max-width: 34rem;
+}
+
+/* ------------------------------------------------------------ The intro */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The greeting, set the same way in the intro and in the hero so the one
+   can fly onto the other. Its full stop is the pale blue dot. */
+.greeting,
+.introLine {
+  margin: 0;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.greeting {
+  font-size: clamp(1.3rem, 2.1vw, 1.7rem);
+}
+
+.ch {
+  position: relative;
+  display: inline-block;
+}
+
+.chReal {
+  opacity: 0;
+  transition: opacity 260ms;
+}
+
+.ch[data-set] .chReal {
+  opacity: 1;
+}
+
+.chGlyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.55em;
+  color: var(--earth-soft);
+}
+
+.period {
+  color: var(--earth);
+  text-shadow: 0 0 0.5em rgb(146 203 251 / 0.55);
+}
+
+.intro {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+  transition: background-color 900ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.intro[data-lifting] {
+  background-color: transparent;
+}
+
+.intro[data-fading] {
+  opacity: 0;
+  transition: opacity 450ms;
+}
+
+.introLine {
+  font-size: clamp(2.8rem, 9vw, 7.5rem);
+}
+
+/* The pale blue dot: first alone at the centre, then gliding to where the
+   greeting's full stop will be, and handing over to it. */
+.introDot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--earth-white);
+  box-shadow:
+    0 0 10px 3px rgb(146 203 251 / 0.65),
+    0 0 36px 10px rgb(146 203 251 / 0.22);
+  opacity: 0;
+  transition:
+    left 750ms cubic-bezier(0.65, 0, 0.35, 1),
+    top 750ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 500ms,
+    scale 500ms;
+}
+
+.intro[data-ready] .introDot {
+  opacity: 1;
+}
+
+.intro[data-ready] .introDot[data-gone] {
+  opacity: 0;
+  scale: 0.4;
+}
+
+/* While the intro plays, the hero waits: its greeting appears only once the
+   flying one has landed on it, and the rest rises in as the black lifts. */
+.root:not([data-intro="done"]) .greeting {
+  visibility: hidden;
+}
+
+.reveal,
+.filter,
+.ticks {
+  transition:
+    opacity 700ms,
+    translate 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.root[data-intro="intro"] :is(.reveal, .filter, .ticks) {
+  opacity: 0;
+}
+
+.root[data-intro="intro"] .reveal {
+  translate: 0 10px;
+}
+
+.root[data-intro="landing"] .reveal {
+  transition-delay: 450ms;
+}
+
+.root[data-intro="landing"] .reveal + .reveal {
+  transition-delay: 560ms;
+}
+
+.root[data-intro="landing"] .reveal + .reveal + .reveal {
+  transition-delay: 670ms;
+}
+
+.root[data-intro="landing"] :is(.filter, .ticks) {
+  transition-delay: 700ms;
 }
 
 .title {
@@ -480,7 +636,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .column {
+  .column,
+  .reveal,
+  .introDot {
     transition: none;
   }
 }
