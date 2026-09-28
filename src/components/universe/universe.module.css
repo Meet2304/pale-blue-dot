@@ -279,6 +279,14 @@
   text-shadow: 0 0 0.5em rgb(146 203 251 / 0.55);
 }
 
+/* The full stop is the pale blue dot, and the last thing said: it glows in
+   more slowly than the letters. */
+.ch[data-period] .chReal {
+  transition-duration: 700ms;
+}
+
+/* The black is lifted frame by frame by the intro itself, on the same curve
+   as the line's flight. */
 .intro {
   position: fixed;
   z-index: 50;
@@ -286,11 +294,6 @@
   display: grid;
   place-items: center;
   background: #000;
-  transition: background-color 900ms cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.intro[data-lifting] {
-  background-color: transparent;
 }
 
 .intro[data-fading] {
@@ -302,35 +305,12 @@
   font-size: clamp(2.8rem, 9vw, 7.5rem);
 }
 
-/* The pale blue dot: first alone at the centre, then gliding to where the
-   greeting's full stop will be, and handing over to it. */
-.introDot {
+/* In flight the line is placed by its top-left corner, which is where the
+   hero's greeting begins; the intro sets the position and size. */
+.introLine[data-flying] {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  border-radius: 50%;
-  background: var(--earth-white);
-  box-shadow:
-    0 0 10px 3px rgb(146 203 251 / 0.65),
-    0 0 36px 10px rgb(146 203 251 / 0.22);
-  opacity: 0;
-  transition:
-    left 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    top 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    opacity 500ms,
-    scale 500ms;
-}
-
-.intro[data-ready] .introDot {
-  opacity: 1;
-}
-
-.intro[data-ready] .introDot[data-gone] {
-  opacity: 0;
-  scale: 0.4;
+  justify-self: start;
+  align-self: start;
 }
 
 /* While the intro plays, the hero waits: its greeting appears only once the
@@ -355,20 +335,22 @@
   translate: 0 10px;
 }
 
+/* The flight takes 1.5 s. The rest of the hero starts to rise in as the
+   line slows into place, so the two finish together. */
 .root[data-intro="landing"] .reveal {
-  transition-delay: 450ms;
+  transition-delay: 750ms;
 }
 
 .root[data-intro="landing"] .reveal + .reveal {
-  transition-delay: 560ms;
+  transition-delay: 880ms;
 }
 
 .root[data-intro="landing"] .reveal + .reveal + .reveal {
-  transition-delay: 670ms;
+  transition-delay: 1010ms;
 }
 
 .root[data-intro="landing"] :is(.filter, .ticks) {
-  transition-delay: 700ms;
+  transition-delay: 1100ms;
 }
 
 .title {
@@ -637,8 +619,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .column,
-  .reveal,
-  .introDot {
+  .reveal {
     transition: none;
+  }
+  /* Nothing flies: the black fades away with the centred line, and the
+     hero's greeting is already in place beneath it. */
+  .root[data-intro="landing"] .greeting {
+    visibility: visible;
   }
 }
