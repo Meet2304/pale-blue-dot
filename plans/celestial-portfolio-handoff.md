@@ -278,10 +278,19 @@ and spikes at high impact, twinkling. It **resolves into its full body** as its 
 radius grows from 26 px to 70 px (smoothstep cross-fade). This is DECIDED: "It is ok if each
 and every contribution is not visible completely."
 
-**The galaxy backdrop** (`galaxy.ts`): rendered once per resize into an offscreen canvas at
-the map's zoom. A warm core with a radial glow, two logarithmic spiral arms seen at an angle,
-dust lanes on their inner edges, pink star-forming knots, and a deep field. It turns slowly
-about its centre (0.006 rad/s). It is full at the map and fades out over a 3× zoom-in.
+**The galaxy backdrop** (`galaxy.ts`) is **alive, not a picture (DECIDED: "The ASCII in the
+map section should also be alive").** `buildGalaxy()` measures the shape once per resize into
+a list of character cells (a warm core, two logarithmic spiral arms seen at an angle, dust
+lanes on their inner edges, pink star-forming knots, a deep field). `drawGalaxy()` draws every
+cell live each frame:
+
+- every character re-decides its glyph on its own slow clock (1.6–4.8 s);
+- deep-field stars and knots twinkle at their own rates;
+- waves of light run outward along the arms;
+- the core glow breathes;
+- the whole disc turns about its centre (0.006 rad/s).
+
+It is full at the map and fades out over a 3× zoom-in.
 
 ---
 
@@ -305,18 +314,19 @@ about its centre (0.006 rad/s). It is full at the map and fades out over a 3× z
 
 **DECIDED:** the map is never static.
 
-| Motion                  | Value                                                                                    |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| Orbits around the dot   | `ω = 0.03 · (14/d)^1.5` rad/s; clusters rotate about Earth on ellipses flattened to 0.72 |
-| Galaxy rotation         | 0.006 rad/s about its centre                                                             |
-| Earth spin              | 0.12 rad/s; drag sets velocity, which eases back                                         |
-| Earth's particle orbits | 0.22, −0.14, 0.09 rad/s on three tilted rings                                            |
-| Camera                  | holds ~22% of each step, then eases (smoothstep) with log-space zoom                     |
-| Point → body            | cross-fade over on-screen radius 26–70 px                                                |
-| Galaxy fade             | full at map zoom, gone at 3×                                                             |
-| Filter                  | 10% per frame toward 1 or 0.12                                                           |
-| Chapter copy            | opacity plus an 8 px rise when ≥55% on screen (500 ms / 700 ms)                          |
-| Orbit paths             | dotted, the dash offset drifting slowly                                                  |
+| Motion                  | Value                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Orbits around the dot   | `ω = 0.03 · (14/d)^1.5` rad/s; clusters rotate about Earth on ellipses flattened to 0.72                                       |
+| Galaxy rotation         | 0.006 rad/s about its centre                                                                                                   |
+| Galaxy characters       | each re-picks its glyph every 1.6–4.8 s; arm waves travel outward (0.55 rad/s of spiral phase); stars twinkle at 0.6–2.4 rad/s |
+| Earth spin              | 0.12 rad/s; drag sets velocity, which eases back                                                                               |
+| Earth's particle orbits | 0.22, −0.14, 0.09 rad/s on three tilted rings                                                                                  |
+| Camera                  | holds ~22% of each step, then eases (smoothstep) with log-space zoom                                                           |
+| Point → body            | cross-fade over on-screen radius 26–70 px                                                                                      |
+| Galaxy fade             | full at map zoom, gone at 3×                                                                                                   |
+| Filter                  | 10% per frame toward 1 or 0.12                                                                                                 |
+| Chapter copy            | opacity plus an 8 px rise when ≥55% on screen (500 ms / 700 ms)                                                                |
+| Orbit paths             | dotted, the dash offset drifting slowly                                                                                        |
 
 Reduced motion (`prefers-reduced-motion`): no orbiting, spinning, twinkle or drift; scroll
 still moves the camera. Keep it that way.

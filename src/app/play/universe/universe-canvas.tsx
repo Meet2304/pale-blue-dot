@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { mulberry32 } from "../systems/engine";
 import { fit } from "../systems/lab/live-palette";
 import { EARTH_COLORS, KINDS, colorsOf, layout, type Kind } from "./data";
-import { renderGalaxy, type GalaxyImage } from "./galaxy";
+import { buildGalaxy, drawGalaxy, type Galaxy } from "./galaxy";
 import { drawBody, makeFrame } from "./render";
 
 /**
@@ -81,7 +81,6 @@ export function UniverseCanvas({
       placed.map((p) => [p.id, { x: p.x, y: p.y }]),
     ) as Record<string, { x: number; y: number }>;
     const liveGroup = groups.map((gr) => ({ x: gr.x, y: gr.y }));
-    let galaxyCenter = { x: 0, y: 0 };
     const colors = Object.fromEntries(
       (Object.keys(KINDS) as Kind[]).map((k) => [
         k,
@@ -101,7 +100,7 @@ export function UniverseCanvas({
     let raf = 0;
     let visible = true;
     let keys: Cam[] = [];
-    let galaxy: GalaxyImage | null = null;
+    let galaxy: Galaxy | null = null;
 
     const stars = Array.from({ length: 900 }, () => ({
       x: rnd(),
@@ -183,25 +182,19 @@ export function UniverseCanvas({
         { ...map, ax: 0.5, ay: 0.46, z: mapZ * 0.9 },
       ];
 
-      /* The galaxy, drawn once at the map's zoom, over a margin wide enough
-         for both map framings. */
+      /* The galaxy's cells, measured once at the map's zoom, over a margin
+         wide enough for both map framings and for the disc's slow turn. */
       const span = Math.max(x1 - x0, y1 - y0);
-      const gx0 = map.x - (w * 0.7) / mapZ;
-      const gx1 = map.x + (w * 0.7) / mapZ;
-      const gy0 = map.y - (h * 0.7) / mapZ;
-      const gy1 = map.y + (h * 0.7) / mapZ;
-      galaxyCenter = { x: map.x + span * 0.08, y: map.y - span * 0.04 };
-      galaxy = renderGalaxy({
-        x0: gx0,
-        y0: gy0,
-        x1: gx1,
-        y1: gy1,
+      const reach = (Math.hypot(w, h) * 0.62) / mapZ;
+      galaxy = buildGalaxy({
+        x0: map.x - reach,
+        y0: map.y - reach,
+        x1: map.x + reach,
+        y1: map.y + reach,
         z: mapZ,
-        dpr,
         cx: map.x + span * 0.08,
         cy: map.y - span * 0.04,
         radius: span * 0.8,
-        font: `9px ${mono}`,
       });
     };
 
@@ -290,23 +283,18 @@ export function UniverseCanvas({
       const zq = Math.log(cam.z / keys[1].z);
       const galaxyA = Math.max(0, Math.min(1, zq <= 0 ? 1 : 1 - zq / Math.log(3)));
       if (galaxy && galaxyA > 0.01) {
-        g.globalAlpha = galaxyA;
-        g.imageSmoothingEnabled = true;
-        g.save();
-        const gcx = toX(galaxyCenter.x);
-        const gcy = toY(galaxyCenter.y);
-        g.translate(gcx, gcy);
-        g.rotate(calm ? 0 : t * 0.006);
-        g.translate(-gcx, -gcy);
-        g.drawImage(
-          galaxy.canvas,
-          toX(galaxy.x0),
-          toY(galaxy.y0),
-          (galaxy.x1 - galaxy.x0) * cam.z,
-          (galaxy.y1 - galaxy.y0) * cam.z,
-        );
-        g.restore();
-        g.globalAlpha = 1;
+        drawGalaxy(g, galaxy, {
+          toX,
+          toY,
+          z: cam.z,
+          w,
+          h,
+          t,
+          alpha: galaxyA,
+          rot: calm ? 0 : t * 0.006,
+          calm,
+          mono,
+        });
       }
 
       /* Which bodies the filter keeps. */

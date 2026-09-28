@@ -2,69 +2,95 @@ import { fbm3 } from "../systems/lab/noise";
 import { hash } from "./bodies";
 
 /**
- * The galaxy behind the map, drawn once into an offscreen canvas in the same
- * character grid as everything else: a warm core, two spiral arms seen at an
- * angle, dark dust lanes along their inner edges, pink knots where stars are
- * forming, and a deep field of stars in front and behind.
+ * The galaxy behind the map, in the same character grid as everything else:
+ * a warm core, two spiral arms seen at an angle, dark dust lanes along their
+ * inner edges, pink knots where stars are forming, and a deep field of stars.
+ *
+ * The shape is measured once (per resize) into a list of cells. The cells are
+ * drawn live every frame, so the galaxy is never a picture:
+ *   - every character re-decides itself on its own slow clock;
+ *   - stars twinkle, each at its own rate;
+ *   - waves of light run outward along the arms;
+ *   - the core breathes, and the star-forming knots flicker;
+ *   - the whole disc turns, very slowly, about its centre.
  *
  * Earth is not at the centre. It sits out in an arm, which is where it is.
  */
 
-export type GalaxyImage = {
-  canvas: HTMLCanvasElement;
-  /** The world rectangle the image covers. */
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-};
-
 type Opts = {
-  /** World rectangle to cover, and the zoom it is drawn at (px per unit). */
+  /** World rectangle to fill, and the zoom the grid is measured at. */
   x0: number;
   y0: number;
   x1: number;
   y1: number;
   z: number;
-  dpr: number;
   /** Galaxy centre and radius, in world units. */
   cx: number;
   cy: number;
   radius: number;
-  font: string;
 };
 
+/** Cell kinds, which are also colour rows. */
+const CORE = 0;
+const ARM = 1;
+const DUST = 2;
+const KNOT = 3;
+const FIELD = 4;
+const COLORS = ["#ffdcb0", "#c9d6ff", "#8f86a8", "#ff9fc8", "#e6ebf5"];
+
 const RAMP = [".", "·", ":", ";", "+", "*"];
-const CORE = "#ffdcb0";
-const ARM = "#c9d6ff";
-const DUST = "#8f86a8";
-const KNOT = "#ff9fc8";
-const FIELD = "#e6ebf5";
+const LEVELS = 4;
 
-export function renderGalaxy(o: Opts): GalaxyImage {
-  const wpx = (o.x1 - o.x0) * o.z;
-  const hpx = (o.y1 - o.y0) * o.z;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(wpx * o.dpr);
-  canvas.height = Math.ceil(hpx * o.dpr);
-  const g = canvas.getContext("2d");
-  if (!g) return { canvas, ...o };
-  g.setTransform(o.dpr, 0, 0, o.dpr, 0, 0);
+export type Galaxy = {
+  n: number;
+  /** World position, relative to the galaxy's centre. */
+  x: Float32Array;
+  y: Float32Array;
+  kind: Uint8Array;
+  density: Float32Array;
+  /** Spiral phase at the cell, for waves that travel along the arms. */
+  phase: Float32Array;
+  /** Radius in galaxy units (0 at the core, ~1 at the edge). */
+  r: Float32Array;
+  seed: Float32Array;
+  cx: number;
+  cy: number;
+  radius: number;
+  /** The zoom the grid was measured at. */
+  z: number;
+};
 
+export function buildGalaxy(o: Opts): Galaxy {
   const cw = 6;
   const ch = 10;
+  const wpx = (o.x1 - o.x0) * o.z;
+  const hpx = (o.y1 - o.y0) * o.z;
   const cols = Math.ceil(wpx / cw);
   const rows = Math.ceil(hpx / ch);
 
-  /* Buckets by colour and brightness, so each fillStyle is set once. */
-  const buckets = new Map<string, { x: number[]; y: number[]; c: string[] }>();
-  const put = (color: string, lvl: number, x: number, y: number, c: string) => {
-    const key = `${color}|${lvl}`;
-    let b = buckets.get(key);
-    if (!b) buckets.set(key, (b = { x: [], y: [], c: [] }));
-    b.x.push(x);
-    b.y.push(y);
-    b.c.push(c);
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const kinds: number[] = [];
+  const dens: number[] = [];
+  const phases: number[] = [];
+  const rads: number[] = [];
+  const seeds: number[] = [];
+  const push = (
+    wx: number,
+    wy: number,
+    k: number,
+    d: number,
+    ph: number,
+    r: number,
+    s: number,
+  ) => {
+    xs.push(wx);
+    ys.push(wy);
+    kinds.push(k);
+    dens.push(d);
+    phases.push(ph);
+    rads.push(r);
+    seeds.push(s);
   };
 
   const tilt = -0.42;
@@ -75,13 +101,10 @@ export function renderGalaxy(o: Opts): GalaxyImage {
 
   for (let gy = 0; gy < rows; gy++) {
     for (let gx = 0; gx < cols; gx++) {
-      const X = (gx + 0.5) * cw;
-      const Y = (gy + 0.5) * ch;
       const id = gx * 131 + gy * 977;
-      const wx = o.x0 + X / o.z - o.cx;
-      const wy = o.y0 + Y / o.z - o.cy;
+      const wx = o.x0 + ((gx + 0.5) * cw) / o.z - o.cx;
+      const wy = o.y0 + ((gy + 0.5) * ch) / o.z - o.cy;
 
-      /* Into the galaxy's own plane: unrotate, then undo the inclination. */
       const px = (wx * ct + wy * st) / o.radius;
       const py = (-wx * st + wy * ct) / incl / o.radius;
       const r = Math.hypot(px, py);
@@ -99,51 +122,138 @@ export function renderGalaxy(o: Opts): GalaxyImage {
         (r > 1.15 ? 0 : 1);
       const dust = lane * Math.exp(-r / 0.7) * 0.7 * (r > 0.1 ? 1 : 0);
       const d = Math.max(0, bulge + disk - dust);
+      const s = hash(id, 8);
 
-      /* Star-forming knots, pink, scattered along the arms. */
       if (arm > 0.55 && r > 0.12 && r < 0.95 && n > 0.62 && hash(id, 71) < 0.5) {
-        put(KNOT, 2, X, Y, n > 0.68 ? "+" : ":");
+        push(wx, wy, KNOT, 0.5 + (n - 0.62) * 5, phase, r, s);
         continue;
       }
       if (d > 0.03 && hash(id, 7) < Math.min(0.72, d * 1.9)) {
-        /* Jitter the ramp per cell, so dense regions read as a crowd of
-           stars rather than as rows of type. */
-        const jitter = (hash(id, 8) - 0.5) * 2.4;
-        const i = Math.max(0, Math.min(RAMP.length - 1, Math.floor(d * 4.5 + jitter)));
-        const lvl = Math.max(0, Math.min(3, Math.floor(d * 3.2 + jitter * 0.6)));
-        put(r < 0.2 ? CORE : dust > 0.35 ? DUST : ARM, lvl, X, Y, RAMP[i]);
+        push(wx, wy, r < 0.2 ? CORE : dust > 0.35 ? DUST : ARM, d, phase, r, s);
         continue;
       }
-      /* The deep field: faint stars everywhere, a few bright ones. */
       const hs = hash(id, 9);
       if (hs > 0.985)
-        put(FIELD, hs > 0.998 ? 3 : hs > 0.993 ? 1 : 0, X, Y, hs > 0.998 ? "+" : ".");
+        push(wx, wy, FIELD, hs > 0.998 ? 1.2 : hs > 0.993 ? 0.6 : 0.25, 0, 2, s);
     }
   }
 
-  g.font = o.font;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  for (const [key, b] of buckets) {
-    const [color, lvl] = key.split("|");
-    g.fillStyle = color;
-    g.globalAlpha = [0.28, 0.45, 0.65, 0.9][Number(lvl)];
-    for (let j = 0; j < b.x.length; j++) g.fillText(b.c[j], b.x[j], b.y[j]);
-  }
-  g.globalAlpha = 1;
+  return {
+    n: xs.length,
+    x: Float32Array.from(xs),
+    y: Float32Array.from(ys),
+    kind: Uint8Array.from(kinds),
+    density: Float32Array.from(dens),
+    phase: Float32Array.from(phases),
+    r: Float32Array.from(rads),
+    seed: Float32Array.from(seeds),
+    cx: o.cx,
+    cy: o.cy,
+    radius: o.radius,
+    z: o.z,
+  };
+}
 
-  /* A soft glow under the core, so the centre reads as light, not text. */
-  const ccx = (o.cx - o.x0) * o.z;
-  const ccy = (o.cy - o.y0) * o.z;
-  const rr = o.radius * o.z * 0.42;
-  const grad = g.createRadialGradient(ccx, ccy, 0, ccx, ccy, rr);
-  grad.addColorStop(0, "rgba(255,220,176,0.3)");
-  grad.addColorStop(0.4, "rgba(255,210,170,0.08)");
+/* Reused buckets: kind × brightness level. */
+const BUCKETS = COLORS.length * LEVELS;
+const bx: number[][] = Array.from({ length: BUCKETS }, () => []);
+const by: number[][] = Array.from({ length: BUCKETS }, () => []);
+const bc: string[][] = Array.from({ length: BUCKETS }, () => []);
+
+export function drawGalaxy(
+  g: CanvasRenderingContext2D,
+  gal: Galaxy,
+  o: {
+    toX: (x: number) => number;
+    toY: (y: number) => number;
+    z: number;
+    w: number;
+    h: number;
+    t: number;
+    alpha: number;
+    rot: number;
+    calm: boolean;
+    mono: string;
+  },
+) {
+  const { t, calm } = o;
+  const k = o.z / gal.z;
+  const cr = Math.cos(o.rot);
+  const sr = Math.sin(o.rot);
+  const gcx = o.toX(gal.cx);
+  const gcy = o.toY(gal.cy);
+
+  /* A soft glow under the core that breathes. */
+  const breathe = calm ? 1 : 1 + 0.12 * Math.sin(t * 0.5);
+  const rr = gal.radius * o.z * 0.42;
+  const grad = g.createRadialGradient(gcx, gcy, 0, gcx, gcy, rr);
+  grad.addColorStop(0, `rgba(255,220,176,${0.3 * breathe * o.alpha})`);
+  grad.addColorStop(0.4, `rgba(255,210,170,${0.08 * breathe * o.alpha})`);
   grad.addColorStop(1, "rgba(255,220,176,0)");
   g.globalCompositeOperation = "lighter";
   g.fillStyle = grad;
-  g.fillRect(ccx - rr, ccy - rr, rr * 2, rr * 2);
+  g.fillRect(gcx - rr, gcy - rr, rr * 2, rr * 2);
   g.globalCompositeOperation = "source-over";
 
-  return { canvas, x0: o.x0, y0: o.y0, x1: o.x1, y1: o.y1 };
+  for (let b = 0; b < BUCKETS; b++) {
+    bx[b].length = 0;
+    by[b].length = 0;
+    bc[b].length = 0;
+  }
+
+  for (let i = 0; i < gal.n; i++) {
+    const X = gcx + (gal.x[i] * cr - gal.y[i] * sr) * o.z;
+    const Y = gcy + (gal.x[i] * sr + gal.y[i] * cr) * o.z;
+    if (X < -10 || Y < -10 || X > o.w + 10 || Y > o.h + 10) continue;
+    const kind = gal.kind[i];
+    const s = gal.seed[i];
+    let d = gal.density[i];
+
+    if (!calm) {
+      if (kind === FIELD) {
+        /* Twinkle, each star at its own rate. */
+        d *= 0.55 + 0.45 * Math.sin(t * (0.6 + s * 1.8) + s * 40);
+      } else if (kind === KNOT) {
+        d *= 0.6 + 0.4 * Math.sin(t * (1.2 + s * 2) + s * 30);
+      } else {
+        /* Waves of light running outward along the arms, a slow pulse in
+           the core, and a small shimmer on every cell. */
+        const wave = Math.max(0, Math.sin(gal.phase[i] * 2 + gal.r[i] * 3 - t * 0.55));
+        const core = kind === CORE ? 0.15 * Math.sin(t * 0.5 - gal.r[i] * 12) : 0;
+        d *= 1 + 0.5 * wave * wave + core + 0.12 * Math.sin(t * (0.8 + s) + s * 20);
+      }
+    }
+    if (d < 0.02) continue;
+
+    let c: string;
+    if (kind === FIELD) c = d > 0.9 ? "+" : ".";
+    else if (kind === KNOT) c = d > 0.8 ? "+" : ":";
+    else {
+      /* Each cell re-decides its glyph on its own slow clock. */
+      const epoch = calm ? 0 : Math.floor(t / (1.6 + s * 3.2) + s * 7);
+      const jitter = (hash(i, epoch) - 0.5) * 2.2;
+      const gi = Math.max(0, Math.min(RAMP.length - 1, Math.floor(d * 4.5 + jitter)));
+      c = RAMP[gi];
+    }
+    const lvl = Math.max(0, Math.min(LEVELS - 1, Math.floor(d * 3.2)));
+    const bIdx = kind * LEVELS + lvl;
+    bx[bIdx].push(X);
+    by[bIdx].push(Y);
+    bc[bIdx].push(c);
+  }
+
+  g.font = `${Math.max(6, Math.min(16, 9 * k))}px ${o.mono}`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  const alphas = [0.28, 0.45, 0.65, 0.9];
+  for (let b = 0; b < BUCKETS; b++) {
+    const xs = bx[b];
+    if (!xs.length) continue;
+    g.fillStyle = COLORS[Math.floor(b / LEVELS)];
+    g.globalAlpha = alphas[b % LEVELS] * o.alpha;
+    const ys = by[b];
+    const cs = bc[b];
+    for (let j = 0; j < xs.length; j++) g.fillText(cs[j], xs[j], ys[j]);
+  }
+  g.globalAlpha = 1;
 }
