@@ -114,6 +114,24 @@ export function UniverseCanvas({
       ...o,
       a: Array.from({ length: o.n }, () => rnd() * Math.PI * 2),
     }));
+    /* The stars behind Earth: fewer and brighter than the dust above, each
+       drawn as a light glyph that twinkles on its own clock. Their own seed,
+       so adding them left every other random draw as it was. */
+    const srnd = mulberry32(11);
+    const TINTS = ["#dfe6f5", "#ffd08a", EARTH_COLORS[3]];
+    const skyStars = Array.from({ length: 240 }, (_, order) => {
+      const hue = srnd();
+      return {
+        order,
+        x: srnd(),
+        y: srnd(),
+        z: srnd(),
+        b: 0.3 + Math.pow(srnd(), 2.2) * 0.7,
+        rate: 0.6 + srnd() * 1.8,
+        p: srnd() * Math.PI * 2,
+        tint: hue < 0.84 ? 0 : hue < 0.92 ? 1 : 2,
+      };
+    }).sort((a, b) => a.tint - b.tint);
 
     let yaw = 0;
     let yawVel = 0.12;
@@ -279,6 +297,42 @@ export function UniverseCanvas({
         g.fillRect(px, py, 1.1, 1.1);
       }
       g.globalAlpha = 1;
+
+      /* The stars behind Earth. They belong to the close-up: as the camera
+         pulls back they gather in towards the dot and fade, and the
+         galaxy's own deep field takes over. A star's glyph follows its
+         brightness (· then + then *), the way the galaxy's characters
+         re-decide theirs, and none is drawn over Earth's disc. */
+      const near = Math.max(0, 1 - s);
+      if (near > 0.01) {
+        const ex0 = toX(0);
+        const ey0 = toY(0);
+        const pull = cam.z / keys[0].z;
+        const clear = cam.z * 1.12;
+        const count = Math.min(skyStars.length, Math.round((w * h) / 9000));
+        g.font = `${narrow ? 10 : 11}px ${mono}`;
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        let tint = -1;
+        for (const st of skyStars) {
+          /* A density, not a fixed number, so a phone gets a sparser sky.
+             The draws are random, so any first few are an even scatter. */
+          if (st.order >= count) continue;
+          const k = Math.pow(pull, 0.08 + 0.12 * st.z);
+          const px = ex0 + (st.x * w - ex0) * k;
+          const py = ey0 + (st.y * h - ey0) * k;
+          if (Math.hypot(px - ex0, py - ey0) < clear) continue;
+          const tw = calm ? 0.8 : (0.5 + 0.5 * Math.sin(t * st.rate + st.p)) ** 2;
+          const level = st.b * (0.3 + 0.7 * tw);
+          if (st.tint !== tint) {
+            tint = st.tint;
+            g.fillStyle = TINTS[tint];
+          }
+          g.globalAlpha = Math.min(1, level * near * 1.1);
+          g.fillText(level > 0.72 ? "*" : level > 0.42 ? "+" : "·", px, py);
+        }
+        g.globalAlpha = 1;
+      }
 
       /* The galaxy: full at the map, fading as the camera closes on a year
          or on Earth, when the bodies themselves take over. */
