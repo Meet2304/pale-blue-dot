@@ -2,6 +2,7 @@
 
 Dated notes about notable changes to this repo. Newest first.
 
+- [2026-09-28 — The bar, a tab for each kind of work, and the bodies in detail](./2026-09-28-work-menu.md)
 - [2026-09-28 — Hero: the greeting, and a new line](./2026-09-28-hero-greeting.md)
 - [2026-09-28 — The universe replaces the coming-soon page](./2026-09-28-universe-home.md)
 - [2026-08-23 — Story page, on any host](./2026-08-23-story-page-any-host.md)

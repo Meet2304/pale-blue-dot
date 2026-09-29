@@ -1,4 +1,11 @@
-import { BODIES, EXTENT, type BodyId, type Cell, type Frame } from "./bodies";
+import {
+  BODIES,
+  EXTENT,
+  type BodyFn,
+  type BodyId,
+  type Cell,
+  type Frame,
+} from "./bodies";
 
 /**
  * Draw one body into the character grid. The grid is absolute (cells sit at
@@ -7,7 +14,9 @@ import { BODIES, EXTENT, type BodyId, type Cell, type Frame } from "./bodies";
  */
 
 const LEVELS = 4;
-const BUCKETS = 7 * LEVELS;
+/* Room for two bodies' colours at once (7 tiers each): the work menu
+   morphs one body into another in a single pass. */
+const BUCKETS = 14 * LEVELS;
 const bx: number[][] = Array.from({ length: BUCKETS }, () => []);
 const by: number[][] = Array.from({ length: BUCKETS }, () => []);
 const bc: string[][] = Array.from({ length: BUCKETS }, () => []);
@@ -28,15 +37,22 @@ export function drawBody(
     colors: string[];
     alpha: number;
     font: string;
+    /** Draw with another renderer (the work menu's portraits). */
+    fn?: BodyFn;
+    extent?: number;
+    /** The light under the glyphs and the photon ring; off when the
+        caller draws its own. */
+    light?: boolean;
   },
 ) {
-  const { w, h, cx, cy, R, cw, ch, frame, colors, alpha } = o;
-  const fn = BODIES[body];
-  const reach = EXTENT[body] * R;
+  const { w, h, cx, cy, R, cw, ch, frame, colors, alpha, light = true } = o;
+  const fn = o.fn ?? BODIES[body];
+  const extent = o.extent ?? EXTENT[body];
+  const reach = extent * R;
   if (cx + reach < 0 || cx - reach > w || cy + reach < 0 || cy - reach > h) return;
 
   /* Light under the glyphs: what makes a star read as light. */
-  if (body === "sun" || body === "blackhole") {
+  if (light && (body === "sun" || body === "blackhole")) {
     const hot = body === "sun";
     const gr = R * (hot ? 2.4 : 1.6);
     const grad = g.createRadialGradient(cx, cy, 0, cx, cy, gr);
@@ -85,7 +101,7 @@ export function drawBody(
       const Y = (gy + 0.5) * ch;
       const nx = (X - cx) / R;
       const ny = (Y - cy) / R;
-      if (nx * nx + ny * ny > EXTENT[body] ** 2) continue;
+      if (nx * nx + ny * ny > extent * extent) continue;
       if (!fn(nx, ny, gx * 131 + gy * 977, frame, cell)) continue;
       const lvl = Math.min(
         LEVELS - 1,
@@ -113,7 +129,7 @@ export function drawBody(
   g.globalAlpha = 1;
 
   /* The photon ring, drawn as light: a thin circle with a bloom. */
-  if (body === "blackhole" && R > 20) {
+  if (light && body === "blackhole" && R > 20) {
     g.save();
     g.strokeStyle = withAlpha("#fff4e2", 0.9 * alpha);
     g.lineWidth = Math.max(1, R * 0.012);

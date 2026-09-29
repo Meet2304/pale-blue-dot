@@ -14,7 +14,9 @@ import { CONTACT, COLLECTIONS, UNITS, type Kind, type Unit } from "@/content/wor
 import { routes } from "@/lib/routes";
 
 import { KINDS, KIND_ORDER, kindColors } from "./encoding";
-import { Greeting, Intro } from "./intro";
+import { Greeting, Headline, Intro, SpokenTitle } from "./intro";
+import { MAP_TITLE } from "./intro-timeline";
+import { UniverseNav } from "./nav";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
 
@@ -42,7 +44,14 @@ export function Universe() {
     introPlayed ? "done" : "intro",
   );
   const greetingRef = useRef<HTMLParagraphElement>(null);
-  const onLand = useCallback(() => setIntro("landing"), []);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  /* When Earth began to arrive: not yet while the opening speaks (null),
+     long ago if the opening has already played this visit (0). */
+  const arriveRef = useRef<number | null>(introPlayed ? 0 : null);
+  const onLand = useCallback(() => {
+    arriveRef.current = performance.now();
+    setIntro("landing");
+  }, []);
   const onIntroDone = useCallback(() => {
     introPlayed = true;
     setIntro("done");
@@ -112,8 +121,16 @@ export function Universe() {
   return (
     <main id="content" className={s.root} data-intro={intro}>
       {intro !== "done" && (
-        <Intro target={greetingRef} onLand={onLand} onDone={onIntroDone} />
+        <Intro
+          target={greetingRef}
+          headline={headlineRef}
+          onLand={onLand}
+          onDone={onIntroDone}
+        />
       )}
+      {/* Outside the pinned stage, which is a layer of its own under the
+          chapters' text: fixed here, the bar and its menu sit above both. */}
+      <UniverseNav filter={filter} setFilter={setFilter} goTo={goTo} chapter={active} />
       <section
         ref={sectionRef}
         data-universe
@@ -124,32 +141,10 @@ export function Universe() {
           <UniverseCanvas
             filter={filter}
             hoverRef={hoverRef}
+            arriveRef={arriveRef}
             onPick={(ci) => goTo(ci + 2)}
             className={s.canvas}
           />
-          <nav className={s.filter} aria-label="Show one kind of work">
-            <button
-              type="button"
-              aria-pressed={filter === "all"}
-              onClick={() => setFilter("all")}
-            >
-              all
-            </button>
-            {KIND_ORDER.map((k) => (
-              <button
-                key={k}
-                type="button"
-                style={kindVars(k)}
-                aria-pressed={filter === k}
-                onClick={() => setFilter(filter === k ? "all" : k)}
-              >
-                <span className={s.mark} aria-hidden>
-                  {KINDS[k].mark}
-                </span>
-                {KINDS[k].label.toLowerCase()}
-              </button>
-            ))}
-          </nav>
           <ol className={s.ticks} aria-label="Chapters">
             {TICKS.map((label, i) => (
               <li key={`${label}-${i}`}>
@@ -168,9 +163,7 @@ export function Universe() {
         <div className={s.chapters}>
           <Chapter>
             <Greeting ref={greetingRef} className={s.greeting} />
-            <h1 className={`${s.hero} ${s.reveal}`}>
-              Adding light to the pale blue dot.
-            </h1>
+            <Headline ref={headlineRef} className={s.hero} />
             <p className={`${s.lede} ${s.reveal}`}>
               AI engineer and product builder. MS in AI Engineering at Carnegie Mellon.
             </p>
@@ -179,7 +172,7 @@ export function Universe() {
 
           <Chapter>
             <p className={s.kicker}>The map</p>
-            <h2 className={s.title}>Everything, around one point of light.</h2>
+            <SpokenTitle spoken={MAP_TITLE} className={s.title} />
             <p className={s.lede}>
               Every point of light out here is one part of my life. The small blue one
               is where all of it happened.
@@ -255,7 +248,7 @@ export function Universe() {
         </div>
       </section>
 
-      <section className={s.index} aria-labelledby="index-title">
+      <section id="index" className={s.index} aria-labelledby="index-title">
         <h2 id="index-title" className={s.indexTitle}>
           Index
         </h2>
@@ -296,9 +289,13 @@ function Chapter({ children }: { children: ReactNode }) {
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const io = new IntersectionObserver(([e]) => setOn(e.intersectionRatio > 0.55), {
-      threshold: [0, 0.55, 1],
-    });
+    /* A quick scroll can bring several crossings in one batch: the last
+       is where the chapter is now. Reading the first could leave a chapter
+       that is on screen marked as off it, and so invisible. */
+    const io = new IntersectionObserver(
+      (entries) => setOn(entries[entries.length - 1].intersectionRatio > 0.55),
+      { threshold: [0, 0.55, 1] },
+    );
     io.observe(node);
     return () => io.disconnect();
   }, []);

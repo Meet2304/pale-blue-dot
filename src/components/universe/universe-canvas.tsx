@@ -24,6 +24,16 @@ import { drawBody, makeFrame } from "./render";
  */
 
 const TILT = (23.4 * Math.PI) / 180;
+
+/* Earth's arrival on a fresh visit: nothing while the opening speaks, then,
+   as its lines fly to the hero, a single pale blue point of light that grows
+   into the terminal Earth, on the same curve and in the same time, so both
+   land together. It grows in log space, as the camera zooms: at first a
+   point (the renderer's own for a body too small for glyphs), then glyphs
+   resolving, then the orbits. The same eased curve as the opening's. */
+const ARRIVE = 1500;
+const FROM = 0.012;
+const arrivalEase = (p: number) => (p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
 const ORBITS = [
   { r: 1.3, inc: 0.35, node: 0.2, speed: 0.22, n: 420 },
   { r: 1.55, inc: -0.6, node: 1.2, speed: -0.14, n: 360 },
@@ -35,11 +45,14 @@ type Cam = { x: number; y: number; z: number; ax: number; ay: number; gi?: numbe
 export function UniverseCanvas({
   filter,
   hoverRef,
+  arriveRef,
   onPick,
   className,
 }: {
   filter: Kind | "all";
   hoverRef: { current: string | null };
+  /** When Earth began to arrive (see ARRIVE); null while the opening plays. */
+  arriveRef: { current: number | null };
   onPick: (collection: number) => void;
   className?: string;
 }) {
@@ -268,6 +281,15 @@ export function UniverseCanvas({
         s = Math.min(keys.length - 1, Math.max(0, -top / window.innerHeight));
       }
       const cam = camAt(s);
+      const arrivedAt = arriveRef.current;
+      const arrived =
+        calm || arrivedAt === 0
+          ? 1
+          : arrivedAt === null
+            ? 0
+            : Math.min(1, (now - arrivedAt) / ARRIVE);
+      const earthScale =
+        arrived >= 1 ? 1 : Math.exp(Math.log(FROM) * (1 - arrivalEase(arrived)));
       camNow = cam;
       const toX = (x: number) => cam.ax * w + (x - cam.x) * cam.z;
       const toY = (y: number) => cam.ay * h + (y - cam.y) * cam.z;
@@ -308,7 +330,7 @@ export function UniverseCanvas({
         const ex0 = toX(0);
         const ey0 = toY(0);
         const pull = cam.z / keys[0].z;
-        const clear = cam.z * 1.12;
+        const clear = cam.z * earthScale * 1.12;
         const count = Math.min(skyStars.length, Math.round((w * h) / 9000));
         g.font = `${narrow ? 10 : 11}px ${mono}`;
         g.textAlign = "center";
@@ -361,7 +383,7 @@ export function UniverseCanvas({
 
       const ex = toX(0);
       const ey = toY(0);
-      const earthR = cam.z;
+      const earthR = cam.z * earthScale;
       const mapness = Math.min(
         1,
         Math.max(0, 1 - (Math.log(cam.z) - Math.log(keys[1].z)) / 1.6),
@@ -732,8 +754,9 @@ export function UniverseCanvas({
 
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
-    const io = new IntersectionObserver(([e]) => {
-      visible = e.isIntersecting;
+    const io = new IntersectionObserver((entries) => {
+      /* Several changes can arrive at once: the last is the current one. */
+      visible = entries[entries.length - 1].isIntersecting;
     });
     io.observe(canvas);
 
@@ -791,7 +814,7 @@ export function UniverseCanvas({
       canvas.removeEventListener("click", onClick);
       document.removeEventListener("pointerleave", onLeave);
     };
-  }, [hoverRef]);
+  }, [hoverRef, arriveRef]);
 
   return (
     <canvas

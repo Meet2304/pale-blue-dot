@@ -15,15 +15,81 @@ It is paced like someone speaking:
 3. A pause of about a second, the breath before saying who you are.
 4. "I'm Meet", word after word at the pace of speech. The full stop lights last, in pale
    blue with a soft glow: the pale blue dot arrives as the end of the sentence.
-5. A hold of about a second, then one move of 1.5 s: the line shrinks and travels into
-   the hero while the black lifts off Earth on the same curve. The headline, identity
-   line, filter and chapter ticks rise in as the line slows into place.
+5. After a breath (0.75 s), the line that says what that dot is, beneath the greeting,
+   decoded and ticking the same way, a little quicker: **"This pale blue dot is where
+   I build things."** It is the hero's headline, set in the headline's type, on one
+   line, left-aligned with the greeting (added 29 September; see below).
+6. A hold of 1.3 s, then one move of 1.5 s: the greeting shrinks into its place in the
+   hero, and the second line breaks into the headline's lines and grows into it, every
+   line flying straight to its place, all together. As they leave, the black lifts away
+   in under half a second, and Earth, still a single pale blue point of light, grows
+   into the terminal Earth on the same curve, landing as the lines do (29 September;
+   see below). The identity line, bar and chapter ticks rise in as the lines slow into
+   place.
 
-About 4.7 seconds from the first frame. Any key, click, tap or scroll skips straight to
+About 8 seconds from the first frame. Any key, click, tap or scroll skips straight to
 the flight, and nothing scrolls until it has landed. It plays on every fresh load, not
 again when a visitor comes back to `/` from another page in the same visit. Under
 reduced motion each word appears whole on the same beats, and the black fades away over
 a greeting that is already in place.
+
+### A line that becomes the headline (29 September)
+
+On its own, "Adding light to the pale blue dot." assumed visitors knew the reference
+(Voyager 1's photograph of Earth, and Carl Sagan's name for it) and what "adding light"
+meant here. Meet chose to bridge it in the opening: after "Hola! I'm Meet.", a second
+line names the dot, and Earth shows through as it is said.
+
+At first that line faded as the greeting flew into the hero. Meet wanted the opening
+and the hero joined more seamlessly, and chose for the line to become the headline:
+the hero now reads "Hola! I'm Meet." over **"This pale blue dot is where I build
+things."**, and "Adding light to the pale blue dot." is retired from the hero. The
+page title follows. The closing chapter ("It is a little brighter than it was.")
+still stands on its own.
+
+Meet then asked for the line to be said on one line, left-aligned, and to break into
+the headline's lines in flight, line by line. In flight its words are grouped by the
+line each falls on in the hero, and each group flies as one rigid line: its first
+word flies from where it was to where it will be, and the others keep their places
+along it, scaled with the type. Every line flies straight to its place, all of them
+together. (A version in which the bottom line left first, on an arc, so that no line
+crossed another, read to Meet as a jump; he preferred the direct move, in which the
+lower lines pass across the first for a moment.) The hero's headline is built of the
+same per-letter boxes
+(`Headline` in `intro.tsx`) and every destination is measured from it, so on the last
+frame every letter sits on the hero's: 0 px off at 1440×900 and 390×844.
+
+### Earth grows out of the dot (29 September)
+
+Earth used to show through the black, dimmed, for a second before the flight, then
+fade up with the lift. Meet found that faded preview and fade-in clumsy. Now Earth is
+not drawn at all while the opening speaks. As the lines fly, the black lifts in 450 ms
+(what appears is the sky), and Earth grows from a single pale blue point of light to
+the full terminal Earth over the 1.5 s flight, on the same curve, in log space as the
+camera zooms: first the point (the renderer's own for a body too small for glyphs),
+then the glyphs resolving, then the orbits. The page tells the canvas when the flight
+begins (`arriveRef`); on a return visit, or under reduced motion, Earth is simply
+there.
+
+One trap on the way: `letter-spacing` in ems is fixed to pixels where it is declared
+and inherited as pixels, so set on the whole line it did not grow with each word, and
+letters landed up to 9.5 px apart from the hero's. The tracking is now set on each
+word, in its own ems.
+
+As the visitor scrolls on to the map, its title, now **"Everything I've made, I made on
+this little planet."**, is spoken the same way the first time it comes into view
+(`SpokenTitle` in `intro.tsx`). If it is already on screen when the page loads, or
+motion is reduced, it is simply there.
+
+`intro-timeline.ts` is now a builder, `speak(words)`, that gives any line its letters,
+its loading stretches, its ticks and its glyphs on one clock; the opening (greeting and
+second line together) and the map title are both built with it.
+
+Headings made of one box per letter can break a line between any two letters ("little
+pl / anet."), so each word is held together. And an observer with several thresholds
+can report several crossings in one batch on a quick scroll; reading only the first
+left the map title, now and then, never spoken. Every observer on the page now reads
+the latest entry, which also fixes a chapter's text that could stay invisible.
 
 ### Revised the same day
 
@@ -97,7 +163,8 @@ motion they hold still.
 
 ## The line
 
-"What's missing, I make." becomes **"Adding light to the pale blue dot."** Every piece of
-work on the map is a point of light around the dot; the line says what Meet does in the
+"What's missing, I make." became **"Adding light to the pale blue dot."** Every piece of
+work on the map is a point of light around the dot; the line said what Meet does in the
 site's own terms, and the closing chapter ("It is a little brighter than it was.")
-answers it. The page title follows.
+answered it. On 29 September it gave way to "This pale blue dot is where I build
+things.", which needs no reference to follow (see above).

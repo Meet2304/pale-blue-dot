@@ -18,8 +18,12 @@ export const KINDS: Record<
   Kind,
   {
     label: string;
+    /** The heading for this kind in the work menu. */
+    title: string;
     body: BodyId;
     bodyName: string;
+    /** Why this body stands for this kind of work, for the work menu. */
+    about: string;
     mark: string;
     hue: number;
     l: number;
@@ -28,8 +32,10 @@ export const KINDS: Record<
 > = {
   experience: {
     label: "Experience",
+    title: "Professional experience",
     body: "sun",
     bodyName: "star",
+    about: "Jobs and internships: steady light that other people work by.",
     mark: "=",
     hue: 70,
     l: 0.84,
@@ -37,8 +43,10 @@ export const KINDS: Record<
   },
   research: {
     label: "Research",
+    title: "Research",
     body: "constellation",
     bodyName: "constellation",
+    about: "Research: points joined by lines until a pattern shows.",
     mark: "×",
     hue: 185,
     l: 0.8,
@@ -46,8 +54,10 @@ export const KINDS: Record<
   },
   projects: {
     label: "Projects",
+    title: "Projects",
     body: "planet",
     bodyName: "planet",
+    about: "Things I built end to end, each a small world of its own.",
     mark: "+",
     hue: 300,
     l: 0.77,
@@ -55,8 +65,10 @@ export const KINDS: Record<
   },
   leadership: {
     label: "Leadership",
+    title: "Leadership",
     body: "nebula",
     bodyName: "nebula",
+    about: "Clubs and teams: the clouds where other people's work took shape.",
     mark: "~",
     hue: 15,
     l: 0.77,
@@ -64,8 +76,10 @@ export const KINDS: Record<
   },
   education: {
     label: "Education",
+    title: "Education",
     body: "blackhole",
     bodyName: "black hole",
+    about: "School: the deepest gravity, which bent every path after it.",
     mark: "o",
     hue: 225,
     l: 0.86,
@@ -73,12 +87,14 @@ export const KINDS: Record<
   },
 };
 
+/* The order the kinds are read in: the bar's tabs, the phone's chips and
+   the map's key. */
 export const KIND_ORDER: Kind[] = [
-  "experience",
-  "research",
-  "projects",
-  "leadership",
   "education",
+  "experience",
+  "projects",
+  "research",
+  "leadership",
 ];
 
 /** The seven colours a body draws with: five-stop ramp, warm, white. */

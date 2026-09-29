@@ -93,8 +93,9 @@ export function BodyPortrait({
     raf = requestAnimationFrame(frame);
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
-    const io = new IntersectionObserver(([e]) => {
-      visible = e.isIntersecting;
+    const io = new IntersectionObserver((entries) => {
+      /* Several changes can arrive at once: the last is the current one. */
+      visible = entries[entries.length - 1].isIntersecting;
     });
     io.observe(canvas);
     const onMove = (e: PointerEvent) => {

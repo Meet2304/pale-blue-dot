@@ -57,52 +57,6 @@
   display: block;
 }
 
-/* The filter: a row of words. The chosen one is lit in its own colour and
-   underlined with a single hairline. */
-.filter {
-  position: absolute;
-  z-index: 3;
-  top: 1.35rem;
-  left: 50%;
-  translate: -50% 0;
-  display: flex;
-  gap: 1.4rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-}
-
-.filter button {
-  display: inline-flex;
-  gap: 0.4rem;
-  padding: 0.25rem 0;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  background: none;
-  color: var(--mute);
-  font: inherit;
-  cursor: pointer;
-  transition:
-    color 200ms,
-    border-color 200ms;
-}
-
-.filter button .mark {
-  color: inherit;
-}
-
-.filter button:hover {
-  color: var(--soft);
-}
-
-.filter button[aria-pressed="true"] {
-  color: var(--fg);
-  border-bottom-color: var(--kind, var(--fg));
-}
-
-.filter button[aria-pressed="true"] .mark {
-  color: var(--kind);
-}
-
 /* The chapter index down the right edge: where you are, and a way to jump. */
 .ticks {
   position: absolute;
@@ -159,7 +113,372 @@
   width: 22px;
 }
 
-.filter button:focus-visible,
+/* ------------------------------------------------------------- The bar */
+
+/* The bar: type in a hairline frame, like an instrument's readout. Solid
+   black behind it so the stars don't run through the words; no blur, no
+   shadow, no rounded pill. */
+.nav {
+  position: fixed;
+  z-index: 10;
+  top: 1rem;
+  left: 50%;
+  translate: -50% 0;
+  width: min(64rem, calc(100vw - 2rem));
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  height: 2.5rem;
+  padding: 0 0.35rem 0 0.9rem;
+  border: 1px solid var(--hair);
+  background: #000;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-right: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Held empty for Meet's logo, at the size the pale blue dot had, so the name
+   stays where it is until the logo arrives. */
+.brandMark {
+  width: 6px;
+  height: 6px;
+}
+
+.barItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 1.9rem;
+  padding: 0 0.6rem;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 200ms,
+    border-color 200ms;
+}
+
+.barItem:hover,
+.barItem[aria-expanded="true"] {
+  color: var(--fg);
+}
+
+/* A kind's tab: its mark keeps the kind's colour, and while its panel is
+   open, a hairline in that colour sits under it. */
+.tab .mark {
+  color: var(--kind);
+  opacity: 0.7;
+  transition: opacity 200ms;
+}
+
+.tab:hover .mark,
+.tab[aria-expanded="true"] .mark,
+.tab[data-filtered="true"] .mark {
+  opacity: 1;
+}
+
+.tab[aria-expanded="true"] {
+  border-bottom-color: var(--kind);
+}
+
+/* The kind the map is filtered to stays lit. */
+.tab[data-filtered="true"] {
+  color: var(--kind-soft);
+}
+
+.phoneTab {
+  display: none;
+}
+
+.phoneTab[aria-expanded="true"] {
+  border-bottom-color: var(--fg);
+}
+
+.barGap {
+  flex: 1;
+}
+
+/* Between the pages and the ways to get in touch: a short hairline. */
+.barRule {
+  width: 1px;
+  height: 1rem;
+  margin: 0 0.35rem;
+  background: var(--hair);
+}
+
+/* Contact's mark, in the bar's monochrome: it reads as an address before
+   the words are read. */
+.barAt {
+  color: var(--soft);
+}
+
+.barItem:hover .barAt {
+  color: var(--fg);
+}
+
+/* The one call to action: a hairline box, lit on hover. */
+.barCta {
+  display: inline-flex;
+  align-items: center;
+  height: 1.9rem;
+  margin-left: 0.3rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--hair);
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 200ms;
+}
+
+.barCta:hover {
+  border-color: var(--soft);
+}
+
+/* ------------------------------------------------------- The kind panel */
+
+/* The panel hangs from the whole bar, edge to edge: a sheet of hairlines
+   on black, like the key on a technical drawing. No card, no shadow. */
+.menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  translate: 0 -4px;
+  border: 1px solid var(--hair);
+  background: #000;
+  font-family: var(--font-sans);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 180ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s 260ms;
+}
+
+/* A bridge over the gap between the bar and the panel, so the pointer can
+   cross it without the panel closing. */
+.menu::before {
+  content: "";
+  position: absolute;
+  inset: -0.6rem 0 100% 0;
+}
+
+/* The panel's top edge is lit in the colour of the kind it shows. */
+.menu::after {
+  content: "";
+  position: absolute;
+  inset: -1px -1px auto;
+  height: 1px;
+  background: var(--kind);
+  transition: background-color 200ms;
+}
+
+.menu[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  translate: 0 0;
+  transition:
+    opacity 180ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+
+/* The panel's height glides when the next kind holds more or less work. */
+.menuFrame {
+  overflow: hidden;
+  transition: height 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chips {
+  display: none;
+}
+
+.menuBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  min-height: 25rem;
+}
+
+.viewer {
+  position: relative;
+  border-right: 1px solid var(--hair);
+}
+
+.viewerCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.menuInfo {
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem 1.4rem 1.1rem;
+}
+
+.menuHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.menuCount {
+  margin-left: auto;
+}
+
+.menuTitle {
+  margin: 0.9rem 0 0;
+  font-weight: 300;
+  font-size: 1.75rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.menuAbout {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--soft);
+  max-width: 34ch;
+}
+
+.menuUnits {
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each piece of work: a hairline row, whose top edge takes the kind's
+   colour on hover, as the unit rows in the chapters do. */
+.menuUnit {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.8rem;
+  padding: 0.6rem 0 0.65rem;
+  border-top: 1px solid var(--hair);
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.menuUnit::before {
+  content: "";
+  position: absolute;
+  inset: -1px 0 auto;
+  height: 1px;
+  background: var(--kind);
+  opacity: 0;
+  transition: opacity 200ms;
+}
+
+.menuUnit:hover::before,
+.menuUnit:focus-visible::before {
+  opacity: 1;
+}
+
+.menuUnitName {
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+}
+
+.menuUnitWhen {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.menuUnitResult {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--kind-soft);
+}
+
+.menuFoot {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.menuFoot .barCta {
+  margin-left: 0;
+}
+
+/* The site-wide link style (base.css) gives every anchor a bottom border
+   and turns every border blue on hover. In the bar and its panels the lines
+   are drawn here instead, so that one stands down: links light by colour,
+   rows keep their hairline, and the one underlined link keeps its own. */
+.bar a.barItem,
+.bar a.barItem:hover,
+.menuLink,
+.menuLink:hover,
+.footLinks a,
+.footLinks a:hover {
+  border-bottom-color: transparent;
+}
+
+.menuUnit:hover {
+  border-color: var(--hair);
+}
+
+.menuLink {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--soft);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+}
+
+.menuLink:hover {
+  color: var(--fg);
+  text-decoration-color: var(--fg);
+}
+
+.footLinks {
+  display: none;
+}
+
+.brand:focus-visible,
+.barItem:focus-visible,
+.barCta:focus-visible,
 .ticks button:focus-visible,
 .links a:focus-visible,
 .unitLink:focus-visible,
@@ -301,33 +620,78 @@
   transition: opacity 450ms;
 }
 
+/* A word is one box, so it can be measured and moved as one, and never
+   broken between its letters. */
+.word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* The greeting, and under it the line that says what the dot is, left
+   aligned as the hero's block is, centred on the screen as a pair. */
+.introStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(0.9rem, 2.2vw, 1.6rem);
+}
+
 .introLine {
   font-size: clamp(2.8rem, 9vw, 7.5rem);
 }
 
-/* In flight the line is placed by its top-left corner, which is where the
-   hero's greeting begins; the intro sets the position and size. */
-.introLine[data-flying] {
-  position: absolute;
-  justify-self: start;
-  align-self: start;
+/* The second line is the hero's headline, on one line: the same weight,
+   spacing and leading, so each word can grow into its place there. Soft
+   while it is spoken; full strength by the time it lands. */
+.introSub {
+  margin: 0;
+  font-weight: 200;
+  font-size: clamp(1.05rem, 2.6vw, 2.3rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  color: var(--soft);
+  transition: color 1500ms;
 }
 
-/* While the intro plays, the hero waits: its greeting appears only once the
-   flying one has landed on it, and the rest rises in as the black lifts. */
-.root:not([data-intro="done"]) .greeting {
+.introSub[data-flying] {
+  color: var(--fg);
+}
+
+/* Its tracking is set on each word, in ems of the word's own size: an em
+   value is fixed to pixels where it is declared and inherited as pixels, so
+   set on the line alone it would not scale as each word grows in flight. */
+.introSub .word {
+  letter-spacing: -0.045em;
+}
+
+/* In flight its words are placed by the intro, line by line. */
+.introSub[data-flying] .word {
+  position: absolute;
+}
+
+/* In flight each line is placed by its top-left corner (for the greeting,
+   where the hero's greeting begins); the intro sets the position. */
+.introLine[data-flying] {
+  position: absolute;
+}
+
+/* While the intro plays, the hero waits: its greeting and headline appear
+   only once the flying ones have landed on them, and the rest rises in as
+   the black lifts. */
+.root:not([data-intro="done"]) :is(.greeting, .hero) {
   visibility: hidden;
 }
 
 .reveal,
-.filter,
+.nav,
 .ticks {
   transition:
     opacity 700ms,
     translate 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.root[data-intro="intro"] :is(.reveal, .filter, .ticks) {
+.root[data-intro="intro"] :is(.reveal, .nav, .ticks) {
   opacity: 0;
 }
 
@@ -349,7 +713,7 @@
   transition-delay: 1010ms;
 }
 
-.root[data-intro="landing"] :is(.filter, .ticks) {
+.root[data-intro="landing"] :is(.nav, .ticks) {
   transition-delay: 1100ms;
 }
 
@@ -547,17 +911,91 @@
 
 /* ---------------------------------------------------------------- Small */
 
+/* Below this the bar gets crowded: "say hello" moves into the panel's foot. */
+@media (max-width: 1100px) {
+  .barWider {
+    display: none;
+  }
+}
+
 @media (max-width: 860px) {
-  /* The filter scrolls sideways on a phone, and fades at the edge so it is
-     plain that it does. */
-  .filter {
-    top: 1rem;
-    max-width: calc(100vw - 1.5rem);
-    overflow-x: auto;
+  /* The bar keeps the mark, one "work" tab and the resume. The panel hangs
+     from the whole bar: the kinds as a row of chips, then the chosen
+     kind's body, name and work, stacked; story and hello move to its foot. */
+  .nav {
+    top: 0.75rem;
+    width: calc(100vw - 1.5rem);
+  }
+  .tab,
+  .barWide {
+    display: none;
+  }
+  .phoneTab {
+    display: inline-flex;
+  }
+  .brand {
+    margin-right: 0.4rem;
+  }
+  .menu {
+    max-height: calc(100svh - 5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .chips {
+    display: flex;
     gap: 1rem;
-    white-space: nowrap;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--hair);
+    overflow-x: auto;
     scrollbar-width: none;
-    mask-image: linear-gradient(to right, #000 85%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .chips button {
+    display: inline-flex;
+    gap: 0.35rem;
+    padding: 0.2rem 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--mute);
+    font: inherit;
+  }
+  .chips button .mark {
+    color: var(--kind);
+  }
+  .chips button[aria-pressed="true"] {
+    color: var(--fg);
+    border-bottom-color: var(--kind);
+  }
+  .menuBody {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .viewer {
+    height: 13rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .menuInfo {
+    padding: 0.9rem 0.9rem 0.9rem;
+  }
+  .menuTitle {
+    margin-top: 0.6rem;
+    font-size: 1.4rem;
+  }
+  .footLinks {
+    display: flex;
+    gap: 1.4rem;
+    padding: 0.7rem 0.9rem 0.8rem;
+    border-top: 1px solid var(--hair);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .footLinks a {
+    color: var(--soft);
+    text-decoration: none;
   }
   .ticks {
     display: none;
@@ -624,7 +1062,7 @@
   }
   /* Nothing flies: the black fades away with the centred line, and the
      hero's greeting is already in place beneath it. */
-  .root[data-intro="landing"] .greeting {
+  .root[data-intro="landing"] :is(.greeting, .hero) {
     visibility: visible;
   }
 }

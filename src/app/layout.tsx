@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Meet Bhatt — Adding light to the pale blue dot.",
+    default: "Meet Bhatt — This pale blue dot is where I build things.",
     template: "%s — Meet Bhatt",
   },
   description: "Personal site of Meet Bhatt.",
