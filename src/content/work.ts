@@ -9,7 +9,65 @@
  *   - the missing numbers (Phoenix accuracy, Linea users, Icarus results).
  */
 
+import type { StaticImageData } from "next/image";
+
+import cmuCampus from "../../public/assets/CMU_v0.1.jpeg";
+import cslLogo from "../../public/assets/CSL_Logo_Landscape.png";
+import lineaEnd from "./media/linea/5-end.webp";
+import lineaHero from "./media/linea/1-hero.webp";
+import lineaLooks from "./media/linea/3-looks.webp";
+import lineaLyrics from "./media/linea/2-lyrics.webp";
+import lineaSound from "./media/linea/4-sound.webp";
+import astarHome from "./media/astar/1-home.webp";
+import astarOffers from "./media/astar/2-offers.webp";
+import astarSolutions from "./media/astar/3-solutions.webp";
+import astarCases from "./media/astar/4-cases.webp";
+import astarMobile from "./media/astar/5-mobile.webp";
+import blinkIntelligence from "./media/blink/1-intelligence.webp";
+import blinkWhat from "./media/blink/2-what.webp";
+import blinkServices from "./media/blink/3-services.webp";
+import blinkLeverage from "./media/blink/4-leverage.webp";
+import blinkEnd from "./media/blink/5-end.webp";
+import phoenixAbility from "./media/phoenix/2-ability.webp";
+import phoenixCells from "./media/phoenix/4-cells.webp";
+import phoenixDiagnosis from "./media/phoenix/3-diagnosis.webp";
+import phoenixGithub from "./media/phoenix/5-github.webp";
+import phoenixTitle from "./media/phoenix/1-title.webp";
+import talariaTitle from "./media/talaria/1-title.webp";
+import talariaLegend from "./media/talaria/2-legend.webp";
+import talariaFeatures from "./media/talaria/3-features.webp";
+import talariaGait from "./media/talaria/4-gait.webp";
+import talariaJoin from "./media/talaria/5-join.webp";
+
 export type Kind = "experience" | "research" | "projects" | "leadership" | "education";
+
+/**
+ * A picture of the work, shown beside it on the home page: a photo, or a
+ * website, shown as a few of its screens in a browser frame, turning from
+ * one to the next as if someone were scrolling it, and loading the live site
+ * in its place on request. Images are imported (from `src/content/media/`,
+ * or `public/assets/` for the ones Meet adds), so Next.js knows their size
+ * and serves each at the size it is shown; a photo keeps its own shape.
+ */
+export type Media =
+  | {
+      kind: "photo";
+      src: StaticImageData;
+      alt: string;
+      caption?: string;
+      /** A logo is shown smaller than a photo: it names, it doesn't show. */
+      logo?: boolean;
+    }
+  | {
+      kind: "site";
+      href: string;
+      /** The address shown in the frame's bar. */
+      label: string;
+      /** False for a site that refuses to be shown inside another page
+          (X-Frame-Options): "Try it live" then opens it in a new tab. */
+      embed?: boolean;
+      screens: { src: StaticImageData; alt: string }[];
+    };
 
 export type Unit = {
   /** Also the per-unit page's slug: `/work/${id}`. */
@@ -20,9 +78,18 @@ export type Unit = {
   /** 1 to 3. Sets brightness on the map and size up close. PLACEHOLDER. */
   impact: number;
   line: string;
+  /**
+   * What the opportunity was about, for someone reading Meet's resume: the
+   * aim, or the role and its scope, rather than test numbers. Shown in the
+   * bar's panels.
+   */
+  brief: string;
   owned: string;
   result: string;
-  link?: { label: string; href: string };
+  /** Where the thing itself is. Shown as "Visit <label>", or with `verb`
+      in place of "Visit" ("Read the paper"). */
+  link?: { label: string; href: string; verb?: string };
+  media?: Media;
 };
 
 export type Collection = {
@@ -46,16 +113,26 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "carnegie-mellon",
         name: "Carnegie Mellon University",
+        brief:
+          "Graduate study in AI engineering and in turning new technology into products, as a J N Tata Scholar.",
         kind: "education",
         when: "2026 to 2027",
         impact: 3,
         line: "MS in AI Engineering and Technology Innovation Management.",
         owned: "J N Tata Scholar.",
         result: "In progress, Pittsburgh.",
+        media: {
+          kind: "photo",
+          src: cmuCampus,
+          alt: "Carnegie Mellon's campus at sunset, with the Walking to the Sky sculpture.",
+          caption: "Carnegie Mellon, Pittsburgh",
+        },
       },
       {
         id: "bosch-mobility",
         name: "Corporate Startup Lab, Bosch Mobility",
+        brief:
+          "Finding new markets for Bosch's low-voltage actuators, in a team of six: market research, customer discovery and strategic fit.",
         kind: "experience",
         when: "Aug to Dec 2026",
         impact: 2,
@@ -63,10 +140,19 @@ export const COLLECTIONS: Collection[] = [
         owned:
           "Market research, customer discovery and strategic fit, in a team of six.",
         result: "In progress.",
+        media: {
+          kind: "photo",
+          src: cslLogo,
+          alt: "The Corporate Startup Lab's logo: CSL in white on red.",
+          logo: true,
+          caption: "Corporate Startup Lab, Bosch Mobility",
+        },
       },
       {
         id: "linea",
         name: "Linea",
+        brief:
+          "An open-source Windows app I designed and built end to end: lyrics that float over your work, in time with whatever is playing.",
         kind: "projects",
         when: "2026",
         impact: 2.8,
@@ -75,6 +161,30 @@ export const COLLECTIONS: Collection[] = [
           "The whole app: overlay, Windows media sessions, lyric sync, offline cache.",
         result: "Open source, version 0.2.0.",
         link: { label: "linea.meetbhatt.com", href: "https://linea.meetbhatt.com" },
+        media: {
+          kind: "site",
+          href: "https://linea.meetbhatt.com",
+          label: "linea.meetbhatt.com",
+          screens: [
+            {
+              src: lineaHero,
+              alt: "Linea's home page: 'Know every word.', over a lyric card.",
+            },
+            {
+              src: lineaLyrics,
+              alt: "Live lyrics: the current line stays centred as the song plays.",
+            },
+            {
+              src: lineaLooks,
+              alt: "The overlay's dark look, with its settings for theme and size.",
+            },
+            {
+              src: lineaSound,
+              alt: "'Sound has a shape': a Chladni figure computed live on the page.",
+            },
+            { src: lineaEnd, alt: "The end of the page, with the Linea wordmark." },
+          ],
+        },
       },
     ],
   },
@@ -88,6 +198,8 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "phoenix",
         name: "Project Phoenix",
+        brief:
+          "Aim: help catch the earliest cell changes in cervical cancer, with a model that shows why it decided, running in the browser.",
         kind: "research",
         when: "2025 to 2026",
         impact: 3,
@@ -96,20 +208,51 @@ export const COLLECTIONS: Collection[] = [
           "Image cleanup on SipakMed and Herlev, the CNN models, the visual explanations.",
         result: "Manuscript in preparation. Runs live in the browser.",
         link: { label: "phoenix.meetbhatt.com", href: "https://phoenix.meetbhatt.com" },
+        media: {
+          kind: "site",
+          href: "https://phoenix.meetbhatt.com",
+          label: "phoenix.meetbhatt.com",
+          screens: [
+            {
+              src: phoenixTitle,
+              alt: "Phoenix: explainable cervical cancer cell classification.",
+            },
+            {
+              src: phoenixAbility,
+              alt: "'We're giving AI the ability to truly understand cervical cancer cells.'",
+            },
+            {
+              src: phoenixDiagnosis,
+              alt: "'So diagnosis becomes clearer, safer, and impossible to misinterpret.'",
+            },
+            { src: phoenixCells, alt: "The five cell types the model tells apart." },
+            { src: phoenixGithub, alt: "Open source: join the project on GitHub." },
+          ],
+        },
       },
       {
         id: "prompt-classifier",
         name: "Malicious prompt classifier",
+        brief:
+          "Aim: stop harmful prompts before they reach a language model, and explain which patterns made them look risky.",
         kind: "research",
         when: "2025",
         impact: 2.3,
         line: "Stop harmful prompts before they reach a language model, and say why.",
         owned: "A Markov-chain detector and a module that explains high-risk patterns.",
-        result: "90.79% accuracy, 98.84% precision. Paper submitted.",
+        result:
+          "90.79% accuracy, 98.84% precision. Published in Procedia Computer Science, 2026.",
+        link: {
+          verb: "Read",
+          label: "the paper",
+          href: "https://www.sciencedirect.com/science/article/pii/S1877050926016996",
+        },
       },
       {
         id: "talaria",
         name: "Project Talaria",
+        brief:
+          "A smart shoe for everyday health: a wearable that tracks heart rate and gait, and a model that forecasts both ahead of time.",
         kind: "projects",
         when: "2025",
         impact: 2.4,
@@ -118,6 +261,28 @@ export const COLLECTIONS: Collection[] = [
           "The ESP32 wearable, the cloud pipeline, and an RNN forecasting 50 steps ahead.",
         result: "R² of 0.97 across 15 signals, on 50,000+ sequences.",
         link: { label: "talaria.meetbhatt.com", href: "https://talaria.meetbhatt.com" },
+        media: {
+          kind: "site",
+          href: "https://talaria.meetbhatt.com",
+          label: "talaria.meetbhatt.com",
+          embed: false,
+          screens: [
+            {
+              src: talariaTitle,
+              alt: "Talaria: heart and gait, monitored in real time.",
+            },
+            { src: talariaLegend, alt: "The legend: the winged sandals of Hermes." },
+            {
+              src: talariaFeatures,
+              alt: "Heart rate and blood oxygen, tracked continuously.",
+            },
+            {
+              src: talariaGait,
+              alt: "Gait analysis, and live charts of every stride.",
+            },
+            { src: talariaJoin, alt: "Open source: join the project on GitHub." },
+          ],
+        },
       },
     ],
   },
@@ -131,6 +296,8 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "blink-analytics",
         name: "Blink Analytics",
+        brief:
+          "Grew from RLHF contributor to team lead to leading product development; led the build of Serin, an AI interview and hiring platform.",
         kind: "experience",
         when: "2024 to 2026",
         impact: 3,
@@ -138,10 +305,40 @@ export const COLLECTIONS: Collection[] = [
         owned:
           "Led development of Serin, an AI hiring platform; directed an intern team.",
         result: "222% more project revenue in two months.",
+        link: { label: "blinkanalytics.in", href: "https://www.blinkanalytics.in" },
+        media: {
+          kind: "site",
+          href: "https://www.blinkanalytics.in",
+          label: "blinkanalytics.in",
+          screens: [
+            {
+              src: blinkIntelligence,
+              alt: "Blink Analytics: data into intelligence, models into impact.",
+            },
+            {
+              src: blinkWhat,
+              alt: "What Blink does: generative AI and data analytics.",
+            },
+            {
+              src: blinkServices,
+              alt: "Services, from RLHF to retrieval-augmented generation.",
+            },
+            {
+              src: blinkLeverage,
+              alt: "'Leverage AI and data to propel your business.'",
+            },
+            {
+              src: blinkEnd,
+              alt: "The end of the page, with the Blink Analytics wordmark.",
+            },
+          ],
+        },
       },
       {
         id: "icarus",
         name: "Project Icarus",
+        brief:
+          "A drone that flies on a flight controller I designed and built myself: custom PCB, Teensy 4.0, sensor fusion in C.",
         kind: "projects",
         when: "2024 to 2026",
         impact: 2,
@@ -161,6 +358,8 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "pdeu",
         name: "Pandit Deendayal Energy University",
+        brief:
+          "B.Tech in Computer Engineering with a minor in IoT, graduating with a 9.55 out of 10 GPA.",
         kind: "education",
         when: "2022 to 2026",
         impact: 2.4,
@@ -171,6 +370,8 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "mind-ripple",
         name: "Mind Ripple",
+        brief:
+          "The university's quizzing club: rose from member to head of design to president, leading a 30-member team and its flagship event.",
         kind: "leadership",
         when: "2022 to 2026",
         impact: 2.6,
@@ -181,6 +382,8 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "astar",
         name: "Astar Technologies",
+        brief:
+          "Lead business and data analysis intern: forecasting which products sell where and when, to guide production and marketing.",
         kind: "experience",
         when: "Dec 2023 to Jan 2024",
         impact: 1.5,
@@ -188,6 +391,28 @@ export const COLLECTIONS: Collection[] = [
         owned:
           "Cleaned the sales data; forecast regional and seasonal demand with time series, Random Forest and XGBoost.",
         result: "Top sellers by region and season, to guide production and marketing.",
+        link: { label: "astartechnologies.net", href: "https://astartechnologies.net" },
+        media: {
+          kind: "site",
+          href: "https://astartechnologies.net",
+          label: "astartechnologies.net",
+          screens: [
+            {
+              src: astarHome,
+              alt: "Astar Technologies: software development, Vadodara.",
+            },
+            {
+              src: astarOffers,
+              alt: "What Astar offers: software, web and mobile apps.",
+            },
+            {
+              src: astarSolutions,
+              alt: "Its smart solutions, from ERP to point of sale.",
+            },
+            { src: astarCases, alt: "Case studies, starting with e-commerce." },
+            { src: astarMobile, alt: "A mobile app for sales and marketing." },
+          ],
+        },
       },
     ],
   },
@@ -201,6 +426,8 @@ export const COLLECTIONS: Collection[] = [
       {
         id: "interact-club",
         name: "Interact Club of Baroda Sayajinagari",
+        brief:
+          "Founded the club and served as its charter president, leading 32 teenagers in service projects with nonprofits.",
         kind: "leadership",
         when: "2021 to 2022",
         impact: 2.1,

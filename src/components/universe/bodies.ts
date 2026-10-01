@@ -1,4 +1,5 @@
 import { mulberry32 } from "./helpers";
+import type { Look } from "./looks";
 import { fbm3 } from "./noise";
 
 /**
@@ -33,6 +34,9 @@ export type Frame = {
   /** A per-body number, so no two nebulae or constellations are the same. */
   seed: number;
   calm: boolean;
+  /** How this body differs from others of its kind (looks.ts); the
+      portraits read it, and draw their kind's usual body without it. */
+  look?: Look;
 };
 
 export type BodyFn = (nx: number, ny: number, id: number, f: Frame, o: Cell) => boolean;

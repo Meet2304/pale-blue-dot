@@ -5,7 +5,10 @@ import { Universe } from "@/components/universe/universe";
 import { plexVariables } from "./fonts";
 
 export const metadata: Metadata = {
-  title: { absolute: "Meet Bhatt — This pale blue dot is where I build things." },
+  title: {
+    absolute:
+      "Meet Bhatt — I am an Engineer. This pale blue dot is where I build things.",
+  },
   description:
     "Meet Bhatt, AI engineer and product builder. Everything he has worked on, drawn as one universe around the pale blue dot.",
 };

@@ -20,7 +20,7 @@ import s from "./universe.module.css";
  * Every visit starts on black, and someone says hello. "Hola!" comes first,
  * on its own; then a breath; then "I'm Meet", at the pace of speech, and
  * the full stop lights in pale blue. Then, beneath it, the line that says
- * what that dot is: "This pale blue dot is where I build things." Each word
+ * who that is: "I am an Engineer." Each word
  * decodes out of the terminal's own glyphs, ticking as it loads. Then both
  * lines fly into the hero, the greeting shrinking into its place and the
  * second line growing into the headline. As they leave, the black lifts
@@ -430,7 +430,9 @@ export function SpokenTitle({
         /* A quick scroll can bring several crossings in one batch (0.3,
            0.66, 1): the last is where the heading is now. */
         const e = entries[entries.length - 1];
-        if (!e.isIntersecting || e.intersectionRatio < 0.6) return;
+        /* As soon as most of it is on screen, so it is never scrolled
+           past unspoken. */
+        if (!e.isIntersecting || e.intersectionRatio < 0.5) return;
         io.disconnect();
         /* A beat after the chapter starts to rise in. */
         timer = window.setTimeout(() => {

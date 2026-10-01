@@ -112,6 +112,12 @@ The page is held still by cancelling scroll input rather than hiding the overflo
 hiding it takes the scrollbar away and brings it back, which would shift the hero
 sideways under the line as it lands.
 
+### Plainer signs (29 September)
+
+The chapter tracker's labels are capitalised ("Earth", "Map", "Now"), and the hero's
+scroll hint, "scroll to pull back", which leaned on the space metaphor, now says what
+is below and what to do: "Scroll to see my work".
+
 ## Sound (`src/components/universe/intro-sound.ts`)
 
 Synthesised with the Web Audio API; no audio files. Modelled on OpenAI's "Refreshed."

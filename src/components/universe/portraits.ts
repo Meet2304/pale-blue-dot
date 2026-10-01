@@ -1,5 +1,7 @@
 import type { BodyFn, BodyId, Cell } from "./bodies";
 import { BODIES, EXTENT, hash, strokeAt } from "./bodies";
+import { mulberry32 } from "./helpers";
+import type { Figure, Look } from "./looks";
 import { fbm3 } from "./noise";
 
 /**
@@ -25,6 +27,13 @@ import { fbm3 } from "./noise";
  * Each portrait has light under and over its glyphs (glows, diffraction
  * spikes), drawn on the canvas like the map's glows.
  *
+ * On the home page each piece of work is drawn with these too, and each
+ * has a look of its own (looks.ts, carried on the frame): a planet can be
+ * a banded giant, a smooth ice giant or a cratered rocky world, with or
+ * without rings and moons; a black hole's disk varies in size, tilt and
+ * spin; research is a different constellation each time; a nebula can be
+ * mirrored. With no look, each draws the body the bar's panels show.
+ *
  * Colour tiers, as in bodies.ts: 0 deep, 1 dim, 2 accent, 3 soft,
  * 4 near-white, 5 warm, 6 white.
  */
@@ -41,6 +50,7 @@ export type Light = (
     alpha: number;
     t: number;
     calm: boolean;
+    look?: Look;
   },
 ) => void;
 
@@ -186,7 +196,8 @@ function gasAt(nx: number, ny: number, id: number, f: Parameters<BodyFn>[3]) {
   return out;
 }
 
-const nebula: BodyFn = (nx, ny, id, f, o) => {
+const nebula: BodyFn = (nx0, ny, id, f, o) => {
+  const nx = f.look?.flip ? -nx0 : nx0;
   const [v, fil, core] = gasAt(nx, ny, id, f);
   if (v <= 0.04) return false;
 
@@ -211,29 +222,31 @@ const nebula: BodyFn = (nx, ny, id, f, o) => {
   return set(o, pick(GAS[tier], id, f.t, f.calm), k, 0.5 + tier * 0.12);
 };
 
-const nebulaUnder: Light = (g, { cx, cy, R, colors, alpha }) => {
-  for (const [x, y, rad, k, a] of [
+const nebulaUnder: Light = (g, { cx, cy, R, colors, alpha, look }) => {
+  const m = look?.flip ? -1 : 1;
+  for (const [x0, y, rad, k, a] of [
     [-0.24, 0.02, 1.2, 2, 0.34],
     [0.55, -0.3, 0.8, 2, 0.18],
     [-0.75, 0.35, 0.75, 1, 0.26],
     [0.3, 0.45, 0.6, 2, 0.1],
   ] as const) {
-    const x0 = cx + x * R;
-    const y0 = cy + y * R;
-    const gr = g.createRadialGradient(x0, y0, 0, x0, y0, rad * R);
+    const px = cx + x0 * m * R;
+    const py = cy + y * R;
+    const gr = g.createRadialGradient(px, py, 0, px, py, rad * R);
     gr.addColorStop(0, rgba(colors[k], a * alpha));
     gr.addColorStop(1, rgba(colors[k], 0));
     g.fillStyle = gr;
-    g.fillRect(x0 - rad * R, y0 - rad * R, rad * R * 2, rad * R * 2);
+    g.fillRect(px - rad * R, py - rad * R, rad * R * 2, rad * R * 2);
   }
 };
 
-const nebulaOver: Light = (g, { cx, cy, R, colors, alpha, t, calm }) => {
+const nebulaOver: Light = (g, { cx, cy, R, colors, alpha, t, calm, look }) => {
+  const mirror = look?.flip ? -1 : 1;
   NEBULA_STARS.forEach(([x, y, m], i) => {
     const tw = calm ? 1 : 0.8 + 0.2 * Math.sin(t * (1.1 + i * 0.3) + i);
     sparkle(
       g,
-      cx + x * R,
+      cx + x * mirror * R,
       cy + y * R,
       (4 + m * 9) * Math.min(1.4, R / 90),
       colors[3],
@@ -248,17 +261,54 @@ const RING_IN = 1.32;
 const RING_OUT = 2.2;
 const GAP = 1.82;
 const FLAT = 0.24;
-const TILT = -0.3;
+
+/* The bar's planet: a banded giant with a storm, rings and a moon. */
+const GIANT: NonNullable<Look["planet"]> = {
+  type: "giant",
+  ring: true,
+  tilt: -0.3,
+  moons: 1,
+  bands: 11,
+  storm: true,
+};
+
+/* A rocky world's craters, as points on the unit sphere with a radius (in
+   radians), the same for a seed every time. */
+const craters = new Map<number, [number, number, number, number][]>();
+function cratersFor(seed: number) {
+  const hit = craters.get(seed);
+  if (hit) return hit;
+  const r = mulberry32(Math.floor(seed * 1e6) + 5);
+  const list = Array.from({ length: 9 }, () => {
+    const z = r() * 2 - 1;
+    const a = r() * Math.PI * 2;
+    const q = Math.sqrt(1 - z * z);
+    return [q * Math.cos(a), z, q * Math.sin(a), 0.1 + r() ** 2 * 0.28] as [
+      number,
+      number,
+      number,
+      number,
+    ];
+  });
+  craters.set(seed, list);
+  return list;
+}
+const ROCK = [".", ",", ":", ";", "o", "0"];
 
 const planet: BodyFn = (nx, ny, id, f, o) => {
+  const pl = f.look?.planet ?? GIANT;
   const tt = f.calm ? 0 : f.t;
-  const c = Math.cos(TILT);
-  const s = Math.sin(TILT);
+  const c = Math.cos(pl.tilt);
+  const s = Math.sin(pl.tilt);
   const rx = nx * c + ny * s;
   const ry = -nx * s + ny * c;
   const er = Math.hypot(rx, ry / FLAT);
   const ringAt = (e: number) =>
-    e > RING_IN && e < RING_OUT && Math.abs(e - GAP) > 0.055 && Math.sin(e * 30) > -0.7;
+    pl.ring &&
+    e > RING_IN &&
+    e < RING_OUT &&
+    Math.abs(e - GAP) > 0.055 &&
+    Math.sin(e * 30) > -0.7;
   const ringGlyph = () => {
     const b = (1 - Math.abs(er - 1.6) / 0.62) * (er < GAP ? 1 : 0.75);
     /* The planet's shadow falls across the far side of the rings. */
@@ -267,21 +317,28 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
     return set(o, v > 0.6 ? "=" : v > 0.3 ? "-" : "·", v > 0.6 ? 3 : 2, 0.4 + v * 0.55);
   };
 
-  /* A small moon, on its own slow orbit. */
-  const ma = 2.4 + tt * 0.05;
-  const mx = Math.cos(ma) * 2.05;
-  const my = Math.sin(ma) * 0.45 - 0.62;
-  const md = Math.hypot(nx - mx, ny - my);
-  if (md < 0.13) {
-    const lit = (-(nx - mx) * 0.62 - (ny - my) * 0.42) / 0.13;
-    return set(o, lit > 0.2 ? "+" : lit > -0.3 ? ":" : "·", lit > 0 ? 4 : 2, 0.9);
+  /* Moons, each on its own slow orbit. */
+  for (let m = 0; m < pl.moons; m++) {
+    const orbit = (pl.ring ? 2.05 : 1.55) + m * 0.42;
+    const ma = 2.4 + m * 2.3 + tt * (0.05 + m * 0.03);
+    const mx = Math.cos(ma) * orbit;
+    const my = Math.sin(ma) * orbit * 0.22 - orbit * 0.3;
+    const size = 0.13 - m * 0.03;
+    const md = Math.hypot(nx - mx, ny - my);
+    if (md < size) {
+      const lit = (-(nx - mx) * 0.62 - (ny - my) * 0.42) / size;
+      return set(o, lit > 0.2 ? "+" : lit > -0.3 ? ":" : "·", lit > 0 ? 4 : 2, 0.9);
+    }
   }
 
   const d2 = nx * nx + ny * ny;
   if (d2 > 1) {
     if (ringAt(er)) return ringGlyph();
+    /* A thin atmosphere on the lit limb; a rocky world has almost none. */
     if (d2 < 1.1 && nx - ny < 0.3)
-      return hash(id, 3) < 0.55 ? set(o, "·", 3, 0.5) : false;
+      return hash(id, 3) < (pl.type === "rocky" ? 0.15 : 0.55)
+        ? set(o, "·", 3, 0.5)
+        : false;
     return false;
   }
   /* The near half of the rings crosses in front of the disc. */
@@ -291,23 +348,59 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
   const lambert = nx * -0.62 - ny * 0.42 + nz * 0.66;
   const lat = -ny;
   const lon = Math.atan2(nx, nz) + tt * 0.06;
-  const turb = fbm3(lon * 1.5, lat * 4, f.seed, 3);
-  const zone = Math.sin(lat * 11 + turb * 3.4) * 0.5 + 0.5;
 
   if (scanning(nx, ny, f)) {
     const q = lat * 11;
     if (Math.abs(q - Math.round(q)) < 0.14) return set(o, "-", 2, 1);
   }
   if (lambert < 0.02) return hash(id, 4) < 0.1 ? set(o, "·", 0, 0.8) : false;
-
-  /* The storm: an oval that turns with the planet. */
-  const sl = Math.atan2(Math.sin(lon - 0.7), Math.cos(lon - 0.7));
-  const storm = Math.hypot(sl / 0.3, (lat + 0.34) / 0.12);
   const ringShadow = ringAt(Math.hypot(rx, (ry - 0.12) / FLAT)) && ry < 0.2;
   let b = Math.min(1, lambert * 1.1 + 0.05);
   if (ringShadow) b *= 0.4;
-  if (storm < 1) {
-    return set(o, storm > 0.7 ? "o" : storm > 0.35 ? "~" : ":", 5, 0.55 + b * 0.45);
+
+  if (pl.type === "rocky") {
+    /* A cratered world: rough ground, dark crater floors, bright rims. */
+    const spin = tt * 0.06;
+    const px = nx * Math.cos(spin) + nz * Math.sin(spin);
+    const pz = -nx * Math.sin(spin) + nz * Math.cos(spin);
+    const py = -ny;
+    const ground = fbm3(px * 2.4 + f.seed * 9, py * 2.4, pz * 2.4, 4);
+    let crater = 0;
+    for (const [cx, cy, cz, cr] of cratersFor(f.seed)) {
+      const ang = Math.acos(Math.min(1, px * cx + py * cy + pz * cz));
+      if (ang < cr * 1.2) {
+        crater = ang < cr * 0.85 ? -1 : 1;
+        break;
+      }
+    }
+    let v = b * (0.55 + (ground - 0.5) * 1.2);
+    if (crater < 0) v *= 0.5;
+    else if (crater > 0) v = Math.min(1, v * 1.3 + 0.1);
+    v = Math.max(0, Math.min(1, v));
+    const k = crater < 0 ? 1 : v > 0.62 ? 4 : v > 0.4 ? 3 : v > 0.2 ? 2 : 1;
+    return set(o, ROCK[Math.min(5, Math.floor(v * 6))], k, 0.45 + v * 0.55);
+  }
+
+  if (pl.type === "ice") {
+    /* An ice giant: smooth, with faint bands and bright polar haze. */
+    const turb = fbm3(lon * 1.1, lat * 2.5, f.seed, 2);
+    const zone = Math.sin(lat * pl.bands + turb * 1.6) * 0.5 + 0.5;
+    const polar = smooth(0.6, 0.95, Math.abs(lat));
+    const v = b * (0.72 + zone * 0.2 + polar * 0.15);
+    const ch = v > 0.78 ? "=" : v > 0.55 ? "-" : v > 0.32 ? ":" : "·";
+    const k = polar > 0.5 ? 3 : v > 0.92 ? 4 : v > 0.25 ? 2 : 1;
+    return set(o, ch, k, 0.42 + v * 0.55);
+  }
+
+  const turb = fbm3(lon * 1.5, lat * 4, f.seed, 3);
+  const zone = Math.sin(lat * pl.bands + turb * 3.4) * 0.5 + 0.5;
+  /* The storm: an oval that turns with the planet. */
+  if (pl.storm) {
+    const sl = Math.atan2(Math.sin(lon - 0.7), Math.cos(lon - 0.7));
+    const storm = Math.hypot(sl / 0.3, (lat + 0.34) / 0.12);
+    if (storm < 1) {
+      return set(o, storm > 0.7 ? "o" : storm > 0.35 ? "~" : ":", 5, 0.55 + b * 0.45);
+    }
   }
   const v = b * (0.5 + zone * 0.5);
   const ch = v > 0.72 ? "=" : v > 0.5 ? "≈" : v > 0.3 ? "~" : v > 0.15 ? "-" : "·";
@@ -326,28 +419,86 @@ const planetUnder: Light = (g, { cx, cy, R, colors, alpha }) => {
 
 /* --------------------------------------------------------- Constellation */
 
-/* The Plough (the Big Dipper), in body units, with each star's brightness:
-   the figure most people can find in the sky. */
-const PLOUGH: [number, number, number][] = [
-  [-1.4, 0.34, 0.95], // Alkaid
-  [-0.88, 0.06, 0.8], // Mizar
-  [-0.46, 0.0, 1], // Alioth
-  [0.02, 0.06, 0.45], // Megrez
-  [0.12, 0.58, 0.72], // Phecda
-  [0.9, 0.5, 0.76], // Merak
-  [0.96, -0.1, 0.98], // Dubhe
-];
-const PLOUGH_LINES: [number, number][] = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [4, 5],
-  [5, 6],
-  [6, 3],
-];
-/* Alcor, Mizar's faint companion. */
-const ALCOR: [number, number] = [-0.8, -0.06];
+type Chart = {
+  /** Stars in body units, with brightness. */
+  stars: [number, number, number][];
+  lines: [number, number][];
+  /** A faint companion star, as Alcor is to Mizar. */
+  companion?: [number, number];
+};
+
+/* The figures research is drawn as. The Plough (the Big Dipper) is the one
+   most people can find in the sky, and the bar's; a bird rising with its
+   wings spread (a phoenix); and a shield, like Scutum. */
+const FIGURES: Record<Figure, Chart> = {
+  plough: {
+    stars: [
+      [-1.4, 0.34, 0.95], // Alkaid
+      [-0.88, 0.06, 0.8], // Mizar
+      [-0.46, 0.0, 1], // Alioth
+      [0.02, 0.06, 0.45], // Megrez
+      [0.12, 0.58, 0.72], // Phecda
+      [0.9, 0.5, 0.76], // Merak
+      [0.96, -0.1, 0.98], // Dubhe
+    ],
+    lines: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 3],
+    ],
+    companion: [-0.8, -0.06],
+  },
+  phoenix: {
+    stars: [
+      [0.05, -1.0, 0.8], // head
+      [0.0, -0.55, 0.5],
+      [0.0, -0.05, 1], // heart
+      [0.0, 0.5, 0.55],
+      [-0.35, 1.05, 0.6], // tail
+      [0.38, 1.0, 0.45],
+      [-0.7, -0.2, 0.6], // wings
+      [-1.45, -0.7, 0.9],
+      [0.72, -0.18, 0.55],
+      [1.42, -0.62, 0.75],
+    ],
+    lines: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [3, 5],
+      [2, 6],
+      [6, 7],
+      [2, 8],
+      [8, 9],
+    ],
+  },
+  shield: {
+    stars: [
+      [-0.85, -0.85, 0.75],
+      [0.0, -0.95, 0.5],
+      [0.85, -0.85, 0.8],
+      [0.95, 0.1, 0.55],
+      [0.0, 1.05, 1],
+      [-0.95, 0.1, 0.6],
+      [0.0, -0.05, 0.45],
+    ],
+    lines: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 0],
+      [1, 6],
+      [6, 4],
+    ],
+  },
+};
 
 /* The chart's coordinate lines: circles of declination around a pole
    below the figure, and hour lines running out from it. */
@@ -356,9 +507,10 @@ const POLE: [number, number] = [0.1, 3.4];
 const constellation: BodyFn = (nx, ny, id, f, o) => {
   const tt = f.calm ? 0 : f.t;
   const cell = Math.max(f.px, f.py);
+  const fig = FIGURES[f.look?.figure ?? "plough"];
 
-  for (let k = 0; k < PLOUGH.length; k++) {
-    const [x, y, m] = PLOUGH[k];
+  for (let k = 0; k < fig.stars.length; k++) {
+    const [x, y, m] = fig.stars[k];
     const dx = (nx - x) / f.px;
     const dy = (ny - y) / f.py;
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
@@ -369,13 +521,18 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
     const halo = 1.2 + m * 2.2;
     if (d < halo && hash(id, 9 + k) < 0.8 * (1 - d / halo)) return set(o, "·", 4, 0.75);
   }
-  if (Math.abs(nx - ALCOR[0]) < f.px * 0.5 && Math.abs(ny - ALCOR[1]) < f.py * 0.5) {
+  const comp = fig.companion;
+  if (
+    comp &&
+    Math.abs(nx - comp[0]) < f.px * 0.5 &&
+    Math.abs(ny - comp[1]) < f.py * 0.5
+  ) {
     return set(o, "·", 6, 0.8);
   }
 
-  for (const [a, b] of PLOUGH_LINES) {
-    const [x0, y0] = PLOUGH[a];
-    const [x1, y1] = PLOUGH[b];
+  for (const [a, b] of fig.lines) {
+    const [x0, y0] = fig.stars[a];
+    const [x1, y1] = fig.stars[b];
     const dx = x1 - x0;
     const dy = y1 - y0;
     const len2 = dx * dx + dy * dy;
@@ -428,9 +585,9 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
   return false;
 };
 
-const constellationOver: Light = (g, { cx, cy, R, colors, alpha, t, calm }) => {
+const constellationOver: Light = (g, { cx, cy, R, colors, alpha, t, calm, look }) => {
   const scale = Math.min(1.4, R / 80);
-  PLOUGH.forEach(([x, y, m], i) => {
+  FIGURES[look?.figure ?? "plough"].stars.forEach(([x, y, m], i) => {
     const tw = calm ? 1 : 0.85 + 0.15 * Math.sin(t * 1.3 + i * 1.9);
     if (m > 0.7)
       sparkle(
@@ -457,29 +614,43 @@ const constellationOver: Light = (g, { cx, cy, R, colors, alpha, t, calm }) => {
  * the sky itself.
  */
 const RS = 0.36;
+/* The bar's black hole: a disk seen nearly edge on, turning toward us on
+   the left, running off the frame. */
+const HOLE: NonNullable<Look["hole"]> = { tilt: 0.085, spin: 1, disk: 3.3 };
+/* How far the jets reach, in body radii. */
+const JET = 2.5;
 
 const blackhole: BodyFn = (nx, ny, id, f, o) => {
+  const hole = f.look?.hole ?? HOLE;
   const r = Math.hypot(nx, ny);
-  if (r > 3.4) return false;
+  if (r > hole.disk + 0.1) return false;
   const tt = f.calm ? 0 : f.t;
   const ang = Math.atan2(ny, nx);
-  /* Doppler beaming: the side of the disk coming toward us (the left) is
-     much brighter than the side going away. */
-  const beam = (c: number) => Math.max(0.25, 1 - 0.75 * c);
+  /* Doppler beaming: the side of the disk coming toward us is much
+     brighter than the side going away. */
+  const beam = (c: number) => Math.max(0.25, 1 - 0.75 * c * hole.spin);
 
   /* The near side of the disk: thin, flaring a little with distance,
      crossing in front of everything. */
-  const rr = Math.hypot(nx, ny / (0.085 + 0.025 * Math.abs(nx)));
+  const rr = Math.hypot(nx, ny / (hole.tilt + 0.025 * Math.abs(nx)));
   /* Over the top half it hides behind the shadow; the lower half passes
      in front, right across it, which is the black hole's signature. */
   const behind = ny < 0 && r < RS * 1.25;
   const inner = ny >= 0 ? RS * 0.2 : RS * 1.15;
-  if (rr > inner && rr < 3.3 && !behind) {
-    const heat = Math.pow(Math.max(0, 1 - Math.max(0, rr - RS) / 3), 1.5);
-    const swirl = fbm3(nx * 2.5 - tt * 0.18 * Math.sign(nx || 1), rr * 3, tt * 0.05, 2);
+  if (rr > inner && rr < hole.disk && !behind) {
+    const heat = Math.pow(
+      Math.max(0, 1 - Math.max(0, rr - RS) / (hole.disk - 0.3)),
+      1.5,
+    );
+    const swirl = fbm3(
+      nx * 2.5 - tt * 0.18 * Math.sign(nx || 1) * hole.spin,
+      rr * 3,
+      tt * 0.05,
+      2,
+    );
     const bands = 0.6 + 0.4 * Math.sin(rr * 20 - tt * 1.1 + swirl * 5);
     const b =
-      heat * beam(nx / Math.max(rr, 0.3)) * bands * Math.min(1, (3.3 - rr) / 0.6);
+      heat * beam(nx / Math.max(rr, 0.3)) * bands * Math.min(1, (hole.disk - rr) / 0.6);
     if (b > 0.05) {
       if (b > 0.95) return set(o, "=", 6, 1);
       if (b > 0.62) return set(o, "=", 5, 0.95);
@@ -490,6 +661,32 @@ const blackhole: BodyFn = (nx, ny, id, f, o) => {
   }
 
   if (r < RS + 0.03) return false;
+
+  /* Jets: two narrow beams from the poles, widening as they go, with knots
+     of light running outward along them. */
+  if (hole.jet) {
+    const ay = Math.abs(ny);
+    if (ay > RS * 1.15 && ay < JET) {
+      const along = (ay - RS) / (JET - RS);
+      const width = 0.03 + 0.05 * along;
+      const off = Math.abs(nx - 0.05 * Math.sin(ay * 2.6 + tt * 0.2) * Math.sign(ny));
+      if (off < width) {
+        const knot = 0.5 + 0.5 * Math.sin(ay * 11 - tt * 2.4);
+        const b =
+          Math.pow(1 - along, 1.3) *
+          (0.45 + 0.55 * (1 - off / width)) *
+          (0.45 + 0.55 * knot);
+        if (b > 0.05 && hash(id, 41) < 0.35 + b) {
+          return set(
+            o,
+            b > 0.5 ? "|" : b > 0.25 ? ":" : "·",
+            b > 0.55 ? 4 : 3,
+            0.4 + b * 0.6,
+          );
+        }
+      }
+    }
+  }
 
   /* The far side of the disk, lensed: a broad arc over the shadow and a
      thin one under it. Its light flows round the hole, so it is drawn in
@@ -523,17 +720,18 @@ const blackhole: BodyFn = (nx, ny, id, f, o) => {
   return false;
 };
 
-const blackholeUnder: Light = (g, { cx, cy, R, colors, alpha, t, calm }) => {
+const blackholeUnder: Light = (g, { cx, cy, R, colors, alpha, t, calm, look }) => {
+  const hole = look?.hole ?? HOLE;
   const pulse = calm ? 1 : 0.92 + 0.08 * Math.sin(t * 0.7);
   /* The disk's glow: wide and flat, like the disk. */
   g.save();
-  const gr = R * 3.4;
+  const gr = R * (hole.disk + 0.1);
   const grad = g.createRadialGradient(cx, cy, 0, cx, cy, gr);
   grad.addColorStop(0, rgba(colors[5], 0.34 * alpha * pulse));
   grad.addColorStop(0.25, rgba(colors[5], 0.14 * alpha));
   grad.addColorStop(1, rgba(colors[5], 0));
   g.translate(cx, cy);
-  g.scale(1, 0.3);
+  g.scale(1, 0.3 * Math.sqrt(hole.tilt / HOLE.tilt));
   g.translate(-cx, -cy);
   g.fillStyle = grad;
   g.fillRect(cx - gr, cy - gr, gr * 2, gr * 2);
@@ -550,8 +748,25 @@ const blackholeUnder: Light = (g, { cx, cy, R, colors, alpha, t, calm }) => {
   g.fillStyle = halo;
   g.fillRect(cx - R * 1.3, cy - R * 1.3, R * 2.6, R * 2.6);
   g.restore();
+  /* The jets' glow: long and narrow, up and down from the poles. */
+  if (hole.jet) {
+    for (const dir of [-1, 1]) {
+      g.save();
+      const y0 = cy + dir * R * 1.1;
+      const beam = g.createRadialGradient(cx, y0, 0, cx, y0, R * 1.4);
+      beam.addColorStop(0, rgba(colors[3], 0.16 * alpha * pulse));
+      beam.addColorStop(1, rgba(colors[3], 0));
+      g.translate(cx, y0);
+      g.scale(0.16, 1);
+      g.translate(-cx, -y0);
+      g.fillStyle = beam;
+      g.fillRect(cx - R * 1.4, y0 - R * 1.4, R * 2.8, R * 2.8);
+      g.restore();
+    }
+  }
   /* The shadow: nothing comes back from inside it. */
-  g.fillStyle = `rgba(0,0,0,${alpha})`;
+  /* Even faint, the shadow is black: nothing comes back from it. */
+  g.fillStyle = `rgba(0,0,0,${Math.min(1, alpha * 1.8)})`;
   g.beginPath();
   g.arc(cx, cy, R * RS, 0, Math.PI * 2);
   g.fill();

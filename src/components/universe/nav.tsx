@@ -16,7 +16,10 @@ import { routes } from "@/lib/routes";
 import { hash, type Cell } from "./bodies";
 import { KINDS, KIND_ORDER, kindColors } from "./encoding";
 import { fit, mulberry32 } from "./helpers";
+import { FIRST } from "./chapters";
+import { Drawer } from "./drawer";
 import { GLYPHS } from "./intro-timeline";
+import { Logo } from "./logo";
 import { PORTRAITS, type PortraitId } from "./portraits";
 import { drawBody, makeFrame } from "./render";
 import s from "./universe.module.css";
@@ -29,8 +32,9 @@ import s from "./universe.module.css";
  * beside the kind's name, why that body stands for it, and the work itself.
  * The body resolves out of a point of light as the panel opens; hovering it
  * brings it up, frames it with the four-tick reticle, and the scanner
- * follows the pointer across it to show its hidden structure. "Show on the
- * map" filters the map to that kind, and from the hero goes there too.
+ * follows the pointer across it to show its hidden structure. "Show only
+ * these" dims every other kind in the years, and from the hero or the deep
+ * sky flies on to the first year to show them.
  *
  * Moving along the tabs with the panel open morphs it from one kind to the
  * next rather than swapping it: one panel serves every tab; the body morphs
@@ -54,12 +58,16 @@ export function UniverseNav({
   setFilter,
   goTo,
   chapter,
+  docked,
 }: {
   filter: Kind | "all";
   setFilter: (k: Kind | "all") => void;
   goTo: (chapter: number) => void;
-  /** The chapter on screen: showing a kind from the hero goes to the map. */
+  /** The chapter on screen: showing a kind from before the years goes to
+      the first of them. */
   chapter: number;
+  /** Past the hero: the bar docks to the top edge (see `.nav`). */
+  docked: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<Kind>(KIND_ORDER[0]);
@@ -74,7 +82,7 @@ export function UniverseNav({
   const hold = useCallback(() => window.clearTimeout(timer.current), []);
 
   /* Escape closes and hands focus back to the tab; so does a click
-     elsewhere, or a scroll, since the map is about to move under it. */
+     elsewhere, or a scroll, since the sky is about to move under it. */
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -103,32 +111,37 @@ export function UniverseNav({
   const show = (k: Kind | "all") => {
     setFilter(k);
     setOpen(false);
-    if (chapter === 0) goTo(1);
+    if (chapter < FIRST) goTo(FIRST);
   };
 
   return (
     <header
       ref={headerRef}
       className={s.nav}
+      data-docked={docked}
       onPointerLeave={(e) => e.pointerType === "mouse" && later(false, CLOSE_DELAY)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
     >
       <nav className={s.bar} aria-label="Site">
-        <button type="button" className={s.brand} onClick={() => goTo(0)}>
-          {/* The logo goes here. */}
-          <span className={s.brandMark} aria-hidden />
-          Meet Bhatt
+        <button
+          type="button"
+          className={s.brand}
+          style={{ "--i": 0 } as CSSProperties}
+          onClick={() => goTo(0)}
+          aria-label="Meet Bhatt: back to the top"
+        >
+          <Logo />
         </button>
 
-        {KIND_ORDER.map((k) => (
+        {KIND_ORDER.map((k, i) => (
           <button
             key={k}
             type="button"
             data-tab={k}
             className={`${s.barItem} ${s.tab}`}
-            style={kindVars(k)}
+            style={{ ...kindVars(k), "--i": i + 1 } as CSSProperties}
             aria-expanded={open && kind === k}
             aria-controls={panelId}
             data-filtered={filter === k}
@@ -194,25 +207,34 @@ export function UniverseNav({
 
         <span className={s.barGap} />
 
-        <Link className={`${s.barItem} ${s.barWide}`} href={routes.story}>
-          story
-        </Link>
-        {/* Contact, set apart from the pages: a hairline between, and an @
-            for its mark, as each kind of work has its own. */}
-        <span className={`${s.barRule} ${s.barWider}`} aria-hidden />
+        <span className={s.barMore} style={{ "--i": 6 } as CSSProperties}>
+          <Link className={`${s.barItem} ${s.barWide}`} href={routes.story}>
+            story
+          </Link>
+          {/* Contact, set apart from the pages: a hairline between, and an @
+              for its mark, as each kind of work has its own. */}
+          <span className={`${s.barRule} ${s.barWider}`} aria-hidden />
+          <a
+            className={`${s.barItem} ${s.barWider}`}
+            href={`mailto:${CONTACT.email}`}
+            title={CONTACT.email}
+          >
+            <span className={s.barAt} aria-hidden>
+              @
+            </span>
+            say hello
+          </a>
+        </span>
         <a
-          className={`${s.barItem} ${s.barWider}`}
-          href={`mailto:${CONTACT.email}`}
-          title={CONTACT.email}
+          className={s.barCta}
+          style={{ "--i": 7 } as CSSProperties}
+          href={CONTACT.resume}
+          target="_blank"
+          rel="noreferrer"
         >
-          <span className={s.barAt} aria-hidden>
-            @
-          </span>
-          say hello
-        </a>
-        <a className={s.barCta} href={CONTACT.resume} target="_blank" rel="noreferrer">
           resume
         </a>
+        <Drawer goTo={goTo} />
       </nav>
 
       <KindMenu
@@ -349,7 +371,7 @@ function KindMenu({
                 </span>
                 <Scramble text={`drawn as a ${info.bodyName}`} />
                 <span className={s.menuCount}>
-                  <Scramble text={`${units.length} on the map`} />
+                  <Scramble text={`${units.length} in all`} />
                 </span>
               </p>
               <p className={s.menuTitle}>
@@ -371,8 +393,8 @@ function KindMenu({
                       <span className={s.menuUnitWhen}>
                         <Scramble text={u.when} />
                       </span>
-                      <span className={s.menuUnitResult}>
-                        <Scramble text={u.result} />
+                      <span className={s.menuUnitBrief}>
+                        <Scramble text={u.brief} />
                       </span>
                     </Link>
                   </li>
@@ -386,7 +408,7 @@ function KindMenu({
                   aria-pressed={shown}
                   onClick={() => show(shown ? "all" : kind)}
                 >
-                  {shown ? "show everything" : "show on the map"}
+                  {shown ? "show everything" : "show only these"}
                 </button>
                 <a className={s.menuLink} href="#index">
                   all {UNITS.length} in the index

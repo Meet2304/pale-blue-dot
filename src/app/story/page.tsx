@@ -14,6 +14,9 @@ const signature = Mrs_Saint_Delafield({
   weight: "400",
   subsets: ["latin"],
   display: "swap",
+  /* Not preloaded: a preload is put on every page's head, and only the
+     note's signature uses it. */
+  preload: false,
 });
 
 export const metadata: Metadata = {

@@ -19,7 +19,10 @@ import {
  * mono, so it is not loaded; the token falls back to the system stack until
  * something actually needs it.
  *
- * All four are preloaded, because all four are used above the fold.
+ * None is preloaded: they belong to the Horizon pages (/story), and the
+ * home page, on Terminal, never uses them. Unpreloaded, a browser fetches a
+ * face only on a page whose text is set in it, so the home page downloads
+ * none of them.
  */
 
 export const marcellus = Marcellus({
@@ -27,12 +30,14 @@ export const marcellus = Marcellus({
   subsets: ["latin"],
   weight: "400",
   display: "swap",
+  preload: false,
 });
 
 export const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 /** The hero's label voice: hairline weight, held open by tracking. */
@@ -41,6 +46,7 @@ export const archivo = Archivo({
   subsets: ["latin"],
   weight: ["200", "400"],
   display: "swap",
+  preload: false,
 });
 
 /** The hero's answering voice: ultra-condensed, set very large. */
@@ -49,6 +55,7 @@ export const anton = Anton({
   subsets: ["latin"],
   weight: "400",
   display: "swap",
+  preload: false,
 });
 
 /** Every font variable, for the <html> class list. */
@@ -60,7 +67,7 @@ export const fontVariables = [
 ].join(" ");
 
 /**
- * IBM Plex, the Terminal system's two voices: Sans (200 to 500) speaks, Mono
+ * IBM Plex, the Terminal system's two voices: Sans (200 to 400) speaks, Mono
  * labels, reads out, and draws every glyph on the universe's canvas.
  *
  * Declared here and nowhere else. Declaring one family in several files with
@@ -71,14 +78,14 @@ export const fontVariables = [
 export const plexSans = IBM_Plex_Sans({
   variable: "--plex-sans",
   subsets: ["latin"],
-  weight: ["200", "300", "400", "500"],
+  weight: ["200", "300", "400"],
   display: "swap",
 });
 
 export const plexMono = IBM_Plex_Mono({
   variable: "--plex-mono",
   subsets: ["latin"],
-  weight: ["300", "400"],
+  weight: "400",
   display: "swap",
 });
 

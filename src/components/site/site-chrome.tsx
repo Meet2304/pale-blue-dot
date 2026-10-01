@@ -1,40 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 
-import { StarField } from "@/components/horizon/star-field";
-import { SiteNav } from "@/components/site/site-nav";
-import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 import { isTerminalRoute } from "@/lib/routes";
 
-/**
- * Whether the footer is on screen.
- *
- * The bottom edge blur is the only thing that asks. A blurred strip lying over
- * the footer's links and the dot-matrix name is precisely the case where this
- * effect stops being texture and starts eating content, so the rule is simply
- * "when the footer arrives, get out of the way".
- */
-function useFooterInView(): boolean {
-  const pathname = usePathname();
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const footer = document.querySelector("[data-site-footer]");
-    if (!footer) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0 },
-    );
-
-    observer.observe(footer);
-    return () => observer.disconnect();
-  }, [pathname]);
-
-  return inView;
-}
+/* The Horizon chrome is its own chunk, fetched only when a Horizon page is
+   shown: the home page, on Terminal, never loads its sky, bar or blurs. */
+const HorizonChrome = dynamic(() =>
+  import("./horizon-chrome").then((m) => m.HorizonChrome),
+);
 
 /**
  * Everything that sits outside the page and survives navigation: the sky, the
@@ -45,92 +20,24 @@ function useFooterInView(): boolean {
  * question ("are we past the warp?"), and asking it twice would mean two
  * IntersectionObservers watching the same 1px marker.
  */
-/**
- * Whether we are on a small screen.
- *
- * Only the blur ramps ask, and only to spend fewer layers. Every layer is its
- * own backdrop snapshot, re-taken whenever the star field behind it repaints, so
- * the count is the cost — and it is a prop rather than something CSS can reach.
- * The alternative was a single frosted pane on phones, which put a hard-edged
- * rectangle under the bar: the exact seam the ramp exists to avoid.
- */
-function useNarrow(): boolean {
-  const [narrow, setNarrow] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 760px)");
-    const sync = () => setNarrow(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
-
-  return narrow;
-}
-
 export function SiteChrome() {
   const pathname = usePathname();
 
   /* The Terminal pages bring their own sky and their own controls; only the
      skip link carries over. */
   if (isTerminalRoute(pathname)) {
+    /* In the system's own face: the Terminal pages load no Horizon font,
+       and the link alone would otherwise fetch one. */
     return (
-      <a href="#content" className="hz-skip">
+      <a
+        href="#content"
+        className="hz-skip"
+        style={{ fontFamily: "system-ui, sans-serif" }}
+      >
         Skip to content
       </a>
     );
   }
 
   return <HorizonChrome />;
-}
-
-function HorizonChrome() {
-  const footerInView = useFooterInView();
-  const narrow = useNarrow();
-
-  return (
-    <>
-      {/* First in the body, and outside the nav, so it is reachable on the hero
-          where the bar is still hidden. */}
-      <a href="#content" className="hz-skip">
-        Skip to content
-      </a>
-      <StarField />
-      <SiteNav visible />
-      {/* The veils fade; the blurs do not, and that split is the fix.
-          `backdrop-filter` samples what is behind an element up to the nearest
-          backdrop root, and any ancestor at opacity below 1 creates one — so a
-          host that fades in has nothing to blur for the whole length of its own
-          fade, and browsers are unreliable about re-establishing the backdrop
-          when the value lands back on 1. The blur layers are therefore mounted
-          only while they should show and never animate; the fade lives on a
-          plain gradient with no filter on it. At the moment they appear the
-          frame behind them is black, so the un-faded arrival is invisible. */}
-      <span
-        className="hz-edge-veil hz-edge-veil--top"
-        data-visible="true"
-        aria-hidden
-      />
-      <ProgressiveBlur
-        className="hz-edge-blur hz-edge-blur--top"
-        direction="top"
-        layers={narrow ? 5 : 8}
-        intensity={narrow ? 3 : 2.4}
-      />
-
-      <span
-        className="hz-edge-veil hz-edge-veil--bottom"
-        data-visible={!footerInView ? "true" : "false"}
-        aria-hidden
-      />
-      {!footerInView && (
-        <ProgressiveBlur
-          className="hz-edge-blur hz-edge-blur--bottom"
-          direction="bottom"
-          layers={narrow ? 4 : 6}
-          intensity={narrow ? 1.8 : 1.4}
-        />
-      )}
-    </>
-  );
 }

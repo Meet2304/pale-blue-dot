@@ -127,7 +127,7 @@ export const PERIOD_AT = speak(GREETING).end + 160;
 /* Then, after a breath, the line that says what the dot is. It is also the
    hero's headline: in the opening it is spoken, then it flies into place. It
    is longer, so it is spoken a little quicker. */
-export const HEADLINE = "This pale blue dot is where I build things.";
+export const HEADLINE = "I am an Engineer.";
 export const HEADLINE_WORDS = HEADLINE.split(" ");
 const SUB_PAUSE = 750;
 
@@ -141,12 +141,20 @@ export const OPENING = speak([
   })),
 ]);
 
-/* ------------------------------------------------------------- The map */
+/* ------------------------------------------------- The dot, and the sky */
 
-/* The map chapter's title, spoken as it scrolls into view: quicker still,
-   since the visitor is already moving. */
-export const MAP_TITLE = speak(
-  "Everything I've made, I made on this little planet."
+/* The titles further out, each spoken as it scrolls into view: quicker
+   still, since the visitor is already moving. First Earth as a point of
+   light; then, further out, everything around it. */
+export const DOT_TITLE = speak(
+  "This pale blue dot is where I build things."
+    .split(" ")
+    .map((text, i) => ({ text, at: i === 0 ? 0 : undefined, pace: 0.55 })),
+  80,
+);
+
+export const SKY_TITLE = speak(
+  "This is my impact so far."
     .split(" ")
     .map((text, i) => ({ text, at: i === 0 ? 0 : undefined, pace: 0.55 })),
   80,
