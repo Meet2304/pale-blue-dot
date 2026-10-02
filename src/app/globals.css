@@ -231,3 +231,72 @@
     --hz-glow-ry: 24%;
   }
 }
+
+/* ---------------------------------------------------------- Page changes */
+
+/* Between the universe and the pages beside it (page-transition.tsx). The
+   universe is the far view: leaving it, it slips past and away as if the
+   camera were moving in, and the page comes forward out of the dark; going
+   back, the page falls away and the universe settles back into place. Quick
+   to leave, a little slower to arrive, and nothing slides: these pages sit
+   side by side, not in a stack. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(.vt-recede) {
+  animation: vt-recede 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(.vt-arrive) {
+  animation: vt-arrive 400ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+}
+
+::view-transition-old(.vt-leave) {
+  animation: vt-leave 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(.vt-return) {
+  animation: vt-return 440ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+}
+
+@keyframes vt-recede {
+  to {
+    opacity: 0;
+    scale: 1.06;
+    filter: blur(6px);
+  }
+}
+
+@keyframes vt-arrive {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    filter: blur(4px);
+  }
+}
+
+@keyframes vt-leave {
+  to {
+    opacity: 0;
+    scale: 0.97;
+    filter: blur(4px);
+  }
+}
+
+@keyframes vt-return {
+  from {
+    opacity: 0;
+    scale: 1.06;
+    filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

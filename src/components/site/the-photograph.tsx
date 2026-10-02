@@ -16,19 +16,15 @@ const PHOTO = {
 /**
  * The photograph at the top of the Note.
  *
- * Cropped to 16:9 on the page so it does not eat the night. The plate is a
- * button because the only thing it does is open a closer look — a dialog,
- * the platform’s own, so escape, focus and the backdrop come free. The full
- * 4:3 still waits in there.
- *
- * The still is faded in once it has decoded, so a slow fetch shows the
- * plate as a skeleton rather than as an empty black hole that then pops.
+ * Shown whole, in its own 4:3, and always: nothing holds it back until a
+ * load event that a cached image may fire before the page is listening. The
+ * plate is a button because the only thing it does is open a closer look —
+ * a dialog, the platform’s own, so escape, focus and the backdrop come free.
  */
 export function ThePhotograph() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [open, setOpen] = useState(false);
-  const [ready, setReady] = useState(false);
 
   const show = useCallback(() => {
     dialogRef.current?.showModal();
@@ -46,7 +42,6 @@ export function ThePhotograph() {
           type="button"
           className="hz-note-frame hz-rise"
           style={{ ["--hz-dur" as string]: "var(--dur-cinematic)" }}
-          data-ready={ready ? "true" : "false"}
           onClick={show}
           aria-haspopup="dialog"
           aria-controls={titleId}
@@ -62,7 +57,6 @@ export function ThePhotograph() {
               fetchPriority="high"
               sizes="(max-width: 760px) calc(100vw - 48px), 44rem"
               className="hz-note-shot"
-              onLoad={() => setReady(true)}
             />
           </span>
         </button>

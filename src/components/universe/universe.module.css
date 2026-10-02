@@ -1,0 +1,2000 @@
+/* The universe page. Everything outside the canvas is type and hairlines:
+   no surfaces, no shadows, no cards. Colour appears only where it means a
+   kind of work. */
+.root {
+  --fg: #e7eaef;
+  --soft: #a3a9b4;
+  --mute: #6a717d;
+  --hair: rgb(255 255 255 / 0.09);
+  --font-sans: var(--plex-sans), sans-serif;
+  --font-mono: var(--plex-mono), monospace;
+  --kind: #9cc8ff;
+  --kind-soft: #cfe3ff;
+  /* Earth's pale blue (EARTH_COLORS: accent, soft, near-white). */
+  --earth: #92cbfb;
+  --earth-soft: #c9e2f8;
+  --earth-white: #eff6fd;
+
+  background: #000;
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+:where(.root) :is(h1, h2, h3) {
+  font-family: inherit;
+  color: inherit;
+  letter-spacing: normal;
+  margin: 0;
+}
+
+/* The Horizon pages set headings in Marcellus with a rule of the same weight
+   as the one above, so which wins depends on which stylesheet loads last; in
+   a production build it was Marcellus, on every heading here, and the font
+   was downloaded for it. The face and colour are held with a stronger rule.
+   (Spacing stays on the weaker one, so each heading's class can set its own.) */
+.root :is(h1, h2, h3) {
+  font-family: inherit;
+  color: inherit;
+}
+
+.mark {
+  font-family: var(--font-mono);
+  color: var(--kind);
+}
+
+.muted {
+  color: var(--mute);
+}
+
+/* ------------------------------------------------------------ The stage */
+
+.universe {
+  position: relative;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The chapter index down the right edge: where you are, and a way to jump. */
+.ticks {
+  position: absolute;
+  z-index: 3;
+  right: 1.5rem;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.ticks button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ticks button::after {
+  content: "";
+  width: 10px;
+  height: 1px;
+  background: currentColor;
+  transition: width 300ms;
+}
+
+.ticks button span {
+  opacity: 0;
+  transition: opacity 200ms;
+}
+
+.ticks:hover button span,
+.ticks button[aria-current="step"] span {
+  opacity: 1;
+}
+
+.ticks button[aria-current="step"] {
+  color: var(--fg);
+}
+
+.ticks button[aria-current="step"]::after {
+  width: 22px;
+}
+
+/* ------------------------------------------------------------- The bar */
+
+/* The bar: type in a hairline frame, like an instrument's readout. Solid
+   black behind it so the stars don't run through the words; no blur, no
+   shadow, no rounded pill.
+
+   At the hero it floats, framed. Past the hero it docks: it rises to the top
+   edge, its frame widens to the edges of the screen and slims, and its
+   outline dissolves into one hairline along the bottom, so it becomes a thin
+   strip, out of the way of the work but with every page still named in it.
+   Its contents never move: they stay centred at the width they had, and only
+   the frame around them changes. Everything eases on one curve. */
+.nav {
+  --glide: 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  position: fixed;
+  z-index: 10;
+  top: 1rem;
+  left: 50%;
+  translate: -50% 0;
+  width: min(64rem, calc(100% - 2rem));
+  transition:
+    top var(--glide),
+    width var(--glide),
+    opacity 600ms,
+    transform 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.nav[data-docked="true"] {
+  top: 0;
+  width: 100%;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  height: 2.5rem;
+  /* The contents keep the floating bar's width, centred, however wide the
+     frame becomes. */
+  padding-block: 0;
+  padding-left: max(0.9rem, calc((100% - 64rem) / 2 + 0.9rem));
+  padding-right: max(0.35rem, calc((100% - 64rem) / 2 + 0.35rem));
+  border: 1px solid var(--hair);
+  background: #000;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  transition:
+    height var(--glide),
+    padding var(--glide),
+    border-color var(--glide);
+}
+
+.nav[data-docked="true"] .bar {
+  height: 2.25rem;
+  border-color: transparent transparent var(--hair);
+}
+
+/* The links past story sit together, as one run. */
+.barMore {
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-right: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The logo (logo.tsx): "m." at rest; pointed at or focused, the pale blue
+   dot travels out to the end of the word and draws "eet" out behind it.
+   Sizes are in the wordmark's own proportions, as fractions of its height
+   (--h): the "m" is 1.208 of it, "eet" 2.153, the gap 0.025, the dot 0.322. */
+.logo {
+  --h: 1.15rem;
+  --open: 560ms cubic-bezier(0.65, 0, 0.25, 1);
+  display: inline-flex;
+  align-items: flex-end;
+  height: var(--h);
+  width: calc(var(--h) * 3.708);
+}
+
+.logoM,
+.logoEet > span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: left bottom;
+  mask-size: 100% 100%;
+}
+
+.logoM {
+  flex: none;
+  width: calc(var(--h) * 1.208);
+  mask-image: url("/logos/wordmark/m.png");
+}
+
+.logoEet {
+  flex: none;
+  width: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: width var(--open);
+}
+
+.logoEet > span {
+  width: calc(var(--h) * 2.153);
+  mask-image: url("/logos/wordmark/eet.png");
+  opacity: 0;
+  translate: calc(var(--h) * -0.25) 0;
+  transition:
+    opacity 360ms,
+    translate var(--open);
+}
+
+.logoDot {
+  flex: none;
+  width: calc(var(--h) * 0.322);
+  height: calc(var(--h) * 0.322);
+  margin-left: calc(var(--h) * 0.025);
+  border-radius: 50%;
+  background: #2f9dff;
+  transition: box-shadow 500ms;
+}
+
+.brand:is(:hover, :focus-visible) .logoEet {
+  width: calc(var(--h) * 2.153);
+}
+
+.brand:is(:hover, :focus-visible) .logoEet > span {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: 60ms, 0ms;
+}
+
+.brand:is(:hover, :focus-visible) .logoDot {
+  box-shadow: 0 0 calc(var(--h) * 0.5) rgb(47 157 255 / 0.55);
+}
+
+.barItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 1.9rem;
+  padding: 0 0.6rem;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 200ms,
+    border-color 200ms;
+}
+
+.barItem:hover,
+.barItem[aria-expanded="true"] {
+  color: var(--fg);
+}
+
+/* A kind's tab: its mark keeps the kind's colour, and while its panel is
+   open, a hairline in that colour sits under it. */
+.tab .mark {
+  color: var(--kind);
+  opacity: 0.7;
+  transition: opacity 200ms;
+}
+
+.tab:hover .mark,
+.tab[aria-expanded="true"] .mark {
+  opacity: 1;
+}
+
+.tab[aria-expanded="true"] {
+  border-bottom-color: var(--kind);
+}
+
+.phoneTab {
+  display: none;
+}
+
+.phoneTab[aria-expanded="true"] {
+  border-bottom-color: var(--fg);
+}
+
+.barGap {
+  flex: 1;
+}
+
+/* Between the pages and the ways to get in touch: a short hairline. */
+.barRule {
+  width: 1px;
+  height: 1rem;
+  margin: 0 0.35rem;
+  background: var(--hair);
+}
+
+/* Contact's mark, in the bar's monochrome: it reads as an address before
+   the words are read. */
+.barAt {
+  color: var(--soft);
+}
+
+.barItem:hover .barAt {
+  color: var(--fg);
+}
+
+/* The one call to action: a hairline box, lit on hover. */
+.barCta {
+  display: inline-flex;
+  align-items: center;
+  height: 1.9rem;
+  margin-left: 0.3rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--hair);
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 200ms;
+}
+
+.barCta:hover {
+  border-color: var(--soft);
+}
+
+/* ------------------------------------------------------- The kind panel */
+
+/* The panel hangs from the bar, as wide as its contents and centred under
+   them, whether the bar floats or is docked: a sheet of hairlines on black,
+   like the key on a technical drawing. No card, no shadow. */
+.menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  width: min(64rem, 100%);
+  translate: -50% -4px;
+  border: 1px solid var(--hair);
+  background: #000;
+  font-family: var(--font-sans);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 180ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s 260ms;
+}
+
+/* A bridge over the gap between the bar and the panel, so the pointer can
+   cross it without the panel closing. */
+.menu::before {
+  content: "";
+  position: absolute;
+  inset: -0.6rem 0 100% 0;
+}
+
+/* The panel's top edge is lit in the colour of the kind it shows. */
+.menu::after {
+  content: "";
+  position: absolute;
+  inset: -1px -1px auto;
+  height: 1px;
+  background: var(--kind);
+  transition: background-color 200ms;
+}
+
+.menu[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  translate: -50% 0;
+  transition:
+    opacity 180ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+
+/* The panel's height glides when the next kind holds more or less work. */
+.menuFrame {
+  overflow: hidden;
+  transition: height 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chips {
+  display: none;
+}
+
+.menuBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  min-height: 25rem;
+}
+
+.viewer {
+  position: relative;
+  border-right: 1px solid var(--hair);
+}
+
+.viewerCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.menuInfo {
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem 1.4rem 1.1rem;
+}
+
+.menuHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.menuCount {
+  margin-left: auto;
+}
+
+.menuTitle {
+  margin: 0.9rem 0 0;
+  font-weight: 300;
+  font-size: 1.75rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.menuAbout {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--soft);
+  max-width: 34ch;
+}
+
+.menuUnits {
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each piece of work: a hairline row, whose top edge takes the kind's
+   colour on hover. */
+.menuUnit {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.8rem;
+  padding: 0.6rem 0 0.65rem;
+  border-top: 1px solid var(--hair);
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.menuUnit::before {
+  content: "";
+  position: absolute;
+  inset: -1px 0 auto;
+  height: 1px;
+  background: var(--kind);
+  opacity: 0;
+  transition: opacity 200ms;
+}
+
+.menuUnit:hover::before,
+.menuUnit:focus-visible::before {
+  opacity: 1;
+}
+
+.menuUnitName {
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+}
+
+.menuUnitWhen {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+/* What the piece of work was about: the aim, or the role and its scope. */
+.menuUnitBrief {
+  grid-column: 1 / -1;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+/* The site-wide link style (base.css) gives every anchor a bottom border
+   and turns every border blue on hover. In the bar and its panels the lines
+   are drawn here instead, so that one stands down: links light by colour,
+   rows keep their hairline, and the one underlined link keeps its own. */
+.bar a.barItem,
+.bar a.barItem:hover,
+.menuLink,
+.menuLink:hover,
+.footLinks a,
+.footLinks a:hover {
+  border-bottom-color: transparent;
+}
+
+.menuUnit:hover {
+  border-color: var(--hair);
+}
+
+.menuLink {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--soft);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+}
+
+.menuLink:hover {
+  color: var(--fg);
+  text-decoration-color: var(--fg);
+}
+
+.footLinks {
+  display: none;
+}
+
+.brand:focus-visible,
+.barItem:focus-visible,
+.barCta:focus-visible,
+.ticks button:focus-visible,
+.links a:focus-visible,
+.visit:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------- Chapters */
+
+.chapters {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.chapter {
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  padding: 5rem 6vw;
+}
+
+.column {
+  max-width: 27rem;
+  pointer-events: auto;
+  opacity: 0;
+  translate: 0 8px;
+  transition:
+    opacity 220ms,
+    translate 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chapter[data-on="true"] .column {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* Behind the words, a shade with no edges: darkest at the heart of the
+   copy and fading to nothing well inside its bounds, so the sky passing
+   behind it is dimmed, never boxed; and a soft shadow under the letters.
+   Not in the hero, whose line flies in from the opening and must land on
+   type that looks exactly like it. */
+.chapter:not(:first-child) .column {
+  position: relative;
+  isolation: isolate;
+  text-shadow:
+    0 0 16px rgb(0 0 0 / 0.9),
+    0 1px 3px rgb(0 0 0 / 0.75);
+}
+
+.chapter:not(:first-child) .column::before {
+  /* Fades as a black hole takes the words, so no shade is left behind. */
+  opacity: var(--scrim, 1);
+  content: "";
+  position: absolute;
+  inset: -3rem -4rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgb(0 0 0 / 0.6),
+    rgb(0 0 0 / 0.32) 55%,
+    transparent
+  );
+}
+
+.chapter:first-child {
+  align-items: flex-end;
+  padding-bottom: 10vh;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+
+.hero {
+  margin-top: 0.9rem;
+  font-weight: 200;
+  font-size: clamp(2.8rem, 5vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.chapter:first-child .column {
+  max-width: 34rem;
+}
+
+/* ------------------------------------------------------------ The intro */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The greeting, set the same way in the intro and in the hero so the one
+   can fly onto the other. Its full stop is the pale blue dot. */
+.greeting,
+.introLine {
+  margin: 0;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.greeting {
+  font-size: clamp(1.3rem, 2.1vw, 1.7rem);
+}
+
+.ch {
+  position: relative;
+  display: inline-block;
+}
+
+.chReal {
+  opacity: 0;
+  transition: opacity 260ms;
+}
+
+.ch[data-set] .chReal {
+  opacity: 1;
+}
+
+.chGlyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.55em;
+  color: var(--earth-soft);
+}
+
+.period {
+  color: var(--earth);
+  text-shadow: 0 0 0.5em rgb(146 203 251 / 0.55);
+}
+
+/* The full stop is the pale blue dot, and the last thing said: it glows in
+   more slowly than the letters. */
+.ch[data-period] .chReal {
+  transition-duration: 700ms;
+}
+
+/* The black is lifted frame by frame by the intro itself, on the same curve
+   as the line's flight. */
+.intro {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.intro[data-fading] {
+  opacity: 0;
+  transition: opacity 450ms;
+}
+
+/* A word is one box, so it can be measured and moved as one, and never
+   broken between its letters. */
+.word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* The word that fixes a bug in itself when pointed at (debug-word.ts),
+   laying its pieces over itself. */
+.word[data-fix] {
+  position: relative;
+  cursor: default;
+}
+
+/* The greeting, and under it the line that says what the dot is, left
+   aligned as the hero's block is, centred on the screen as a pair. */
+.introStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(0.9rem, 2.2vw, 1.6rem);
+}
+
+.introLine {
+  font-size: clamp(2.8rem, 9vw, 7.5rem);
+}
+
+/* The second line is the hero's headline, on one line: the same weight,
+   spacing and leading, so each word can grow into its place there. Soft
+   while it is spoken; full strength by the time it lands. */
+.introSub {
+  margin: 0;
+  font-weight: 200;
+  font-size: clamp(1.05rem, 2.6vw, 2.3rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  color: var(--soft);
+  transition: color 1500ms;
+}
+
+.introSub[data-flying] {
+  color: var(--fg);
+}
+
+/* Its tracking is set on each word, in ems of the word's own size: an em
+   value is fixed to pixels where it is declared and inherited as pixels, so
+   set on the line alone it would not scale as each word grows in flight. */
+.introSub .word {
+  letter-spacing: -0.045em;
+}
+
+/* In flight its words are placed by the intro, line by line. */
+.introSub[data-flying] .word {
+  position: absolute;
+}
+
+/* In flight each line is placed by its top-left corner (for the greeting,
+   where the hero's greeting begins); the intro sets the position. */
+.introLine[data-flying] {
+  position: absolute;
+}
+
+/* While the intro plays, the hero waits: its greeting and headline appear
+   only once the flying ones have landed on them, and the rest rises in as
+   the black lifts. */
+.root:not([data-intro="done"]) :is(.greeting, .hero) {
+  visibility: hidden;
+}
+
+.reveal,
+.ticks {
+  transition:
+    opacity 700ms,
+    translate 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.root[data-intro="intro"] :is(.reveal, .ticks) {
+  opacity: 0;
+}
+
+/* The bar arrives with the hero: it drops in from above as the lines settle,
+   and its items come in after it, left to right. */
+.root[data-intro="intro"] .nav {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
+.root[data-intro="intro"] .bar > * {
+  opacity: 0;
+}
+
+.root[data-intro="landing"] .nav {
+  transition-delay: 0ms, 0ms, 1000ms, 1000ms;
+}
+
+.root[data-intro="landing"] .bar > * {
+  transition:
+    opacity 450ms calc(1200ms + var(--i, 0) * 60ms),
+    color 200ms,
+    border-color 200ms;
+}
+
+.root[data-intro="intro"] .reveal {
+  translate: 0 10px;
+}
+
+/* The flight takes 1.5 s. The rest of the hero starts to rise in as the
+   line slows into place, so the two finish together. */
+.root[data-intro="landing"] .reveal {
+  transition-delay: 750ms;
+}
+
+.root[data-intro="landing"] .reveal + .reveal {
+  transition-delay: 880ms;
+}
+
+.root[data-intro="landing"] .reveal + .reveal + .reveal {
+  transition-delay: 1010ms;
+}
+
+.root[data-intro="landing"] .ticks {
+  transition-delay: 1100ms;
+}
+
+.title {
+  margin-top: 0.5rem;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.lede {
+  margin-top: 0.9rem;
+  color: var(--soft);
+  line-height: 1.6;
+}
+
+.hint {
+  margin-top: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+
+/* --------------------------------------------------------- A piece of work
+
+   One piece of work per screen, the copy in the left column and its body on
+   the canvas to the right, framed by a reticle with its name. The copy reads
+   top to bottom as a recruiter would ask: which year, what is it, what kind
+   of thing and when, what it was for, and why it is drawn as it is. Colour
+   is the piece's own: the colours its body is drawn in. The canvas measures
+   where the copy and the picture sit and fits the body into the space left,
+   so this layout can change freely with the screen. */
+
+.piece {
+  position: relative;
+}
+
+.piece .column {
+  max-width: min(29rem, 40vw);
+}
+
+.span {
+  color: var(--mute);
+}
+
+.count {
+  margin-left: 0.9rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--hair);
+}
+
+.pieceName {
+  margin-top: 0.7rem;
+  font-weight: 300;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.pieceKind {
+  margin-top: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kind-soft);
+}
+
+.pieceBrief {
+  margin-top: 1.1rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--fg);
+  text-wrap: pretty;
+}
+
+.visit {
+  display: inline-block;
+  margin-top: 1.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--kind);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.35em;
+  transition: text-decoration-color 200ms;
+}
+
+.visit:hover {
+  text-decoration-color: var(--fg);
+}
+
+/* The picture of the work: under the body, right of the copy, as large as
+   fits without crowding the body, in its own shape. It rises in with the
+   copy, a beat after it. */
+.aside {
+  position: absolute;
+  right: calc(6vw + 3rem);
+  bottom: 7vh;
+  width: min(34vw, 32rem, calc(40vh * var(--aspect, 1.6)));
+  pointer-events: auto;
+  opacity: 0;
+  translate: 0 12px;
+  transition:
+    opacity 240ms,
+    translate 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.withLogo .aside {
+  width: min(20vw, 17rem, calc(24vh * var(--aspect, 1.6)));
+}
+
+.chapter[data-on="true"] .aside {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* On a wide screen the picture leads: large, centred on the copy's height,
+   the other half of a spread. The piece's body rises behind its top-right
+   corner (universe-canvas.tsx), quieter, part of the setting; a soft
+   shadow lifts the picture in front of it. */
+@media (min-width: 861px), (min-aspect-ratio: 4/3) and (min-height: 521px) {
+  /* As wide as fits beside the copy, never over it; a little below the
+     middle, to leave the sky above it for the body. */
+  .withMedia .aside {
+    top: 57%;
+    bottom: auto;
+    width: min(
+      41vw,
+      44rem,
+      calc(52vh * var(--aspect, 1.6)),
+      calc(88vw - min(29rem, 40vw) - 7rem)
+    );
+    translate: 0 calc(-50% + 12px);
+  }
+  .withMedia.withLogo .aside {
+    width: min(24vw, 20rem, calc(30vh * var(--aspect, 1.6)));
+  }
+  .withMedia.chapter[data-on="true"] .aside {
+    translate: 0 -50%;
+  }
+  .withMedia :is(.photo, .site) {
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.4);
+  }
+}
+
+.media {
+  margin: 0;
+}
+
+.photo {
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 6px;
+  background: #0b0c0e;
+}
+
+.photoImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+  min-height: 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--mute);
+}
+
+/* A website: a browser frame, its screens turning as if scrolled, and the
+   live site on request. */
+.site {
+  container-type: inline-size;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 8px;
+  background: #0b0c0e;
+  transition: border-color 300ms;
+}
+
+.site:hover,
+.site[data-live="true"] {
+  border-color: var(--kind);
+}
+
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  height: 1.9rem;
+  padding: 0 0.7rem;
+  border-bottom: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.dots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+@container (max-width: 260px) {
+  .dots {
+    display: none;
+  }
+}
+
+.dots i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.16);
+}
+
+.address {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.address:hover {
+  color: var(--fg);
+}
+
+.address span {
+  color: var(--kind-soft);
+}
+
+.close {
+  padding: 0.1rem 0.5rem;
+  text-decoration: none;
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  background: none;
+  color: var(--soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--fg);
+  border-color: var(--soft);
+}
+
+.screen {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.tryLive {
+  cursor: zoom-in;
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.strip {
+  display: block;
+  height: 100%;
+  transition: translate 1100ms cubic-bezier(0.65, 0, 0.25, 1);
+}
+
+.shot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  /* A bright page is held down a little in the dark, and comes up when
+     pointed at. */
+  filter: brightness(0.84);
+  transition: filter 300ms;
+}
+
+.tryLive:hover .shot,
+.tryLive:focus-visible .shot {
+  filter: none;
+}
+
+.tryPill {
+  text-decoration: none;
+  position: absolute;
+  z-index: 1;
+  cursor: pointer;
+  top: 0.7rem;
+  right: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.72);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  transition:
+    background-color 200ms,
+    border-color 200ms;
+}
+
+.tryPill:hover,
+.tryPill:focus-visible {
+  background: #000;
+  border-color: var(--kind);
+}
+
+.tryLive:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: -3px;
+}
+
+.tryDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 0 0 var(--kind);
+  animation: tryPulse 2.4s ease-out infinite;
+}
+
+@keyframes tryPulse {
+  70% {
+    box-shadow: 0 0 0 0.35rem transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.live {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  transform-origin: 0 0;
+  background: #fff;
+}
+
+.pips {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pips i {
+  width: 0.9rem;
+  height: 1px;
+  background: var(--mute);
+  opacity: 0.5;
+  transition:
+    opacity 300ms,
+    background-color 300ms;
+}
+
+.pips i[data-on="true"] {
+  background: var(--kind-soft);
+  opacity: 1;
+}
+
+/* The chapter index names a year once, at its first piece of work; the
+   one on screen is always named. */
+.ticks:hover button[data-first="false"]:not([aria-current="step"]) span {
+  opacity: 0;
+}
+
+.links a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color 200ms;
+}
+
+.links a:hover {
+  text-decoration-color: var(--fg);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  margin-top: 1.4rem;
+}
+
+/* ---------------------------------------------------------------- Small */
+
+/* Below this the bar gets crowded: "say hello" moves into the panel's foot. */
+@media (max-width: 1100px) {
+  .barWider {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  /* The bar keeps the mark, one "work" tab and the resume. The panel hangs
+     from the whole bar: the kinds as a row of chips, then the chosen
+     kind's body, name and work, stacked; story and hello move to its foot. */
+  .nav {
+    top: 0.75rem;
+    width: calc(100% - 1.5rem);
+  }
+  .tab,
+  .barWide {
+    display: none;
+  }
+  .phoneTab {
+    display: inline-flex;
+  }
+  .brand {
+    margin-right: 0.4rem;
+  }
+  .menu {
+    max-height: calc(100svh - 5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .chips {
+    display: flex;
+    gap: 1rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--hair);
+    overflow-x: auto;
+    scrollbar-width: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .chips button {
+    display: inline-flex;
+    gap: 0.35rem;
+    padding: 0.2rem 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--mute);
+    font: inherit;
+  }
+  .chips button .mark {
+    color: var(--kind);
+  }
+  .chips button[aria-pressed="true"] {
+    color: var(--fg);
+    border-bottom-color: var(--kind);
+  }
+  .menuBody {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .viewer {
+    height: 13rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .menuInfo {
+    padding: 0.9rem 0.9rem 0.9rem;
+  }
+  .menuTitle {
+    margin-top: 0.6rem;
+    font-size: 1.4rem;
+  }
+  .footLinks {
+    display: flex;
+    gap: 1.4rem;
+    padding: 0.7rem 0.9rem 0.8rem;
+    border-top: 1px solid var(--hair);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .footLinks a {
+    color: var(--soft);
+    text-decoration: none;
+  }
+  .ticks {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+}
+
+/* A small screen held upright (a phone, a tablet in portrait): the canvas
+   takes the top of the screen and each chapter's copy stacks below it. The
+   canvas uses the same test (universe-canvas.tsx, `stacked`). */
+@media (max-width: 860px) and (max-aspect-ratio: 4/3) {
+  .chapter {
+    align-items: flex-end;
+    padding: 1.25rem 1.25rem 3rem;
+  }
+  .column {
+    padding: 1.2rem 0 0;
+  }
+  .chapter:not(:first-child) .column::before {
+    inset: -2.5rem -1.25rem -3rem;
+    background: radial-gradient(
+      closest-side,
+      rgb(0 0 0 / 0.78),
+      rgb(0 0 0 / 0.5) 60%,
+      transparent
+    );
+  }
+  /* A piece of work stacks: its body at the top, then the copy, then the
+     picture, which joins the flow under the copy. */
+  .piece {
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+  }
+  .withLogo .aside {
+    width: min(55%, calc(15vh * var(--aspect, 1.6)));
+  }
+  .aside {
+    position: static;
+    width: min(100%, calc(24vh * var(--aspect, 1.6)));
+    padding-top: 1rem;
+  }
+  .piece .column {
+    max-width: 34rem;
+  }
+}
+
+/* A phone on its side: too short to stack, so the copy stays on the left,
+   compact, with the picture beside it and the body to the right of both. */
+@media (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .chapter {
+    padding: 3.6rem 1.5rem 1rem;
+  }
+  .hero {
+    font-size: clamp(1.9rem, 7vh, 2.6rem);
+  }
+  .greeting {
+    font-size: 1.1rem;
+  }
+  .title {
+    font-size: 1.5rem;
+  }
+  .lede {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+  .piece {
+    gap: 1.25rem;
+  }
+  .piece .column {
+    max-width: 19rem;
+  }
+  .pieceName {
+    margin-top: 0.4rem;
+    font-size: 1.35rem;
+  }
+  .pieceKind {
+    margin-top: 0.35rem;
+    font-size: 0.6875rem;
+  }
+  .pieceBrief {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+  .visit {
+    margin-top: 0.5rem;
+  }
+  .aside,
+  .withLogo .aside {
+    position: static;
+    flex: none;
+    width: min(11rem, calc(34vh * var(--aspect, 1.6)));
+  }
+  .caption {
+    display: none;
+  }
+}
+
+/* On a phone the bodies need the top of the screen, so each chapter's copy
+   tightens: a piece of work keeps what it is and what it was for, and names
+   its body without the reason. */
+@media (max-width: 560px) {
+  .hero {
+    font-size: clamp(2.6rem, 11vw, 3rem);
+  }
+  .title {
+    font-size: 1.9rem;
+  }
+  .lede {
+    margin-top: 0.6rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  .pieceName {
+    margin-top: 0.5rem;
+    font-size: 1.7rem;
+  }
+  .pieceKind {
+    margin-top: 0.45rem;
+  }
+  .pieceBrief {
+    margin-top: 0.7rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  .visit {
+    margin-top: 0.8rem;
+  }
+  .caption {
+    display: none;
+  }
+}
+
+/* A short phone, or one turned on its side: the picture shrinks further,
+   so the copy and the body still share one screen. */
+@media (max-width: 860px) and (max-aspect-ratio: 4/3) and (max-height: 700px) {
+  .aside {
+    width: min(100%, calc(18vh * var(--aspect, 1.6)));
+    padding-top: 0.7rem;
+  }
+  .pieceBrief {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logoEet,
+  .logoEet > span,
+  .column,
+  .aside,
+  .strip,
+  .reveal,
+  .nav,
+  .bar {
+    transition: none;
+  }
+  /* Nothing flies: the black fades away with the centred line, and the
+     hero's greeting is already in place beneath it. */
+  .root[data-intro="landing"] :is(.greeting, .hero) {
+    visibility: visible;
+  }
+}
+
+/* ------------------------------------------------- Pictures, up close
+
+   Under the pointer a picture leans a few degrees towards it, as a print
+   would if picked up, and a soft sheen follows the pointer across it.
+   Clicking opens it up (lightbox.tsx): it grows out of its place over a
+   dimmed sky and shrinks back into it when closed. */
+
+.tilt {
+  position: relative;
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tilt[data-lean="true"] {
+  transition-duration: 160ms;
+}
+
+.sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgb(255 255 255 / 0.14),
+    transparent 42%
+  );
+  opacity: 0;
+  transition: opacity 400ms;
+}
+
+.tilt[data-lean="true"] .sheen {
+  opacity: 1;
+}
+
+.zoomIn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.zoomIn:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: -3px;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4.5rem 4vw 1.5rem;
+}
+
+/* The sky dims behind it; the picture itself flies, it never fades. */
+.lightbox::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgb(0 0 0 / 0.86);
+  backdrop-filter: blur(8px);
+  animation: lbIn 320ms ease both;
+}
+
+.lightbox[data-closing="true"]::before {
+  animation: lbOut 420ms ease both;
+}
+
+.lbClose,
+.lbFoot {
+  animation: lbIn 300ms 140ms ease both;
+}
+
+.lightbox[data-closing="true"] :is(.lbClose, .lbFoot) {
+  animation: lbOut 180ms ease both;
+}
+
+@keyframes lbIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lbOut {
+  to {
+    opacity: 0;
+  }
+}
+
+.lbClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.6);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.lbClose span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.lbClose:hover,
+.lbClose:focus-visible {
+  border-color: var(--kind);
+}
+
+.lbStage {
+  display: flex;
+  justify-content: center;
+  max-width: min(92vw, 1400px);
+  transform-origin: center;
+}
+
+.lbPhoto {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(92vw, 1400px);
+  max-height: calc(100svh - 10rem);
+  border-radius: 8px;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 0.8);
+}
+
+.lbSite {
+  width: min(92vw, 1280px, calc((100svh - 12rem) * 1.6));
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 10px;
+  background: #0b0c0e;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 0.8);
+}
+
+.lbScreen {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.lbScreen[data-live="true"][data-narrow="true"] {
+  aspect-ratio: auto;
+  height: calc(100svh - 12rem);
+}
+
+.lbShot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.lbFoot {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  max-width: min(92vw, 1280px);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--soft);
+}
+
+.lbSteps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.lbSteps button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 50%;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lbSteps button:hover,
+.lbSteps button:focus-visible {
+  border-color: var(--kind);
+}
+
+.lbCaption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt,
+  .lightbox::before,
+  .lbClose,
+  .lbFoot {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------- The phone's menu
+
+   On a phone the bar keeps only the mark and a menu button; the menu is a
+   drawer from the right (drawer.tsx): the work by kind, each with its body
+   drawn live, then the story, hello and the resume. */
+
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  margin-left: auto;
+  margin-right: -0.4rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.drawerScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 360ms ease;
+}
+
+.drawerScrim[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  z-index: 41;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(88vw, 23rem);
+  padding: 1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-left: 1px solid rgb(255 255 255 / 0.1);
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgb(60 90 160 / 0.14), transparent 60%),
+    rgb(4 5 8 / 0.94);
+  backdrop-filter: blur(14px);
+  translate: 100% 0;
+  transition: translate 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drawer[data-open="true"] {
+  translate: 0 0;
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.4rem;
+}
+
+.drawerBrand {
+  padding: 0.3rem 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.drawerClose {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 1.9rem;
+  padding: 0 0.7rem;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.drawerLabel {
+  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.drawerKinds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawerKinds > li {
+  border-top: 1px solid var(--hair);
+}
+
+.drawerKinds > li:last-child {
+  border-bottom: 1px solid var(--hair);
+}
+
+.drawerKind {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.55rem 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.thumb {
+  flex: none;
+  width: 4.25rem;
+  height: 3.6rem;
+}
+
+.drawerKindText {
+  display: grid;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.drawerKindName {
+  font-size: 1.05rem;
+}
+
+.drawerKindBody {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--kind-soft);
+}
+
+.drawerChevron {
+  font-family: var(--font-mono);
+  color: var(--mute);
+}
+
+.drawerKind[aria-expanded="true"] .drawerChevron {
+  color: var(--kind-soft);
+}
+
+/* A kind opens to its pieces: the list slides open to its own height. */
+.drawerPieces {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 360ms ease;
+}
+
+.drawerPieces[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.drawerPieces > ul {
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0 0 0 5.15rem;
+  list-style: none;
+}
+
+.drawerPieces[data-open="true"] > ul {
+  padding-bottom: 0.6rem;
+}
+
+.drawerPieces button {
+  display: grid;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.45rem 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.drawerWhen {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.drawerLinks {
+  display: grid;
+  margin-top: 1.4rem;
+}
+
+.drawerLinks a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--hair);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.drawerElse {
+  display: flex;
+  gap: 1.4rem;
+  margin-top: auto;
+  padding-top: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.drawerElse a {
+  color: var(--soft);
+}
+
+.drawer :is(button, a):focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+  .menuButton {
+    display: inline-flex;
+  }
+  .phoneTab,
+  .barCta {
+    display: none;
+  }
+}
+
+@media (min-width: 861px) {
+  .drawer,
+  .drawerScrim {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawerScrim,
+  .drawerPieces {
+    transition: none;
+  }
+}

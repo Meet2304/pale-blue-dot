@@ -1,0 +1,141 @@
+/* A unit's page, in the Terminal system: true black, type and hairlines,
+   and colour only where it means the kind of work. */
+.root {
+  --fg: #e7eaef;
+  --soft: #a3a9b4;
+  --mute: #6a717d;
+  --hair: rgb(255 255 255 / 0.09);
+  --font-sans: var(--plex-sans), sans-serif;
+  --font-mono: var(--plex-mono), monospace;
+
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding: 5rem 6vw;
+  background: #000;
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+:where(.root) :is(h1, h2, h3) {
+  font-family: inherit;
+  color: inherit;
+  letter-spacing: normal;
+  margin: 0;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.column {
+  position: relative;
+  z-index: 1;
+  max-width: 27rem;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+
+.mark {
+  color: var(--kind);
+}
+
+.title {
+  margin-top: 0.5rem;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.lede {
+  margin-top: 0.9rem;
+  color: var(--soft);
+  line-height: 1.6;
+}
+
+.facts {
+  margin: 1.4rem 0 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.facts > div {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--hair);
+}
+
+.facts dt {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+  padding-top: 0.15rem;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--soft);
+}
+
+.facts .result {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kind-soft);
+}
+
+.soon {
+  margin-top: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  margin-top: 1rem;
+}
+
+.links a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color 200ms;
+}
+
+.links a:hover {
+  text-decoration-color: var(--fg);
+}
+
+.links a:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 3px;
+}
+
+@media (max-width: 860px) {
+  .root {
+    align-items: flex-end;
+    padding: 1.25rem 1.25rem 3rem;
+  }
+
+  .column {
+    padding-top: 1.2rem;
+    background: linear-gradient(transparent, #000 2.5rem);
+  }
+}

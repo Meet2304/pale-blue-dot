@@ -10,11 +10,7 @@ export default function StoryLoading() {
     <div aria-busy="true" aria-live="polite">
       <p className="hz-note-sr">Loading the story</p>
       <div className="hz-note-sky">
-        <div
-          className="hz-note-frame hz-note-skel-plate"
-          data-ready="false"
-          aria-hidden="true"
-        >
+        <div className="hz-note-frame hz-note-skel-plate" aria-hidden="true">
           <span className="hz-note-mat" />
         </div>
       </div>
