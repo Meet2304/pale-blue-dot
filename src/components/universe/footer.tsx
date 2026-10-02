@@ -5,6 +5,7 @@ import { CONTACT } from "@/content/work";
 import { routes } from "@/lib/routes";
 import { SOCIAL_LINKS, type SocialId } from "@/lib/socials";
 
+import { BackToEarth, HomeLink } from "./footer-actions";
 import { GlyphText } from "./glyph-text";
 import s from "./footer.module.css";
 
@@ -45,9 +46,9 @@ export function Footer() {
   return (
     <footer className={`${plexVariables} ${s.foot}`}>
       <div className={s.grid}>
-        <Link href={routes.home} className={s.mark} aria-label="Meet Bhatt: home">
+        <HomeLink className={s.mark} aria-label="Meet Bhatt: home">
           <GlyphText text="m" dot weight={400} className={s.glyphs} />
-        </Link>
+        </HomeLink>
         <nav className={s.links} aria-label="Pages and elsewhere">
           <ul className={s.list}>
             {WAYS.map((w) => {
@@ -72,6 +73,8 @@ export function Footer() {
                     >
                       {inner}
                     </a>
+                  ) : w.href === routes.home ? (
+                    <HomeLink data-icon={w.icon}>{inner}</HomeLink>
                   ) : (
                     <Link href={w.href} data-icon={w.icon}>
                       {inner}
@@ -87,6 +90,7 @@ export function Footer() {
           <span>© {new Date().getFullYear()} Meet Bhatt</span>
         </p>
       </div>
+      <BackToEarth />
     </footer>
   );
 }

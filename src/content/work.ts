@@ -68,6 +68,9 @@ export type Unit = {
       in place of "Visit" ("Read the paper"). */
   link?: { label: string; href: string; verb?: string };
   media?: Media;
+  /** Part of another piece of work (its id): drawn as that piece's body,
+      seen again from another side, rather than as a body of its own. */
+  sameAs?: string;
 };
 
 export type Collection = {
@@ -332,6 +335,43 @@ export const COLLECTIONS: Collection[] = [
         },
       },
       {
+        id: "serin",
+        name: "Serin",
+        brief:
+          "An AI interview platform for hiring teams. At Blink Analytics I led its development and directed the intern team that built it: live voice interviews, scored against the role.",
+        kind: "experience",
+        when: "2025 to 2026",
+        impact: 3,
+        line: "An AI interview platform: live voice interviews, scored against the role, checked for cheating.",
+        owned: "Led development; directed the intern team.",
+        result: "In private beta at serin-ai.com.",
+        link: { label: "serin-ai.com", href: "https://serin-ai.com" },
+        sameAs: "blink-analytics",
+        media: {
+          kind: "site",
+          href: "https://serin-ai.com",
+          label: "serin-ai.com",
+          screens: [
+            {
+              src: "/work/serin/1-interview.webp",
+              alt: "Serin: interview every candidate, hire the best one.",
+            },
+            {
+              src: "/work/serin/2-scale.webp",
+              alt: "Proven at scale: interviews around the clock, and cheating caught.",
+            },
+            {
+              src: "/work/serin/3-role.webp",
+              alt: "One line, full role: a job, its interview plan and rubric from one prompt.",
+            },
+            {
+              src: "/work/serin/4-hire.webp",
+              alt: "Hire the best candidate: every interview scored and summarised.",
+            },
+          ],
+        },
+      },
+      {
         id: "icarus",
         name: "Project Icarus",
         brief:
@@ -451,6 +491,7 @@ export const CONTACT = {
   email: "mbbhatt@andrew.cmu.edu",
   github: "https://github.com/Meet2304",
   linkedin: "https://www.linkedin.com/in/meet-bhatt2304/",
-  resume:
-    "https://drive.google.com/drive/folders/14uk3ov5w5_K6YqAQykGxUtV5fPBPrxoo?usp=sharing",
+  /* Opened in a new tab, in the browser's own viewer (no download): replace
+     the file to update it. */
+  resume: "/meet-bhatt-resume.pdf",
 } as const;

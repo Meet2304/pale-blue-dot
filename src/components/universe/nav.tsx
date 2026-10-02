@@ -102,6 +102,9 @@ export function UniverseNav({
       ref={headerRef}
       className={s.nav}
       data-docked={docked}
+      /* One bar across the pages: it carries over a page change rather
+         than going out with one page and in with the next (globals.css). */
+      style={{ viewTransitionName: "site-bar" }}
       onPointerLeave={(e) => e.pointerType === "mouse" && later(false, CLOSE_DELAY)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);

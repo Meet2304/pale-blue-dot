@@ -14,3 +14,36 @@ export const notePath = (path: string) => {
 };
 
 export const cameFrom = () => previous;
+
+/* A chapter asked for from another page's bar, for the universe to fly to
+   once it is open (page-nav.tsx). */
+let chapter: number | null = null;
+
+export const requestChapter = (n: number) => {
+  chapter = n;
+};
+
+export const takeChapter = () => {
+  const n = chapter;
+  chapter = null;
+  return n;
+};
+
+/* Where the universe was scrolled to when last seen, and where to put it
+   back when a page's way back opens it again (back-link.tsx). */
+let homeAt = 0;
+let restore: number | null = null;
+
+export const noteHomeScroll = (y: number) => {
+  homeAt = y;
+};
+
+export const requestHomeRestore = () => {
+  restore = homeAt;
+};
+
+export const takeHomeRestore = () => {
+  const y = restore;
+  restore = null;
+  return y;
+};

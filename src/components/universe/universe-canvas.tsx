@@ -281,7 +281,12 @@ export function UniverseCanvas({
               x: p.x,
               y: p.y,
               z: R / (p.r * look.scale),
-              ax: (media.right - c.left - media.width * 0.07) / w,
+              /* A piece drawn as another's body sees it from the other
+                 side: behind the picture's top-left corner instead. */
+              ax:
+                (p.twin !== undefined
+                  ? media.left - c.left + media.width * 0.07
+                  : media.right - c.left - media.width * 0.07) / w,
               ay: (top - R * lift) / h,
             };
           }
@@ -300,7 +305,10 @@ export function UniverseCanvas({
       const half = rx * R;
       const cx =
         mid === null
-          ? (box.x0 + box.x1) / 2
+          ? p.twin !== undefined
+            ? /* Seen from another side: off to the left of the space. */
+              Math.max(box.x0 + half, box.x0 + (box.x1 - box.x0) * 0.3)
+            : (box.x0 + box.x1) / 2
           : Math.max(box.x0 + half, Math.min(box.x1 - half, mid));
       return {
         x: p.x,
@@ -608,6 +616,7 @@ export function UniverseCanvas({
       hovered = null;
       let hoverD = 1e9;
       for (let i = 0; workA > 0.5 && pointer.in && i < placed.length; i++) {
+        if (placed[i].twin !== undefined) continue;
         const { p, R, px, py } = sizeOf(i);
         const d = Math.hypot(pointer.x - px, pointer.y - py);
         if (d < Math.max(14, R * 1.3) && d < hoverD) {
@@ -622,6 +631,13 @@ export function UniverseCanvas({
          bodies, below. */
       const focusI = Math.max(0, Math.min(placed.length - 1, Math.round(s) - FIRST));
       const nearOf = (i: number) => 1 - Math.min(1, Math.abs(s - (i + FIRST)));
+      /* How near the camera is to a body: its own chapter, or any piece
+         drawn as it (`twin`). */
+      const nearBody = (i: number) =>
+        placed.reduce(
+          (m, q, j) => (j === i || q.twin === i ? Math.max(m, nearOf(j)) : m),
+          0,
+        );
       const back = {
         w,
         h,
@@ -637,7 +653,8 @@ export function UniverseCanvas({
       if (workA > 0.01) {
         const bodies: Body[] = [];
         for (let i = 0; i < placed.length; i++) {
-          const near = nearOf(i);
+          if (placed[i].twin !== undefined) continue;
+          const near = nearBody(i);
           if (near <= 0) continue;
           const { look, R, px, py } = sizeOf(i);
           bodies.push({
@@ -683,6 +700,7 @@ export function UniverseCanvas({
           alpha: workA * (0.35 + 0.65 * smooth(nearOf(focusI))),
         });
         for (let i = 0; i < placed.length; i++) {
+          if (placed[i].twin !== undefined) continue;
           const { p, look, portrait, R, extent, px, py } = sizeOf(i);
           const pal = palettes[i];
           const reach = Math.max(R * extent, 14);
@@ -693,7 +711,7 @@ export function UniverseCanvas({
             py - reach > h + 20
           )
             continue;
-          const near = 1 - Math.min(1, Math.abs(s - (i + FIRST)));
+          const near = nearBody(i);
           const a = workA * (0.3 + 0.7 * smooth(near)) * (recede[i] ? 0.94 : 1);
           /* At a distance, a body is only a point of light; it resolves into
              its full form as the camera closes in. */

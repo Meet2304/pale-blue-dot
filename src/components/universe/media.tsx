@@ -9,6 +9,8 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 
+import { AnimateIcon } from "@/components/animate-ui/icons/icon";
+import { SquareArrowOutUpRight } from "@/components/animate-ui/icons/square-arrow-out-up-right";
 import type { Media } from "@/content/work";
 
 import { Picture } from "./picture";
@@ -37,10 +39,10 @@ const SCREEN_H = 800;
  *
  * A website is shown in a browser frame, turning through a few of its
  * screens as if someone were scrolling it: plain images (picture.tsx), all
- * fetched together when the chapter is about two screens away. Opened up, its screens can be stepped through
- * or the live site tried, at a size where it can be used; "Try it live" on
- * the frame opens straight to that. Nothing of the live site loads until
- * then. The address in the frame's bar opens it in a new tab.
+ * fetched together when the chapter is about two screens away. Opened up, its
+ * screens can be stepped through or the live site tried, at a size where it
+ * can be used. Nothing of the live site loads until then. The address in the
+ * frame's bar, and the small arrow in its corner, open it in a new tab.
  *
  * The screens turn only while the frame is on screen, and nothing leans or
  * turns under reduced motion.
@@ -60,6 +62,13 @@ export function WorkMedia({ media }: { media: Media }) {
   /* Until its screens have all been shown once, a site always starts from
      its first: the first look is the site as it opens. */
   const firstPass = useRef(true);
+  /* Stepped through by hand: the screens hold a while before turning on. */
+  const pausedUntil = useRef(0);
+  const step = (d: number) => {
+    firstPass.current = false;
+    pausedUntil.current = Date.now() + HOLD * 1.5;
+    setAt((i) => (i + d + count) % count);
+  };
 
   useEffect(() => {
     const el = ref.current;
@@ -97,6 +106,7 @@ export function WorkMedia({ media }: { media: Media }) {
     const id = window.setInterval(
       () =>
         setAt((i) => {
+          if (Date.now() < pausedUntil.current) return i;
           const next = (i + 1) % count;
           if (next === 0) firstPass.current = false;
           return next;
@@ -193,8 +203,22 @@ export function WorkMedia({ media }: { media: Media }) {
                 rel="noreferrer"
                 title={`Open ${media.label} in a new tab`}
               >
-                {media.label} <span aria-hidden>↗</span>
+                {media.label}
               </a>
+              {/* The live site, in a new tab: at the bar's end, as a
+                  browser's own control would be; it moves when pointed at. */}
+              <AnimateIcon asChild animateOnHover>
+                <a
+                  className={s.openLive}
+                  href={media.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open ${media.label} in a new tab`}
+                  title={`Open ${media.label} in a new tab`}
+                >
+                  <SquareArrowOutUpRight size={16} aria-hidden />
+                </a>
+              </AnimateIcon>
             </div>
             <div className={s.screen}>
               <button
@@ -218,28 +242,6 @@ export function WorkMedia({ media }: { media: Media }) {
                   ))}
                 </span>
               </button>
-              {media.embed === false ? (
-                /* This site refuses to be shown inside another page, so
-                   trying it live means going there. */
-                <a
-                  className={s.tryPill}
-                  href={media.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`Open ${media.label} live, in a new tab`}
-                >
-                  <span className={s.tryDot} aria-hidden /> Open it live ↗
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  className={s.tryPill}
-                  onClick={() => show(true)}
-                  aria-label={`Try ${media.label} live`}
-                >
-                  <span className={s.tryDot} aria-hidden /> Try it live
-                </button>
-              )}
             </div>
           </>
         )}
@@ -247,10 +249,32 @@ export function WorkMedia({ media }: { media: Media }) {
       </div>
       <figcaption className={s.caption}>
         {media.kind === "site" && (
-          <span className={s.pips} aria-hidden>
-            {media.screens.map((_, i) => (
-              <i key={i} data-on={i === at} />
-            ))}
+          <span className={s.stepper}>
+            <button
+              type="button"
+              className={s.stepButton}
+              aria-label="Previous screen"
+              onClick={() => step(-1)}
+            >
+              <svg viewBox="0 0 10 10" aria-hidden>
+                <path d="M6.5 1.5 3 5l3.5 3.5" />
+              </svg>
+            </button>
+            <span className={s.pips} aria-hidden>
+              {media.screens.map((_, i) => (
+                <i key={i} data-on={i === at} />
+              ))}
+            </span>
+            <button
+              type="button"
+              className={s.stepButton}
+              aria-label="Next screen"
+              onClick={() => step(1)}
+            >
+              <svg viewBox="0 0 10 10" aria-hidden>
+                <path d="M3.5 1.5 7 5 3.5 8.5" />
+              </svg>
+            </button>
           </span>
         )}
         {media.kind === "site" ? media.screens[at].alt : media.caption}
