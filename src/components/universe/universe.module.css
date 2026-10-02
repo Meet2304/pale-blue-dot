@@ -97,11 +97,15 @@
   cursor: pointer;
 }
 
+/* Each tick's dash, drawn as a border: a border is snapped to whole device
+   pixels, where a 1px-high box at a fractional position can be rounded
+   away on some screens and zoom levels. */
 .ticks button::after {
   content: "";
+  flex: none;
   width: 10px;
-  height: 1px;
-  background: currentColor;
+  height: 0;
+  border-top: 1px solid currentColor;
   transition: width 300ms;
 }
 
@@ -939,9 +943,18 @@
   text-wrap: pretty;
 }
 
+/* Where the work is: the thing itself, and its code. */
+.visits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.6rem;
+  margin: 1.3rem 0 0;
+}
+
 .visit {
   display: inline-block;
-  margin-top: 1.3rem;
+  border-bottom: 0;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--fg);
@@ -954,6 +967,26 @@
 
 .visit:hover {
   text-decoration-color: var(--fg);
+}
+
+/* The code: no underline, just quiet text that takes the piece's colour,
+   logo and all, when pointed at. */
+.visit.code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.visit.code:is(:hover, :focus-visible) {
+  color: var(--kind);
+}
+
+.codeMark {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* The picture of the work: under the body, right of the copy, as large as
@@ -1280,6 +1313,10 @@
 }
 
 .links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 0;
   color: var(--fg);
   text-decoration: underline;
   text-decoration-color: var(--mute);

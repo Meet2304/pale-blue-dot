@@ -218,24 +218,8 @@
   background: rgb(0 0 0 / 0.85);
 }
 
-/* A profile's mark, in the text's colour; LinkedIn's takes its blue under
-   the pointer. */
+/* Each way's mark (way-mark.tsx), playing its trick under the pointer. */
 .mark {
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-  background: currentColor;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-  transition: background-color 200ms;
-}
-
-.channels a[data-id="linkedin"]:hover .mark {
-  background: #0a66c2;
-}
-
-.resumeMark {
   width: 1.05rem;
   height: 1.05rem;
 }

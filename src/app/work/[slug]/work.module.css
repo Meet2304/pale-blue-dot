@@ -111,12 +111,34 @@
 }
 
 .links a {
+  border-bottom: 0;
   color: var(--fg);
   text-decoration: underline;
   text-decoration-color: var(--mute);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.3em;
   transition: text-decoration-color 200ms;
+}
+
+/* The code: no underline, just quiet text that takes the piece's colour,
+   logo and all, when pointed at. */
+.links .code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 0;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.links .code:is(:hover, :focus-visible) {
+  color: var(--kind);
+}
+
+.codeMark {
+  width: 1rem;
+  height: 1rem;
 }
 
 .back {
