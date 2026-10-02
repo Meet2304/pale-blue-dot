@@ -67,6 +67,8 @@ export type Unit = {
   /** Where the thing itself is. Shown as "Visit <label>", or with `verb`
       in place of "Visit" ("Read the paper"). */
   link?: { label: string; href: string; verb?: string };
+  /** Its code, where it is public. */
+  repo?: string;
   media?: Media;
   /** Part of another piece of work (its id): drawn as that piece's body,
       seen again from another side, rather than as a body of its own. */
@@ -146,6 +148,7 @@ export const COLLECTIONS: Collection[] = [
           "The whole app: overlay, Windows media sessions, lyric sync, offline cache.",
         result: "Open source, version 0.2.0.",
         link: { label: "linea.meetbhatt.com", href: "https://linea.meetbhatt.com" },
+        repo: "https://github.com/Meet2304/Project-Linea",
         media: {
           kind: "site",
           href: "https://linea.meetbhatt.com",
@@ -187,7 +190,7 @@ export const COLLECTIONS: Collection[] = [
         id: "phoenix",
         name: "Project Phoenix",
         brief:
-          "Aim: help catch the earliest cell changes in cervical cancer, with a model that shows why it decided, running in the browser.",
+          "Research on spotting the earliest signs of cervical cancer in microscope images of cells. The model sorts each cell into one of five types and highlights the parts of the image it looked at, so a doctor can check its reasoning. It runs right in your browser.",
         kind: "research",
         when: "Jul 2025 to May 2026",
         impact: 3,
@@ -196,6 +199,7 @@ export const COLLECTIONS: Collection[] = [
           "Image cleanup on SipakMed and Herlev, the CNN models, the visual explanations.",
         result: "Manuscript in preparation. Runs live in the browser.",
         link: { label: "phoenix.meetbhatt.com", href: "https://phoenix.meetbhatt.com" },
+        repo: "https://github.com/Meet2304/Project-Phoenix",
         media: {
           kind: "site",
           href: "https://phoenix.meetbhatt.com",
@@ -228,7 +232,7 @@ export const COLLECTIONS: Collection[] = [
         id: "prompt-classifier",
         name: "Malicious prompt classifier",
         brief:
-          "Aim: stop harmful prompts before they reach a language model, and explain which patterns made them look risky.",
+          "Research on catching harmful prompts before they reach an AI chatbot. The detector flags a risky prompt and shows which parts of it made it look dangerous. The paper was published in Procedia Computer Science in 2026.",
         kind: "research",
         when: "Jul 2025 to Oct 2025",
         impact: 2.3,
@@ -241,6 +245,7 @@ export const COLLECTIONS: Collection[] = [
           label: "the paper",
           href: "https://www.sciencedirect.com/science/article/pii/S1877050926016996",
         },
+        repo: "https://github.com/Meet2304/Project-Vigil",
       },
       {
         id: "talaria",
@@ -255,6 +260,7 @@ export const COLLECTIONS: Collection[] = [
           "The ESP32 wearable, the cloud pipeline, and an RNN forecasting 50 steps ahead.",
         result: "R² of 0.97 across 15 signals, on 50,000+ sequences.",
         link: { label: "talaria.meetbhatt.com", href: "https://talaria.meetbhatt.com" },
+        repo: "https://github.com/Meet2304/Project-Talaria",
         media: {
           kind: "site",
           href: "https://talaria.meetbhatt.com",
@@ -297,7 +303,7 @@ export const COLLECTIONS: Collection[] = [
         id: "blink-analytics",
         name: "Blink Analytics",
         brief:
-          "Grew from RLHF contributor to team lead to leading product development; led the build of Serin, an AI interview and hiring platform.",
+          "Blink Analytics builds AI and data products for other companies. I joined to help train AI models with human feedback, became a team lead, and then went on to lead product development. My biggest project there was Serin.",
         kind: "experience",
         when: "Aug 2024 to Jun 2026",
         impact: 3,
@@ -338,7 +344,7 @@ export const COLLECTIONS: Collection[] = [
         id: "serin",
         name: "Serin",
         brief:
-          "An AI interview platform for hiring teams. At Blink Analytics I led its development and directed the intern team that built it: live voice interviews, scored against the role.",
+          "Serin helps companies interview job candidates. An AI holds a live voice interview with each candidate, scores their answers against the job, and checks for cheating. I led its development at Blink Analytics and managed the intern team that built it.",
         kind: "experience",
         when: "2025 to Jun 2026",
         impact: 3,
@@ -382,6 +388,7 @@ export const COLLECTIONS: Collection[] = [
         line: "A drone that flies on a flight controller I built.",
         owned: "Teensy 4.0 controller, custom PCB, sensor fusion in C.",
         result: "Stable flight.",
+        repo: "https://github.com/Meet2304/Project-Icarus",
       },
     ],
   },
@@ -408,7 +415,7 @@ export const COLLECTIONS: Collection[] = [
         id: "mind-ripple",
         name: "Mind Ripple",
         brief:
-          "The university's quizzing club: rose from member to head of design to president, leading a 30-member team and its flagship event.",
+          "Mind Ripple is my university's quizzing club. I joined as a member, became head of design and then president, and led a team of 30. For two years I ran our flagship event, Matrix Breakout.",
         kind: "leadership",
         when: "Nov 2022 to Apr 2026",
         impact: 2.6,

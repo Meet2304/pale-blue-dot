@@ -28,6 +28,7 @@ import { lookColors, lookOf } from "./looks";
 import { WorkMedia } from "./media";
 import { UniverseNav } from "./nav";
 import { Footer } from "./footer";
+import { WayMark } from "./way-mark";
 import { createSmoothScroll, type SmoothScroll } from "./smooth-scroll";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
@@ -195,18 +196,21 @@ export function Universe() {
             <p className={s.kicker}>Zoom out</p>
             <SpokenTitle spoken={DOT_TITLE} className={s.title} />
             <p className={s.lede}>
-              Earth, from far enough away to see it whole: one point of light.
+              That tiny dot is Earth, seen from very far away. It&apos;s where I live,
+              learn and build everything you&apos;re about to see.
             </p>
-            <p className={s.hint}>Scroll to see my impact</p>
+            <p className={s.hint}>Scroll to see my work</p>
           </Chapter>
 
           <Chapter>
             <p className={s.kicker}>Further out</p>
             <SpokenTitle spoken={SKY_TITLE} className={s.title} />
             <p className={s.lede}>
-              Every light out here is something I&apos;ve built, researched or led.
+              Each light out here is one thing I&apos;ve done: a degree, a job, a
+              project, some research, or a team I led. Keep scrolling and I&apos;ll show
+              you each one, newest first.
             </p>
-            <p className={s.hint}>Scroll to dive in, one piece at a time</p>
+            <p className={s.hint}>Scroll to visit them one by one</p>
           </Chapter>
 
           {PIECES.map(({ u, col, i }, k) => (
@@ -215,21 +219,47 @@ export function Universe() {
 
           <Chapter>
             <p className={s.kicker}>What&apos;s next</p>
-            <h2 className={s.title}>There&apos;s a long way to go.</h2>
+            <h2 className={s.title}>I&apos;m just getting started.</h2>
             <p className={s.lede}>
-              Everything I&apos;ve done so far fits in that one patch of light. All the
-              dark around it is still to build.
+              Everything you just scrolled through fits inside one small patch of sky.
+              There&apos;s a lot of empty space left, and I want to fill it with things
+              that help people. If you&apos;re working on something interesting,
+              I&apos;d love to hear about it.
             </p>
             <nav className={s.links} aria-label="Elsewhere">
-              <Link href={routes.story}>Read the note</Link>
-              <Link href={routes.contact}>Say hello</Link>
-              <a href={CONTACT.github} target="_blank" rel="noreferrer">
+              <Link href={routes.story} data-icon="story">
+                <WayMark icon="story" />
+                Read the story
+              </Link>
+              <Link href={routes.contact} data-icon="contact">
+                <WayMark icon="contact" />
+                Say hello
+              </Link>
+              <a
+                href={CONTACT.github}
+                target="_blank"
+                rel="noreferrer"
+                data-icon="github"
+              >
+                <WayMark icon="github" />
                 GitHub
               </a>
-              <a href={CONTACT.linkedin} target="_blank" rel="noreferrer">
+              <a
+                href={CONTACT.linkedin}
+                target="_blank"
+                rel="noreferrer"
+                data-icon="linkedin"
+              >
+                <WayMark icon="linkedin" />
                 LinkedIn
               </a>
-              <a href={CONTACT.resume} target="_blank" rel="noreferrer">
+              <a
+                href={CONTACT.resume}
+                target="_blank"
+                rel="noreferrer"
+                data-icon="resume"
+              >
+                <WayMark icon="resume" />
                 Resume
               </a>
             </nav>
@@ -340,10 +370,26 @@ function Piece({
         {kind.label}, {u.when}
       </p>
       <p className={s.pieceBrief}>{u.brief}</p>
-      {u.link && (
-        <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
-          {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>
-        </a>
+      {(u.link || u.repo) && (
+        <p className={s.visits}>
+          {u.link && (
+            <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
+              {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>
+            </a>
+          )}
+          {u.repo && (
+            <a
+              className={`${s.visit} ${s.code}`}
+              href={u.repo}
+              target="_blank"
+              rel="noreferrer"
+              data-icon="github"
+            >
+              <WayMark icon="github" className={s.codeMark} />
+              See the code <span aria-hidden>↗</span>
+            </a>
+          )}
+        </p>
       )}
     </Chapter>
   );

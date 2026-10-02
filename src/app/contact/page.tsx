@@ -7,7 +7,7 @@ import { PageTransition } from "@/components/site/page-transition";
 import { CopyEmail } from "@/components/universe/copy-email";
 import { Footer } from "@/components/universe/footer";
 import { PageNav } from "@/components/universe/page-nav";
-import { ResumeMark } from "@/components/universe/resume-mark";
+import { WayMark } from "@/components/universe/way-mark";
 import { CONTACT } from "@/content/work";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
@@ -17,13 +17,6 @@ import { HorizonGlyphs } from "./horizon-glyphs";
 export const metadata: Metadata = {
   title: "Contact",
   description: "How to reach Meet Bhatt: email, LinkedIn, GitHub and X.",
-};
-
-/* Each profile's mark, from svglogos.dev (public/logos/social/). */
-const MARKS: Record<(typeof SOCIAL_LINKS)[number]["id"], string> = {
-  github: "/logos/social/github-icon.svg",
-  linkedin: "/logos/social/linkedin-icon.svg",
-  x: "/logos/social/x.svg",
 };
 
 /**
@@ -73,19 +66,20 @@ export default function ContactPage() {
             <ul className={s.channels}>
               {SOCIAL_LINKS.map((l) => (
                 <li key={l.id}>
-                  <a href={l.href} target="_blank" rel="noreferrer" data-id={l.id}>
-                    <span
-                      className={s.mark}
-                      style={{ maskImage: `url(${MARKS[l.id]})` }}
-                      aria-hidden
-                    />
+                  <a href={l.href} target="_blank" rel="noreferrer" data-icon={l.id}>
+                    <WayMark icon={l.id} className={s.mark} />
                     {l.label}
                   </a>
                 </li>
               ))}
               <li>
-                <a href={CONTACT.resume} target="_blank" rel="noreferrer">
-                  <ResumeMark className={s.resumeMark} />
+                <a
+                  href={CONTACT.resume}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-icon="resume"
+                >
+                  <WayMark icon="resume" className={s.mark} />
                   Resume
                 </a>
               </li>

@@ -8,6 +8,7 @@ import { PageTransition } from "@/components/site/page-transition";
 import { BodyPortrait } from "@/components/universe/body-portrait";
 import { Footer } from "@/components/universe/footer";
 import { PageNav } from "@/components/universe/page-nav";
+import { WayMark } from "@/components/universe/way-mark";
 import { KINDS, kindColors } from "@/components/universe/encoding";
 import { UNITS, unitById } from "@/content/work";
 
@@ -79,6 +80,18 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
               {u.link && (
                 <a href={u.link.href} target="_blank" rel="noreferrer">
                   {u.link.label}
+                </a>
+              )}
+              {u.repo && (
+                <a
+                  href={u.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-icon="github"
+                  className={s.code}
+                >
+                  <WayMark icon="github" className={s.codeMark} />
+                  See the code
                 </a>
               )}
               <BackLink className={s.back} />
