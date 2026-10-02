@@ -1,39 +1,47 @@
 "use client";
 
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { ArrowLeft } from "@/components/animate-ui/icons/arrow-left";
+import { AnimateIcon } from "@/components/animate-ui/icons/icon";
 import { routes } from "@/lib/routes";
-import { cameFrom, requestHomeRestore } from "@/lib/visit";
+import { canGoBack, nextPage } from "@/lib/visit";
 
 /**
- * A way back to the universe. Coming from it, the universe opens where it
- * was left (the same place in it, the opening not played again); arriving
- * from anywhere else, it opens from the top. It is a navigation forward,
- * not the browser's back, so the page change animates (page-transition.tsx).
+ * "Back": to the page the visitor was on before this one, through the
+ * browser's own history, so it opens where it was left (the same place in
+ * the universe, the opening not played again). Stepping back through history
+ * gets no page transition of its own, so it is given one: the browser's,
+ * held until the page it goes back to is on screen. Arriving here from
+ * outside the site, there is nothing to go back to, and it opens the
+ * universe. The arrow moves when pointed at.
  */
-export function BackLink({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+export function BackLink({ className }: { className?: string }) {
   const router = useRouter();
   return (
-    <Link
-      href={routes.home}
-      className={className}
-      onClick={(e) => {
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        if (cameFrom() !== routes.home) return;
-        e.preventDefault();
-        requestHomeRestore();
-        router.push(routes.home, { scroll: false });
-      }}
-    >
-      {children}
-    </Link>
+    <AnimateIcon asChild animateOnHover>
+      <Link
+        href={routes.home}
+        className={className}
+        onClick={(e) => {
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+            return;
+          if (!canGoBack()) return;
+          e.preventDefault();
+          const back = () => {
+            const shown = nextPage();
+            router.back();
+            return shown;
+          };
+          const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          if (document.startViewTransition && !calm) document.startViewTransition(back);
+          else void back();
+        }}
+      >
+        <ArrowLeft size={14} aria-hidden />
+        Back
+      </Link>
+    </AnimateIcon>
   );
 }

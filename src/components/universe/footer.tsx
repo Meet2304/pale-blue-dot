@@ -7,9 +7,11 @@ import { SOCIAL_LINKS, type SocialId } from "@/lib/socials";
 
 import { BackToEarth, HomeLink } from "./footer-actions";
 import { GlyphText } from "./glyph-text";
+import { ResumeMark } from "./resume-mark";
 import s from "./footer.module.css";
 
 type Icon = "home" | "story" | "contact" | "resume" | "email" | SocialId;
+type Drawn = Exclude<Icon, SocialId | "resume">;
 
 /* Every way off the page: the site's pages, the resume, the profiles, and
    a way to write. */
@@ -97,6 +99,7 @@ export function Footer() {
 
 /** A way's mark: a profile's own logo, or a small drawing of its own. */
 function Mark({ icon }: { icon: Icon }) {
+  if (icon === "resume") return <ResumeMark className={s.icon} />;
   if (icon === "github" || icon === "linkedin" || icon === "x")
     return (
       <span
@@ -121,7 +124,7 @@ function Mark({ icon }: { icon: Icon }) {
   );
 }
 
-const DRAWINGS: Record<Exclude<Icon, SocialId>, React.ReactNode> = {
+const DRAWINGS: Record<Drawn, React.ReactNode> = {
   /* Home is Earth: a globe, which turns. */
   home: (
     <>
@@ -150,16 +153,6 @@ const DRAWINGS: Record<Exclude<Icon, SocialId>, React.ReactNode> = {
       <circle className={s.typing} cx="8" cy="10.5" r="0.6" fill="currentColor" />
       <circle className={s.typing} cx="12" cy="10.5" r="0.6" fill="currentColor" />
       <circle className={s.typing} cx="16" cy="10.5" r="0.6" fill="currentColor" />
-    </>
-  ),
-  /* A page; its lines write themselves in. */
-  resume: (
-    <>
-      <path d="M6.5 3h8l4 4v14h-12z" />
-      <path d="M14.5 3v4h4" />
-      <path className={s.line} d="M9 11h6.5" />
-      <path className={s.line} d="M9 14h6.5" />
-      <path className={s.line} d="M9 17h4" />
     </>
   ),
   /* An envelope; its flap opens. */

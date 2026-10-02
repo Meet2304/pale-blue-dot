@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/site/page-transition";
 import { CopyEmail } from "@/components/universe/copy-email";
 import { Footer } from "@/components/universe/footer";
 import { PageNav } from "@/components/universe/page-nav";
+import { ResumeMark } from "@/components/universe/resume-mark";
 import { CONTACT } from "@/content/work";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
@@ -52,9 +53,7 @@ export default function ContactPage() {
           </div>
 
           <header className={s.top}>
-            <BackLink className={s.back}>
-              <span aria-hidden>←</span> Back to the universe
-            </BackLink>
+            <BackLink className={s.back} />
           </header>
 
           <section className={s.center}>
@@ -86,9 +85,7 @@ export default function ContactPage() {
               ))}
               <li>
                 <a href={CONTACT.resume} target="_blank" rel="noreferrer">
-                  <span className={s.glyph} aria-hidden>
-                    ≡
-                  </span>
+                  <ResumeMark className={s.resumeMark} />
                   Resume
                 </a>
               </li>

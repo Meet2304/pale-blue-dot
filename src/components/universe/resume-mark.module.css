@@ -1,0 +1,46 @@
+/* The resume's mark (resume-mark.tsx): it plays when its link is pointed
+   at or focused. */
+.mark {
+  flex: none;
+  overflow: visible;
+}
+
+.line {
+  stroke-dasharray: 7;
+  stroke-dashoffset: 0;
+}
+
+a:is(:hover, :focus-visible) .mark {
+  animation: lift 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+a:is(:hover, :focus-visible) .line {
+  animation: write 500ms ease-out both;
+}
+
+a:is(:hover, :focus-visible) .line:nth-of-type(4) {
+  animation-delay: 120ms;
+}
+
+a:is(:hover, :focus-visible) .line:nth-of-type(5) {
+  animation-delay: 240ms;
+}
+
+@keyframes lift {
+  40% {
+    transform: translateY(-2px) rotate(-6deg);
+  }
+}
+
+@keyframes write {
+  from {
+    stroke-dashoffset: 7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .line {
+    animation: none !important;
+  }
+}
