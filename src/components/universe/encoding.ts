@@ -123,6 +123,8 @@ export type Placed = Unit & {
   r: number;
   seed: number;
   collection: number;
+  /** For a piece drawn as another's body (`sameAs`): that body's index. */
+  twin?: number;
 };
 
 export type Group = { x: number; y: number; r: number };
@@ -137,8 +139,25 @@ export function layout() {
     const gx = Math.cos(ang) * dist;
     const gy = Math.sin(ang) * dist * 0.72;
     let reach = 0;
-    const n = col.units.length;
-    col.units.forEach((u, ui) => {
+    /* A piece drawn as another's body takes no place of its own. */
+    const own = col.units.filter((u) => !u.sameAs);
+    const n = own.length;
+    col.units.forEach((u) => {
+      if (u.sameAs) {
+        const twin = placed.findIndex((p) => p.id === u.sameAs);
+        const at = placed[twin];
+        placed.push({
+          ...u,
+          x: at.x,
+          y: at.y,
+          r: at.r,
+          seed: at.seed,
+          collection: ci,
+          twin,
+        });
+        return;
+      }
+      const ui = own.indexOf(u);
       const r = 0.55 + u.impact * 0.42;
       const a = ang + Math.PI / 2 + (ui / Math.max(1, n)) * Math.PI * 2;
       const off = n === 1 ? 0 : 3.4 + r * 0.9;

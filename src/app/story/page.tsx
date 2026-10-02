@@ -8,6 +8,7 @@ import { PageTransition } from "@/components/site/page-transition";
 import { TheNote } from "@/components/site/the-note";
 import { ThePhotograph } from "@/components/site/the-photograph";
 import { Footer } from "@/components/universe/footer";
+import { PageNav } from "@/components/universe/page-nav";
 
 import s from "./story.module.css";
 
@@ -42,6 +43,7 @@ export default function StoryPage() {
   return (
     <PageTransition>
       <div className={plexVariables}>
+        <PageNav />
         <main id="content" className={s.root}>
           <StarField />
           <header className={s.top}>

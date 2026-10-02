@@ -1,4 +1,4 @@
-import type { Kind } from "@/content/work";
+import { UNITS, type Kind } from "@/content/work";
 
 import type { BodyId } from "./bodies";
 import { KINDS, colorsOf } from "./encoding";
@@ -140,9 +140,14 @@ const LOOKS: Record<string, Partial<Look>> = {
   "interact-club": { hue: 195, l: 0.8, c: 0.11, scale: 0.85, flip: true },
 };
 
+/* A piece drawn as another's body looks like it. */
+const SAME_AS: Record<string, string> = Object.fromEntries(
+  UNITS.filter((u) => u.sameAs).map((u) => [u.id, u.sameAs as string]),
+);
+
 export const lookOf = (id: string, kind: Kind): Look => ({
   ...kindLook(kind),
-  ...LOOKS[id],
+  ...LOOKS[SAME_AS[id] ?? id],
 });
 
 /** A look's seven colours, in the tiers the renderers draw with. */

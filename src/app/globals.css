@@ -244,20 +244,52 @@
   pointer-events: none;
 }
 
+/* The bar carries over: it glides from where it was to where it is, above
+   the pages changing under it. */
+::view-transition-group(site-bar) {
+  z-index: 100;
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The contact page's horizon comes and goes with it: arriving, it rises
+   into place on its own (contact.module.css) as it fades in; leaving, it
+   sets below the foot of the screen while the page falls away. */
+::view-transition-new(horizon):only-child {
+  animation: vt-fade-in 260ms ease-out both;
+}
+
+::view-transition-old(horizon):only-child {
+  animation: horizon-set 300ms cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes horizon-set {
+  to {
+    transform: translateY(32vh);
+    opacity: 0;
+  }
+}
+
 ::view-transition-old(.vt-recede) {
-  animation: vt-recede 220ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: vt-recede 200ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 ::view-transition-new(.vt-arrive) {
-  animation: vt-arrive 400ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+  animation: vt-arrive 340ms cubic-bezier(0.16, 1, 0.3, 1) 20ms both;
 }
 
 ::view-transition-old(.vt-leave) {
-  animation: vt-leave 220ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: vt-leave 200ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 ::view-transition-new(.vt-return) {
-  animation: vt-return 440ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+  animation: vt-return 360ms cubic-bezier(0.16, 1, 0.3, 1) 20ms both;
 }
 
 @keyframes vt-recede {

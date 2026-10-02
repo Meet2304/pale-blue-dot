@@ -39,7 +39,19 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
      (pointed at, touched or focused), so that it can slide in even the
      first time, and the page as served is the same on every screen. */
   const [ready, setReady] = useState(false);
-  const prepare = () => setReady(true);
+  /* Where the drawer goes: the page's root, outside the bar (the bar is
+     positioned with a translate, which would pin a fixed drawer to it). On
+     a page beside the universe, the bar's own root (page-nav.tsx), where
+     its colours are. */
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  const prepare = () => {
+    setHost(
+      menuRef.current?.closest<HTMLElement>("[data-universe-root]") ??
+        document.getElementById("content") ??
+        document.body,
+    );
+    setReady(true);
+  };
   const [kind, setKind] = useState<Kind | null>(null);
   const menuRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -82,7 +94,7 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
           onClick={() => {
             if (ready) setOpen(true);
             else {
-              setReady(true);
+              prepare();
               requestAnimationFrame(() => setOpen(true));
             }
           }}
@@ -92,6 +104,7 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
       </AnimateIcon>
 
       {ready &&
+        host &&
         createPortal(
           <>
             <div
@@ -207,9 +220,7 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
               </p>
             </aside>
           </>,
-          /* In the page's root, outside the bar: the bar is positioned with
-             a translate, which would pin a fixed drawer to it. */
-          document.getElementById("content") ?? document.body,
+          host,
         )}
     </>
   );

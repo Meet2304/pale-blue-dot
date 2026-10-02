@@ -5,13 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { routes } from "@/lib/routes";
-import { cameFrom } from "@/lib/visit";
+import { cameFrom, requestHomeRestore } from "@/lib/visit";
 
 /**
- * A way back to the universe. Coming from it, this is the browser's own
- * back, so the universe opens where it was left (the same chapter, the
- * opening not played again); arriving from anywhere else, it opens the
- * universe from the top.
+ * A way back to the universe. Coming from it, the universe opens where it
+ * was left (the same place in it, the opening not played again); arriving
+ * from anywhere else, it opens from the top. It is a navigation forward,
+ * not the browser's back, so the page change animates (page-transition.tsx).
  */
 export function BackLink({
   className,
@@ -29,7 +29,8 @@ export function BackLink({
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         if (cameFrom() !== routes.home) return;
         e.preventDefault();
-        router.back();
+        requestHomeRestore();
+        router.push(routes.home, { scroll: false });
       }}
     >
       {children}

@@ -1194,24 +1194,6 @@
   outline-offset: -3px;
 }
 
-.tryDot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
-  background: var(--kind);
-  box-shadow: 0 0 0 0 var(--kind);
-  animation: tryPulse 2.4s ease-out infinite;
-}
-
-@keyframes tryPulse {
-  70% {
-    box-shadow: 0 0 0 0.35rem transparent;
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-
 .live {
   position: absolute;
   top: 0;
@@ -1219,6 +1201,53 @@
   border: 0;
   transform-origin: 0 0;
   background: #fff;
+}
+
+/* Under a website's frame: a step back, where it is in its screens, a step
+   on. */
+.stepper {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stepButton {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: -0.2rem 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--mute);
+  cursor: pointer;
+  transition:
+    color 200ms,
+    background-color 200ms;
+}
+
+.stepButton svg {
+  width: 0.65rem;
+  height: 0.65rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stepButton:hover,
+.stepButton:focus-visible {
+  color: var(--kind-soft);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.stepButton:focus-visible {
+  outline: 1px solid var(--kind-soft);
+  outline-offset: 1px;
 }
 
 .pips {

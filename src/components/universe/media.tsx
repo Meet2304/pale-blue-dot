@@ -60,6 +60,13 @@ export function WorkMedia({ media }: { media: Media }) {
   /* Until its screens have all been shown once, a site always starts from
      its first: the first look is the site as it opens. */
   const firstPass = useRef(true);
+  /* Stepped through by hand: the screens hold a while before turning on. */
+  const pausedUntil = useRef(0);
+  const step = (d: number) => {
+    firstPass.current = false;
+    pausedUntil.current = Date.now() + HOLD * 1.5;
+    setAt((i) => (i + d + count) % count);
+  };
 
   useEffect(() => {
     const el = ref.current;
@@ -97,6 +104,7 @@ export function WorkMedia({ media }: { media: Media }) {
     const id = window.setInterval(
       () =>
         setAt((i) => {
+          if (Date.now() < pausedUntil.current) return i;
           const next = (i + 1) % count;
           if (next === 0) firstPass.current = false;
           return next;
@@ -228,7 +236,7 @@ export function WorkMedia({ media }: { media: Media }) {
                   rel="noreferrer"
                   aria-label={`Open ${media.label} live, in a new tab`}
                 >
-                  <span className={s.tryDot} aria-hidden /> Open it live ↗
+                  Open it live ↗
                 </a>
               ) : (
                 <button
@@ -237,7 +245,7 @@ export function WorkMedia({ media }: { media: Media }) {
                   onClick={() => show(true)}
                   aria-label={`Try ${media.label} live`}
                 >
-                  <span className={s.tryDot} aria-hidden /> Try it live
+                  Try it live
                 </button>
               )}
             </div>
@@ -247,10 +255,32 @@ export function WorkMedia({ media }: { media: Media }) {
       </div>
       <figcaption className={s.caption}>
         {media.kind === "site" && (
-          <span className={s.pips} aria-hidden>
-            {media.screens.map((_, i) => (
-              <i key={i} data-on={i === at} />
-            ))}
+          <span className={s.stepper}>
+            <button
+              type="button"
+              className={s.stepButton}
+              aria-label="Previous screen"
+              onClick={() => step(-1)}
+            >
+              <svg viewBox="0 0 10 10" aria-hidden>
+                <path d="M6.5 1.5 3 5l3.5 3.5" />
+              </svg>
+            </button>
+            <span className={s.pips} aria-hidden>
+              {media.screens.map((_, i) => (
+                <i key={i} data-on={i === at} />
+              ))}
+            </span>
+            <button
+              type="button"
+              className={s.stepButton}
+              aria-label="Next screen"
+              onClick={() => step(1)}
+            >
+              <svg viewBox="0 0 10 10" aria-hidden>
+                <path d="M3.5 1.5 7 5 3.5 8.5" />
+              </svg>
+            </button>
           </span>
         )}
         {media.kind === "site" ? media.screens[at].alt : media.caption}

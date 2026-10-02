@@ -7,6 +7,7 @@ import { BackLink } from "@/components/site/back-link";
 import { PageTransition } from "@/components/site/page-transition";
 import { BodyPortrait } from "@/components/universe/body-portrait";
 import { Footer } from "@/components/universe/footer";
+import { PageNav } from "@/components/universe/page-nav";
 import { KINDS, kindColors } from "@/components/universe/encoding";
 import { UNITS, unitById } from "@/content/work";
 
@@ -47,6 +48,7 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
   return (
     <PageTransition>
       <div className={plexVariables}>
+        <PageNav />
         <main
           id="content"
           className={s.root}

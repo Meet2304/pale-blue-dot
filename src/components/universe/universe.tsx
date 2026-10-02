@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -18,6 +19,7 @@ import {
   type Unit,
 } from "@/content/work";
 import { routes } from "@/lib/routes";
+import { noteHomeScroll, takeChapter, takeHomeRestore } from "@/lib/visit";
 
 import { KINDS } from "./encoding";
 import { Greeting, Headline, Intro, SpokenTitle } from "./intro";
@@ -115,6 +117,21 @@ export function Universe() {
     scrollRef.current?.glideTo(top + chapter * chapterHeight(el));
   }, []);
 
+  /* Opened again by a page's way back (back-link.tsx): back where it was
+     left, before it is first shown. */
+  useLayoutEffect(() => {
+    const y = takeHomeRestore();
+    if (y !== null) window.scrollTo(0, y);
+  }, []);
+
+  /* Asked for from another page's bar (page-nav.tsx): once the opening is
+     over, fly there. */
+  useEffect(() => {
+    if (intro !== "done") return;
+    const n = takeChapter();
+    if (n !== null && n > 0) goTo(n);
+  }, [intro, goTo]);
+
   /* Which chapter is on screen, for the index on the right. */
   useEffect(() => {
     const onScroll = () => {
@@ -122,6 +139,7 @@ export function Universe() {
       if (!el) return;
       const s = -el.getBoundingClientRect().top / chapterHeight(el);
       setActive(Math.max(0, Math.min(CHAPTERS.length - 1, Math.round(s))));
+      noteHomeScroll(window.scrollY);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });

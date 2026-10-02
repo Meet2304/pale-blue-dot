@@ -9,7 +9,8 @@
 
   position: relative;
   z-index: 3;
-  padding: 3.6rem 6vw calc(1.6rem + env(safe-area-inset-bottom));
+  /* Room at the very bottom for "Back to Earth" (footer-actions.tsx). */
+  padding: 3.6rem 6vw calc(4.6rem + env(safe-area-inset-bottom));
   overflow: hidden;
   background: #000;
   color: var(--fg);
@@ -109,6 +110,49 @@
   font-family: var(--plex-mono), monospace;
   font-size: 0.6875rem;
   color: var(--mute);
+}
+
+/* Back to Earth: at the very bottom, a pill in the corner that takes the
+   page back to the top (footer-actions.tsx). */
+.toEarth {
+  position: fixed;
+  z-index: 30;
+  right: max(1.2rem, env(safe-area-inset-right));
+  bottom: calc(1.2rem + env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid rgb(146 203 251 / 0.35);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.85);
+  backdrop-filter: blur(6px);
+  color: var(--fg);
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  translate: 0 0.6rem;
+  pointer-events: none;
+  transition:
+    opacity 300ms,
+    translate 400ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 200ms;
+}
+
+.toEarth[data-shown="true"] {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+.toEarth:hover,
+.toEarth:focus-visible {
+  border-color: var(--pale);
+}
+
+.toEarth span {
+  color: var(--pale);
 }
 
 /* ------------------------------------------------------------ The marks */

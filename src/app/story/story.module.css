@@ -18,7 +18,8 @@
 
 .top {
   display: flex;
-  padding: 1.5rem 6vw 0;
+  /* Clear of the bar, docked at the top (page-nav.tsx). */
+  padding: 4.5rem 6vw 0;
 }
 
 .home {
