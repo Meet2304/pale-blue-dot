@@ -9,10 +9,10 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 
 import type { Media } from "@/content/work";
 
+import { Picture } from "./picture";
 import s from "./universe.module.css";
 
 /* The size a live site is laid out at on a wide screen, then scaled. */
@@ -181,12 +181,13 @@ export function Lightbox({
 
       <div ref={stageRef} className={s.lbStage}>
         {media.kind === "photo" ? (
-          <Image
+          <Picture
             src={media.src}
             alt={media.alt}
+            width={media.width}
+            height={media.height}
             sizes="92vw"
-            placeholder="blur"
-            loading="eager"
+            load
             className={s.lbPhoto}
           />
         ) : (
@@ -248,13 +249,14 @@ export function Lightbox({
               ) : (
                 <span className={s.strip} style={{ translate: `0 ${-at * 100}%` }}>
                   {media.screens.map((sc, i) => (
-                    <Image
+                    <Picture
                       key={i}
                       src={sc.src}
                       alt={sc.alt}
+                      width={1280}
+                      height={800}
                       sizes="92vw"
-                      placeholder="blur"
-                      loading="eager"
+                      load
                       className={s.lbShot}
                     />
                   ))}

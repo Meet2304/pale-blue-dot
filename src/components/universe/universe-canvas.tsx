@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-import type { Kind } from "@/content/work";
-
 import {
   createBackdrop,
   drawDust,
@@ -57,6 +55,11 @@ const ORBITS = [
   { r: 1.85, inc: 0.9, node: 2.4, speed: 0.09, n: 300 },
 ];
 
+/* The characters every body is drawn in, Earth and each piece of work
+   alike, the same size whether the camera is moving or still: fine enough
+   to show detail, never so small it turns to noise. In px across. */
+const CELL = { wide: 4.6, narrow: 3.8 };
+
 /* A body behind a picture of its work: its radius against the picture's
    height, and how far above the picture's top edge its centre sits, in its
    own radii. */
@@ -67,6 +70,10 @@ const BEHIND: Partial<Record<string, [number, number]>> = {
   constellation: [0.36, 0.75],
   nebula: [0.36, 0.8],
 };
+
+/* A body beside a picture of its work is drawn this much larger than one
+   alone, so it holds its own next to the picture. */
+const BESIDE = 1.3;
 
 /* How much closer than the deep sky the pale blue dot is framed: close
    enough that the sky is a soft glow around it, not yet the whole view. */
@@ -80,12 +87,10 @@ const smoother = (k: number) => k * k * k * (k * (k * 6 - 15) + 10);
 const lerp = (a: number, b: number, e: number) => a + (b - a) * e;
 
 export function UniverseCanvas({
-  filter,
   arriveRef,
   onPick,
   className,
 }: {
-  filter: Kind | "all";
   /** When Earth began to arrive (see ARRIVE); null while the opening plays. */
   arriveRef: { current: number | null };
   /** A body was clicked: the index of its piece of work. */
@@ -93,12 +98,7 @@ export function UniverseCanvas({
   className?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const filterRef = useRef(filter);
   const pickRef = useRef(onPick);
-
-  useEffect(() => {
-    filterRef.current = filter;
-  }, [filter]);
 
   useEffect(() => {
     pickRef.current = onPick;
@@ -122,15 +122,11 @@ export function UniverseCanvas({
       canvas: document.createElement("canvas"),
       key: "",
       at: -1e9,
-      cam: "",
-      /* How much the camera is moving, 0 to 1, eased. */
-      motion: 0,
     };
     const wg = work.canvas.getContext("2d");
-    const dim = Object.fromEntries(placed.map((p) => [p.id, 1])) as Record<
-      string,
-      number
-    >;
+    /* Earth, drawn offscreen too (see "Earth" below). */
+    const earth = { canvas: document.createElement("canvas"), key: "", at: -1e9 };
+    const eg = earth.canvas.getContext("2d");
 
     let w = 0;
     let h = 0;
@@ -268,12 +264,19 @@ export function UniverseCanvas({
                its top edge it sits: a black hole shows mostly its shadow and
                jet, so it can be large and low; a planet or a star shows its
                whole disc, so it is smaller and rides higher. */
-            const [size, lift] = BEHIND[KINDS[p.kind].body] ?? [0.36, 0.5];
+            const [size, rise] = BEHIND[KINDS[p.kind].body] ?? [0.36, 0.5];
             const top = media.top - c.top;
-            let R = Math.min(media.height * size, Math.min(w, h) * 0.26);
-            R *= 0.85 + 0.15 * Math.min(1, look.scale);
-            /* Clear of the bar above. */
-            R = Math.max(40, Math.min(R, (top - barBottom - 8) / (lift + ry)));
+            const room = top - barBottom - 8;
+            /* Against the picture, or the screen for a small one (a logo). */
+            let R = Math.min(
+              Math.max(media.height, h * 0.42) * size,
+              Math.min(w, h) * 0.26,
+            );
+            R *= (0.85 + 0.15 * Math.min(1, look.scale)) * BESIDE * (look.size ?? 1);
+            /* Clear of the bar above: a body drawn larger sits lower behind
+               the picture to fit, but always shows more than half of itself. */
+            const lift = Math.min(rise, Math.max(0.2, room / R - ry));
+            R = Math.max(40, Math.min(R, room / (lift + ry)));
             return {
               x: p.x,
               y: p.y,
@@ -286,12 +289,14 @@ export function UniverseCanvas({
       }
       const bw = Math.max(40, box.x1 - box.x0);
       const bh = Math.max(40, box.y1 - box.y0);
-      let R = Math.min(bw / (2 * rx), bh / (2 * ry)) * 0.94;
+      const fits = Math.min(bw / (2 * rx), bh / (2 * ry)) * 0.94;
       /* A star's corona reaches far past its disc: it is capped smaller,
          so it glows beside the copy rather than filling the screen. */
       const cap = KINDS[p.kind].body === "sun" ? 0.19 : 0.25;
-      R = Math.max(30, Math.min(R, Math.min(w, h) * cap));
-      R *= (0.8 + 0.2 * Math.min(1, look.scale)) * (recede[i] ? 0.8 : 1);
+      let R = Math.max(30, Math.min(fits, Math.min(w, h) * cap));
+      R *= (0.8 + 0.2 * Math.min(1, look.scale)) * (recede[i] ? BESIDE : 1);
+      /* Drawn larger, but never past the space left for it. */
+      R = Math.max(R, Math.min(R * (look.size ?? 1), fits));
       const half = rx * R;
       const cx =
         mid === null
@@ -374,12 +379,12 @@ export function UniverseCanvas({
       const j = Math.min(keys.length - 1, i + 1);
       const a = keys[i];
       const b = keys[j];
-      /* The pull-back starts as soon as the visitor scrolls; later moves
-         hold a moment first, so the text beside them can be read. */
+      /* Each move runs over nearly the whole way from one chapter to the
+         next, with no dead stretch at either end to read as a stall. */
       const e =
         i === 0
-          ? smoother(clamp01((s - 0.02) / 0.86))
-          : smooth(clamp01((s - i - 0.22) / 0.62));
+          ? smoother(clamp01((s - 0.02) / 0.9))
+          : smooth(clamp01((s - i - 0.04) / 0.92));
       let z = Math.exp(lerp(Math.log(a.z), Math.log(b.z), e));
       const ax = lerp(a.ax, b.ax, e);
       const ay = lerp(a.ay, b.ay, e);
@@ -444,7 +449,6 @@ export function UniverseCanvas({
       /* Held upright and small, the copy stacks under the canvas (the page's
          CSS uses the same test). */
       const narrow = w < 860 && w <= h * (4 / 3);
-      const f = filterRef.current;
 
       /* How far out the camera is, against the deep sky's framing: the sky
          fades in over the last stretch of the pull-back and out as the
@@ -577,14 +581,6 @@ export function UniverseCanvas({
         });
       }
 
-      /* Which bodies the filter keeps. */
-      let dimming = false;
-      for (const p of placed) {
-        const target = f === "all" || f === p.kind ? 1 : 0.12;
-        dim[p.id] += (target - dim[p.id]) * 0.1;
-        if (Math.abs(target - dim[p.id]) > 0.002) dimming = true;
-      }
-
       const ex = toX(0);
       const ey = toY(0);
       const earthR = cam.z * earthScale;
@@ -648,7 +644,7 @@ export function UniverseCanvas({
             x: px,
             y: py,
             R,
-            a: smooth(near) * (recede[i] ? 0.8 : 1),
+            a: smooth(near) * (recede[i] ? 0.94 : 1),
             colors: palettes[i],
             lens: look.hole ? R * 0.95 : 0,
           });
@@ -660,21 +656,16 @@ export function UniverseCanvas({
 
       /* Drawing them is the costly part: thousands of glyphs each. They
          turn slowly, so they are drawn offscreen and redrawn when anything
-         moves (the camera, the scroll, the filter, the pointer over a body)
+         moves (the camera, the scroll, the pointer over a body)
          or every 80 ms; the frames between copy them. */
       const workKey = `${w}x${h}@${dpr} ${cam.x.toFixed(3)},${cam.y.toFixed(3)},${cam.z.toFixed(3)} ${s.toFixed(3)} ${hovered ?? ""}${hovered ? ` ${Math.round(pointer.x)},${Math.round(pointer.y)}` : ""}`;
-      /* While the camera moves, the bodies are drawn in slightly coarser
-         characters, and sharpen as it settles, like a lens coming into
-         focus: in motion the detail can't be seen, and it halves the cost
-         of drawing them. */
-      const camKey = `${cam.x.toFixed(3)},${cam.y.toFixed(3)},${cam.z.toFixed(3)}`;
-      work.motion += ((camKey !== work.cam ? 1 : 0) - work.motion) * (calm ? 1 : 0.2);
-      if (work.motion < 0.01) work.motion = 0;
-      work.cam = camKey;
       if (
         wg &&
         workA > 0.01 &&
-        (workKey !== work.key || dimming || work.motion > 0 || now - work.at > 80)
+        (workKey !== work.key ||
+          /* A body being pointed at answers every frame. */
+          hovered !== null ||
+          now - work.at > 80)
       ) {
         const pw = Math.round(w * dpr);
         const ph = Math.round(h * dpr);
@@ -703,8 +694,7 @@ export function UniverseCanvas({
           )
             continue;
           const near = 1 - Math.min(1, Math.abs(s - (i + FIRST)));
-          const a =
-            dim[p.id] * workA * (0.3 + 0.7 * smooth(near)) * (recede[i] ? 0.8 : 1);
+          const a = workA * (0.3 + 0.7 * smooth(near)) * (recede[i] ? 0.94 : 1);
           /* At a distance, a body is only a point of light; it resolves into
              its full form as the camera closes in. */
           const bodyA = narrow
@@ -741,13 +731,9 @@ export function UniverseCanvas({
             wg.fillRect(px - gr, py - gr, gr * 2, gr * 2);
           }
           if (sharp <= 0.01) continue;
-          /* Characters in proportion to the body, as the bar's panels draw
-             it, so a large body looks the same and costs no more to draw. */
-          const cw =
-            (portrait.cell
-              ? Math.max(portrait.cell, R * 0.04)
-              : Math.max(2.8, Math.min(5.2, R * 0.024))) *
-            (1 + 0.8 * work.motion);
+          /* Every body is set in the same characters as Earth, moving or
+             still (CELL). */
+          const cw = narrow ? CELL.narrow : CELL.wide;
           const ch = cw * 1.72;
           const scan =
             hovered === p.id && R > 40
@@ -845,8 +831,7 @@ export function UniverseCanvas({
       /* Earth. */
       const glyphAlpha = Math.min(1, Math.max(0, (earthR - 18) / 40));
       if (glyphAlpha > 0) {
-        const cw = Math.max(2.4, Math.min(7, earthR * 0.03 + 3));
-        const ecw = narrow ? 6 : Math.min(7, cw);
+        const ecw = narrow ? CELL.narrow : CELL.wide;
         const ech = ecw * 1.72;
         const earthScan =
           pointer.in &&
@@ -854,28 +839,55 @@ export function UniverseCanvas({
           earthR > 80
             ? { x: (pointer.x - ex) / earthR, y: (pointer.y - ey) / earthR, r: 0.42 }
             : null;
-        drawBody(g, "earth", {
-          w,
-          h,
-          cx: ex,
-          cy: ey,
-          R: earthR,
-          cw: ecw,
-          ch: ech,
-          frame: makeFrame(
-            t,
-            yaw,
-            tilt,
-            earthScan,
-            ecw / earthR,
-            ech / earthR,
-            0,
-            calm,
-          ),
-          colors: EARTH_COLORS,
-          alpha: glyphAlpha * (1 - workA),
-          font: `${ech * 0.92}px ${mono}`,
-        });
+        /* Densely set, Earth is many thousands of characters, and it turns
+           slowly: while nothing else about it changes (the camera, the
+           scanner, a drag), it is redrawn thirty times a second and the
+           frames between show the last drawing. */
+        const alphaE = glyphAlpha * (1 - workA);
+        const earthKey = `${w}x${h}@${dpr} ${ex.toFixed(1)},${ey.toFixed(1)},${earthR.toFixed(2)} ${alphaE.toFixed(3)} ${
+          earthScan ? `${earthScan.x.toFixed(3)},${earthScan.y.toFixed(3)}` : ""
+        }`;
+        if (eg) {
+          if (pointer.down || earthKey !== earth.key || now - earth.at > 33) {
+            const pw = Math.round(w * dpr);
+            const ph = Math.round(h * dpr);
+            if (earth.canvas.width !== pw || earth.canvas.height !== ph) {
+              earth.canvas.width = pw;
+              earth.canvas.height = ph;
+            }
+            eg.setTransform(1, 0, 0, 1, 0, 0);
+            eg.clearRect(0, 0, pw, ph);
+            eg.setTransform(dpr, 0, 0, dpr, 0, 0);
+            drawBody(eg, "earth", {
+              w,
+              h,
+              cx: ex,
+              cy: ey,
+              R: earthR,
+              cw: ecw,
+              ch: ech,
+              frame: makeFrame(
+                t,
+                yaw,
+                tilt,
+                earthScan,
+                ecw / earthR,
+                ech / earthR,
+                0,
+                calm,
+              ),
+              colors: EARTH_COLORS,
+              alpha: alphaE,
+              font: `${ech * 0.92}px ${mono}`,
+            });
+            earth.key = earthKey;
+            earth.at = now;
+          }
+          g.save();
+          g.setTransform(1, 0, 0, 1, 0, 0);
+          g.drawImage(earth.canvas, 0, 0);
+          g.restore();
+        }
       }
 
       /* Earth's orbits, while it is big enough to have them. */

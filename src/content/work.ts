@@ -1,7 +1,7 @@
 /**
  * Every unit of Meet's life, grouped into the chapters the home page flies
- * through, newest first. The universe, its index table and the per-unit pages
- * at `/work/[slug]` all read from here, so a fact is written once.
+ * through, newest first. The universe, the menus and the per-unit pages at
+ * `/work/[slug]` all read from here, so a fact is written once.
  *
  * Facts come from the resume (September 2026) and GitHub. Still placeholders,
  * to be settled with Meet once the design is ready:
@@ -9,50 +9,27 @@
  *   - the missing numbers (Phoenix accuracy, Linea users, Icarus results).
  */
 
-import type { StaticImageData } from "next/image";
-
-import cmuCampus from "../../public/assets/CMU_v0.1.jpeg";
-import cslLogo from "../../public/assets/CSL_Logo_Landscape.png";
-import lineaEnd from "./media/linea/5-end.webp";
-import lineaHero from "./media/linea/1-hero.webp";
-import lineaLooks from "./media/linea/3-looks.webp";
-import lineaLyrics from "./media/linea/2-lyrics.webp";
-import lineaSound from "./media/linea/4-sound.webp";
-import astarHome from "./media/astar/1-home.webp";
-import astarOffers from "./media/astar/2-offers.webp";
-import astarSolutions from "./media/astar/3-solutions.webp";
-import astarCases from "./media/astar/4-cases.webp";
-import astarMobile from "./media/astar/5-mobile.webp";
-import blinkIntelligence from "./media/blink/1-intelligence.webp";
-import blinkWhat from "./media/blink/2-what.webp";
-import blinkServices from "./media/blink/3-services.webp";
-import blinkLeverage from "./media/blink/4-leverage.webp";
-import blinkEnd from "./media/blink/5-end.webp";
-import phoenixAbility from "./media/phoenix/2-ability.webp";
-import phoenixCells from "./media/phoenix/4-cells.webp";
-import phoenixDiagnosis from "./media/phoenix/3-diagnosis.webp";
-import phoenixGithub from "./media/phoenix/5-github.webp";
-import phoenixTitle from "./media/phoenix/1-title.webp";
-import talariaTitle from "./media/talaria/1-title.webp";
-import talariaLegend from "./media/talaria/2-legend.webp";
-import talariaFeatures from "./media/talaria/3-features.webp";
-import talariaGait from "./media/talaria/4-gait.webp";
-import talariaJoin from "./media/talaria/5-join.webp";
-
 export type Kind = "experience" | "research" | "projects" | "leadership" | "education";
 
 /**
  * A picture of the work, shown beside it on the home page: a photo, or a
  * website, shown as a few of its screens in a browser frame, turning from
  * one to the next as if someone were scrolling it, and loading the live site
- * in its place on request. Images are imported (from `src/content/media/`,
- * or `public/assets/` for the ones Meet adds), so Next.js knows their size
- * and serves each at the size it is shown; a photo keeps its own shape.
+ * in its place on request.
+ *
+ * Every picture is a plain file in `public/work/<piece>/`, WebP, in two
+ * sizes: the file itself, and a half-size copy beside it named `-sm.webp`
+ * for small screens. They are served as they are, with no resizing on the
+ * way, so nothing stands between a visitor and the picture. Screens of a
+ * website are 1280 × 800, captured from the live site.
  */
 export type Media =
   | {
       kind: "photo";
-      src: StaticImageData;
+      /** In `public`, from the site's root. */
+      src: string;
+      width: number;
+      height: number;
       alt: string;
       caption?: string;
       /** A logo is shown smaller than a photo: it names, it doesn't show. */
@@ -66,7 +43,8 @@ export type Media =
       /** False for a site that refuses to be shown inside another page
           (X-Frame-Options): "Try it live" then opens it in a new tab. */
       embed?: boolean;
-      screens: { src: StaticImageData; alt: string }[];
+      /** 1280 × 800 each, in `public`, from the site's root. */
+      screens: { src: string; alt: string }[];
     };
 
 export type Unit = {
@@ -114,16 +92,18 @@ export const COLLECTIONS: Collection[] = [
         id: "carnegie-mellon",
         name: "Carnegie Mellon University",
         brief:
-          "Graduate study in AI engineering and in turning new technology into products, as a J N Tata Scholar.",
+          "Pursuing a Master of Science in Artificial Intelligence Engineering – Engineering and Technology Innovation Management, as a J N Tata Scholar.",
         kind: "education",
         when: "2026 to 2027",
         impact: 3,
-        line: "MS in AI Engineering and Technology Innovation Management.",
+        line: "Master of Science in Artificial Intelligence Engineering – Engineering and Technology Innovation Management.",
         owned: "J N Tata Scholar.",
         result: "In progress, Pittsburgh.",
         media: {
           kind: "photo",
-          src: cmuCampus,
+          src: "/work/carnegie-mellon/campus.webp",
+          width: 1600,
+          height: 800,
           alt: "Carnegie Mellon's campus at sunset, with the Walking to the Sky sculpture.",
           caption: "Carnegie Mellon, Pittsburgh",
         },
@@ -142,7 +122,9 @@ export const COLLECTIONS: Collection[] = [
         result: "In progress.",
         media: {
           kind: "photo",
-          src: cslLogo,
+          src: "/work/bosch-mobility/csl.webp",
+          width: 960,
+          height: 720,
           alt: "The Corporate Startup Lab's logo: CSL in white on red.",
           logo: true,
           caption: "Corporate Startup Lab, Bosch Mobility",
@@ -167,22 +149,25 @@ export const COLLECTIONS: Collection[] = [
           label: "linea.meetbhatt.com",
           screens: [
             {
-              src: lineaHero,
+              src: "/work/linea/1-hero.webp",
               alt: "Linea's home page: 'Know every word.', over a lyric card.",
             },
             {
-              src: lineaLyrics,
+              src: "/work/linea/2-lyrics.webp",
               alt: "Live lyrics: the current line stays centred as the song plays.",
             },
             {
-              src: lineaLooks,
+              src: "/work/linea/3-looks.webp",
               alt: "The overlay's dark look, with its settings for theme and size.",
             },
             {
-              src: lineaSound,
+              src: "/work/linea/4-sound.webp",
               alt: "'Sound has a shape': a Chladni figure computed live on the page.",
             },
-            { src: lineaEnd, alt: "The end of the page, with the Linea wordmark." },
+            {
+              src: "/work/linea/5-end.webp",
+              alt: "The end of the page, with the Linea wordmark.",
+            },
           ],
         },
       },
@@ -214,19 +199,25 @@ export const COLLECTIONS: Collection[] = [
           label: "phoenix.meetbhatt.com",
           screens: [
             {
-              src: phoenixTitle,
+              src: "/work/phoenix/1-title.webp",
               alt: "Phoenix: explainable cervical cancer cell classification.",
             },
             {
-              src: phoenixAbility,
+              src: "/work/phoenix/2-ability.webp",
               alt: "'We're giving AI the ability to truly understand cervical cancer cells.'",
             },
             {
-              src: phoenixDiagnosis,
+              src: "/work/phoenix/3-diagnosis.webp",
               alt: "'So diagnosis becomes clearer, safer, and impossible to misinterpret.'",
             },
-            { src: phoenixCells, alt: "The five cell types the model tells apart." },
-            { src: phoenixGithub, alt: "Open source: join the project on GitHub." },
+            {
+              src: "/work/phoenix/4-cells.webp",
+              alt: "The five cell types the model tells apart.",
+            },
+            {
+              src: "/work/phoenix/5-github.webp",
+              alt: "Open source: join the project on GitHub.",
+            },
           ],
         },
       },
@@ -268,19 +259,25 @@ export const COLLECTIONS: Collection[] = [
           embed: false,
           screens: [
             {
-              src: talariaTitle,
+              src: "/work/talaria/1-title.webp",
               alt: "Talaria: heart and gait, monitored in real time.",
             },
-            { src: talariaLegend, alt: "The legend: the winged sandals of Hermes." },
             {
-              src: talariaFeatures,
+              src: "/work/talaria/2-legend.webp",
+              alt: "The legend: the winged sandals of Hermes.",
+            },
+            {
+              src: "/work/talaria/3-features.webp",
               alt: "Heart rate and blood oxygen, tracked continuously.",
             },
             {
-              src: talariaGait,
+              src: "/work/talaria/4-gait.webp",
               alt: "Gait analysis, and live charts of every stride.",
             },
-            { src: talariaJoin, alt: "Open source: join the project on GitHub." },
+            {
+              src: "/work/talaria/5-join.webp",
+              alt: "Open source: join the project on GitHub.",
+            },
           ],
         },
       },
@@ -312,23 +309,23 @@ export const COLLECTIONS: Collection[] = [
           label: "blinkanalytics.in",
           screens: [
             {
-              src: blinkIntelligence,
+              src: "/work/blink-analytics/1-intelligence.webp",
               alt: "Blink Analytics: data into intelligence, models into impact.",
             },
             {
-              src: blinkWhat,
+              src: "/work/blink-analytics/2-what.webp",
               alt: "What Blink does: generative AI and data analytics.",
             },
             {
-              src: blinkServices,
+              src: "/work/blink-analytics/3-services.webp",
               alt: "Services, from RLHF to retrieval-augmented generation.",
             },
             {
-              src: blinkLeverage,
+              src: "/work/blink-analytics/4-leverage.webp",
               alt: "'Leverage AI and data to propel your business.'",
             },
             {
-              src: blinkEnd,
+              src: "/work/blink-analytics/5-end.webp",
               alt: "The end of the page, with the Blink Analytics wordmark.",
             },
           ],
@@ -398,19 +395,25 @@ export const COLLECTIONS: Collection[] = [
           label: "astartechnologies.net",
           screens: [
             {
-              src: astarHome,
+              src: "/work/astar/1-home.webp",
               alt: "Astar Technologies: software development, Vadodara.",
             },
             {
-              src: astarOffers,
+              src: "/work/astar/2-offers.webp",
               alt: "What Astar offers: software, web and mobile apps.",
             },
             {
-              src: astarSolutions,
+              src: "/work/astar/3-solutions.webp",
               alt: "Its smart solutions, from ERP to point of sale.",
             },
-            { src: astarCases, alt: "Case studies, starting with e-commerce." },
-            { src: astarMobile, alt: "A mobile app for sales and marketing." },
+            {
+              src: "/work/astar/4-cases.webp",
+              alt: "Case studies, starting with e-commerce.",
+            },
+            {
+              src: "/work/astar/5-mobile.webp",
+              alt: "A mobile app for sales and marketing.",
+            },
           ],
         },
       },

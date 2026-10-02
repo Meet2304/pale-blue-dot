@@ -32,7 +32,8 @@ export type Word = { text: string; at?: number; pace?: number };
 
 export type Spoken = ReturnType<typeof speak>;
 
-export function speak(words: Word[], wordGap = 110) {
+/** `scramble`: how long each letter shows glyphs before it settles. */
+export function speak(words: Word[], wordGap = 110, scramble = SCRAMBLE) {
   const letterAt: number[] = [];
   const wordAt: number[] = [];
   const spans: [number, number][] = [];
@@ -47,7 +48,7 @@ export function speak(words: Word[], wordGap = 110) {
       wordAt.push(at);
     });
     lastStart = t;
-    spans.push([at, t + SCRAMBLE]);
+    spans.push([at, t + scramble]);
     return { text: w.text, at };
   });
 
@@ -75,6 +76,7 @@ export function speak(words: Word[], wordGap = 110) {
   return {
     words: placed,
     text: placed.map((w) => w.text).join(" "),
+    scramble,
     letterAt,
     /** Under reduced motion nothing decodes: each word appears whole. */
     wordAt,
@@ -91,7 +93,7 @@ export function speak(words: Word[], wordGap = 110) {
      */
     glyphAt(i: number, t: number) {
       const start = letterAt[i];
-      if (t < start || t >= start + SCRAMBLE) return "";
+      if (t < start || t >= start + scramble) return "";
       let n = 0;
       while (n < ticks.length && ticks[n] <= t) n++;
       return GLYPHS[(n + i * 3) % GLYPHS.length];
@@ -99,10 +101,10 @@ export function speak(words: Word[], wordGap = 110) {
     /** The letters decoding at time `t`, for placing a tick left or right. */
     decodingAt(t: number, calm = false) {
       const starts = calm ? wordAt : letterAt;
-      const scramble = calm ? 0 : SCRAMBLE;
+      const span = calm ? 0 : scramble;
       const on: number[] = [];
       starts.forEach((st, i) => {
-        if (t >= st && t <= st + scramble) on.push(i);
+        if (t >= st && t <= st + span) on.push(i);
       });
       return on;
     },
@@ -143,19 +145,18 @@ export const OPENING = speak([
 
 /* ------------------------------------------------- The dot, and the sky */
 
-/* The titles further out, each spoken as it scrolls into view: quicker
-   still, since the visitor is already moving. First Earth as a point of
-   light; then, further out, everything around it. */
-export const DOT_TITLE = speak(
-  "This pale blue dot is where I build things."
-    .split(" ")
-    .map((text, i) => ({ text, at: i === 0 ? 0 : undefined, pace: 0.55 })),
-  80,
-);
+/* The titles further out, each spoken as it scrolls into view: in a
+   flash, since the visitor is moving and may be moving fast; all of it has
+   settled in about half a second. First Earth as a point of light; then,
+   further out, everything around it. */
+const title = (line: string) =>
+  speak(
+    line
+      .split(" ")
+      .map((text, i) => ({ text, at: i === 0 ? 0 : undefined, pace: 0.16 })),
+    24,
+    90,
+  );
 
-export const SKY_TITLE = speak(
-  "This is my impact so far."
-    .split(" ")
-    .map((text, i) => ({ text, at: i === 0 ? 0 : undefined, pace: 0.55 })),
-  80,
-);
+export const DOT_TITLE = title("This pale blue dot is where I build things.");
+export const SKY_TITLE = title("This is my impact so far.");

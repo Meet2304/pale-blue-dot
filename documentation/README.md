@@ -2,6 +2,7 @@
 
 Dated notes about notable changes to this repo. Newest first.
 
+- [2026-10-01 — A footer, a contact page, and pictures that always show](./2026-10-01-footer-contact-images.md)
 - [2026-10-01 — A longer story, a phone menu, a lens, and the share card](./2026-10-01-story-menu-sharing.md)
 - [2026-09-30 — Passing a black hole, the logo, and pictures up close](./2026-09-30-black-holes-logo-lightbox.md)
 - [2026-09-30 — The work, one piece at a time](./2026-09-30-pieces-of-work.md)

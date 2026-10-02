@@ -8,10 +8,10 @@ import {
   type PointerEvent,
 } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 
 import type { Media } from "@/content/work";
 
+import { Picture } from "./picture";
 import s from "./universe.module.css";
 
 /* The zoom view's code is fetched on the first click, not with the page. */
@@ -22,6 +22,9 @@ const Lightbox = dynamic(() => import("./lightbox").then((m) => m.Lightbox), {
 /* Each screen of a site holds for a moment, then the next scrolls up. */
 const HOLD = 3400;
 const SIZES = "(max-width: 860px) 92vw, 46rem";
+/* A website's screens, as captured. */
+const SCREEN_W = 1280;
+const SCREEN_H = 800;
 
 /**
  * A picture of a piece of work, beside it on the home page.
@@ -33,8 +36,8 @@ const SIZES = "(max-width: 860px) 92vw, 46rem";
  * A photo is shown whole, in its own shape.
  *
  * A website is shown in a browser frame, turning through a few of its
- * screens as if someone were scrolling it: ordinary images, loaded lazily
- * as the chapter comes near. Opened up, its screens can be stepped through
+ * screens as if someone were scrolling it: plain images (picture.tsx), all
+ * fetched together when the chapter is about two screens away. Opened up, its screens can be stepped through
  * or the live site tried, at a size where it can be used; "Try it live" on
  * the frame opens straight to that. Nothing of the live site loads until
  * then. The address in the frame's bar opens it in a new tab.
@@ -46,28 +49,60 @@ export function WorkMedia({ media }: { media: Media }) {
   const ref = useRef<HTMLDivElement>(null);
   const [at, setAt] = useState(0);
   const [seen, setSeen] = useState(false);
+  /* Near: within two screens. From then on its pictures are fetched. */
+  const [near, setNear] = useState(false);
   const [open, setOpen] = useState<{
     live: boolean;
     from: DOMRect | null;
     vars: CSSProperties;
   } | null>(null);
   const count = media.kind === "site" ? media.screens.length : 1;
+  /* Until its screens have all been shown once, a site always starts from
+     its first: the first look is the site as it opens. */
+  const firstPass = useRef(true);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    /* Seen: at least half of it on screen. */
     const io = new IntersectionObserver(
-      (entries) => setSeen(entries[entries.length - 1].isIntersecting),
-      { threshold: [0, 0.25] },
+      (entries) => {
+        const e = entries[entries.length - 1];
+        const on = e.isIntersecting && e.intersectionRatio >= 0.5;
+        if (on && firstPass.current) setAt(0);
+        setSeen(on);
+      },
+      { threshold: [0, 0.5, 1] },
     );
     io.observe(el);
-    return () => io.disconnect();
+    const pre = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setNear(true);
+          pre.disconnect();
+        }
+      },
+      { rootMargin: "200% 0px 200% 0px" },
+    );
+    pre.observe(el);
+    return () => {
+      io.disconnect();
+      pre.disconnect();
+    };
   }, []);
 
   useEffect(() => {
     if (!seen || open || count < 2) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = window.setInterval(() => setAt((i) => (i + 1) % count), HOLD);
+    const id = window.setInterval(
+      () =>
+        setAt((i) => {
+          const next = (i + 1) % count;
+          if (next === 0) firstPass.current = false;
+          return next;
+        }),
+      HOLD,
+    );
     return () => window.clearInterval(id);
   }, [seen, open, count]);
 
@@ -133,11 +168,13 @@ export function WorkMedia({ media }: { media: Media }) {
             onClick={() => show(false)}
             aria-label={`Enlarge: ${media.alt}`}
           >
-            <Image
+            <Picture
               src={media.src}
               alt={media.alt}
+              width={media.width}
+              height={media.height}
               sizes={SIZES}
-              placeholder="blur"
+              load={near}
               className={s.photoImg}
             />
           </button>
@@ -168,12 +205,14 @@ export function WorkMedia({ media }: { media: Media }) {
               >
                 <span className={s.strip} style={{ translate: `0 ${-at * 100}%` }}>
                   {media.screens.map((sc, i) => (
-                    <Image
+                    <Picture
                       key={i}
                       src={sc.src}
                       alt={sc.alt}
+                      width={SCREEN_W}
+                      height={SCREEN_H}
                       sizes={SIZES}
-                      placeholder="blur"
+                      load={near}
                       className={s.shot}
                     />
                   ))}

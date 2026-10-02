@@ -15,18 +15,19 @@ import {
   COLLECTIONS,
   UNITS,
   type Collection,
-  type Kind,
   type Unit,
 } from "@/content/work";
 import { routes } from "@/lib/routes";
 
-import { KINDS, kindColors } from "./encoding";
+import { KINDS } from "./encoding";
 import { Greeting, Headline, Intro, SpokenTitle } from "./intro";
 import { FIRST } from "./chapters";
 import { DOT_TITLE, SKY_TITLE } from "./intro-timeline";
 import { lookColors, lookOf } from "./looks";
 import { WorkMedia } from "./media";
 import { UniverseNav } from "./nav";
+import { Footer } from "./footer";
+import { createSmoothScroll, type SmoothScroll } from "./smooth-scroll";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
 
@@ -51,18 +52,11 @@ const TICKS = [
 /* Each piece of work, with the year it belongs to and its place in it. */
 const PIECES = COLLECTIONS.flatMap((col) => col.units.map((u, i) => ({ u, col, i })));
 
-const kindVars = (k: Kind) => {
-  const c = kindColors(k);
-  return { "--kind": c[2], "--kind-soft": c[3] } as CSSProperties;
-};
-
 /* A piece of work's own colours: the ones its body is drawn in. */
 const lookVars = (u: Unit) => {
   const c = lookColors(lookOf(u.id, u.kind));
   return { "--kind": c[2], "--kind-soft": c[3] } as CSSProperties;
 };
-
-const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* A chapter's height: 100svh, which on a phone is not always the window's
    height (the address bar comes and goes). */
@@ -76,7 +70,6 @@ let introPlayed = false;
 type IntroPhase = "intro" | "landing" | "done";
 
 export function Universe() {
-  const [filter, setFilter] = useState<Kind | "all">("all");
   const [active, setActive] = useState(0);
   const [intro, setIntro] = useState<IntroPhase>(() =>
     introPlayed ? "done" : "intro",
@@ -95,91 +88,32 @@ export function Universe() {
     setIntro("done");
   }, []);
   const sectionRef = useRef<HTMLElement>(null);
-  /* Where the last jump was headed, and when: a second key press during a
-     smooth scroll steps on from the target, not from wherever the scroll has
-     got to, so pressing twice always moves two chapters. */
-  const aimRef = useRef({ chapter: 0, at: 0 });
-
-  /* A glide, for the arrow keys and the menus: the page's own scroll,
-     eased in and out, from wherever it is to a chapter. The visitor's own
-     scrolling is never taken over. Any wheel or touch takes over from it. */
-  const glideRef = useRef(0);
-  const gliding = useRef(false);
-  const glideTo = useCallback((top: number) => {
-    cancelAnimationFrame(glideRef.current);
-    const from = window.scrollY;
-    const d = top - from;
-    if (Math.abs(d) < 1) {
-      gliding.current = false;
-      return;
-    }
-    if (calm()) {
-      window.scrollTo({ top, behavior: "auto" });
-      return;
-    }
-    const span = Math.abs(d) / window.innerHeight;
-    const dur = Math.min(1100, 520 + span * 300);
-    const t0 = performance.now();
-    gliding.current = true;
-    const step = (now: number) => {
-      const k = Math.min(1, (now - t0) / dur);
-      const e = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
-      window.scrollTo({ top: from + d * e, behavior: "auto" });
-      if (k < 1) glideRef.current = requestAnimationFrame(step);
-      else gliding.current = false;
-    };
-    glideRef.current = requestAnimationFrame(step);
-  }, []);
+  /* The page's scroll, smoothed (smooth-scroll.ts). */
+  const scrollRef = useRef<SmoothScroll | null>(null);
   useEffect(() => {
-    const takeOver = () => {
-      if (!gliding.current) return;
-      cancelAnimationFrame(glideRef.current);
-      gliding.current = false;
-    };
-    window.addEventListener("wheel", takeOver, { passive: true });
-    window.addEventListener("touchstart", takeOver, { passive: true });
+    const el = sectionRef.current;
+    if (!el) return;
+    const smooth = createSmoothScroll({
+      stops: () => {
+        const top = el.getBoundingClientRect().top + window.scrollY;
+        const h = chapterHeight(el);
+        return CHAPTERS.map((_, i) => top + i * h);
+      },
+    });
+    scrollRef.current = smooth;
     return () => {
-      window.removeEventListener("wheel", takeOver);
-      window.removeEventListener("touchstart", takeOver);
+      smooth.destroy();
+      scrollRef.current = null;
     };
   }, []);
-  const goTo = useCallback(
-    (chapter: number) => {
-      const el = sectionRef.current;
-      if (!el) return;
-      aimRef.current = { chapter, at: performance.now() };
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      glideTo(top + chapter * chapterHeight(el));
-    },
-    [glideTo],
-  );
 
-  /* The arrow keys step through the chapters while the universe is on
-     screen; below it, in the index, they scroll the page as usual. */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
-        return;
-      const dir = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
-      if (!dir) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable]")) return;
-      const el = sectionRef.current;
-      if (!el) return;
-      const last = CHAPTERS.length - 1;
-      const s = -el.getBoundingClientRect().top / chapterHeight(el);
-      if (s > last + 0.5) return;
-      const aim = aimRef.current;
-      const from =
-        performance.now() - aim.at < 900 ? aim.chapter : Math.round(Math.max(0, s));
-      const next = from + dir;
-      if (next < 0 || next > last) return;
-      e.preventDefault();
-      goTo(next);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [goTo]);
+  /* A glide to a chapter, for the menus and the index. */
+  const goTo = useCallback((chapter: number) => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    scrollRef.current?.glideTo(top + chapter * chapterHeight(el));
+  }, []);
 
   /* Which chapter is on screen, for the index on the right. */
   useEffect(() => {
@@ -206,13 +140,7 @@ export function Universe() {
       )}
       {/* Outside the pinned stage, which is a layer of its own under the
           chapters' text: fixed here, the bar and its menu sit above both. */}
-      <UniverseNav
-        filter={filter}
-        setFilter={setFilter}
-        goTo={goTo}
-        chapter={active}
-        docked={active > 0}
-      />
+      <UniverseNav goTo={goTo} docked={active > 0} />
       <section
         ref={sectionRef}
         data-universe
@@ -221,7 +149,6 @@ export function Universe() {
       >
         <div className={s.stage}>
           <UniverseCanvas
-            filter={filter}
             arriveRef={arriveRef}
             onPick={(i) => goTo(i + FIRST)}
             className={s.canvas}
@@ -286,7 +213,7 @@ export function Universe() {
             </p>
             <nav className={s.links} aria-label="Elsewhere">
               <Link href={routes.story}>Read the note</Link>
-              <a href={`mailto:${CONTACT.email}`}>Email</a>
+              <Link href={routes.contact}>Say hello</Link>
               <a href={CONTACT.github} target="_blank" rel="noreferrer">
                 GitHub
               </a>
@@ -301,37 +228,7 @@ export function Universe() {
         </div>
       </section>
 
-      <section id="index" className={s.index} aria-labelledby="index-title">
-        <h2 id="index-title" className={s.indexTitle}>
-          Index
-        </h2>
-        <p className={s.lede}>Every piece of work above, as a list.</p>
-        <table className={s.table}>
-          <thead>
-            <tr>
-              <th>when</th>
-              <th>name</th>
-              <th>kind</th>
-              <th>result</th>
-            </tr>
-          </thead>
-          <tbody>
-            {UNITS.map((u) => (
-              <tr key={u.id} style={kindVars(u.kind)}>
-                <td className={s.muted}>{u.when}</td>
-                <td>
-                  <Link href={`${routes.work}/${u.id}`}>{u.name}</Link>
-                </td>
-                <td>
-                  <span className={s.mark}>{KINDS[u.kind].mark}</span>{" "}
-                  {KINDS[u.kind].label.toLowerCase()}
-                </td>
-                <td className={s.muted}>{u.result}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <Footer />
     </main>
   );
 }
@@ -363,8 +260,8 @@ function Chapter({
        scroll can bring several crossings in one batch: the last is where
        the chapter is now. */
     const io = new IntersectionObserver(
-      (entries) => setOn(entries[entries.length - 1].intersectionRatio > 0.12),
-      { threshold: [0, 0.12, 0.5, 1] },
+      (entries) => setOn(entries[entries.length - 1].intersectionRatio > 0.02),
+      { threshold: [0, 0.02, 0.5, 1] },
     );
     io.observe(node);
     return () => io.disconnect();
@@ -407,8 +304,7 @@ function Piece({
   index: number;
 }) {
   const kind = KINDS[u.kind];
-  const aspect =
-    u.media?.kind === "photo" ? u.media.src.width / u.media.src.height : 16 / 10;
+  const aspect = u.media?.kind === "photo" ? u.media.width / u.media.height : 16 / 10;
   return (
     <Chapter
       className={`${s.piece} ${u.media ? s.withMedia : ""} ${
@@ -435,10 +331,6 @@ function Piece({
         {kind.label}, {u.when}
       </p>
       <p className={s.pieceBrief}>{u.brief}</p>
-      <p className={s.pieceBody}>
-        <span className={s.bodyName}>Drawn as a {kind.bodyName}.</span>{" "}
-        <span className={s.about}>{kind.about}</span>
-      </p>
       {u.link && (
         <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
           {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>

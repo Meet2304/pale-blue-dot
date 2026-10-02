@@ -62,25 +62,22 @@
 .hz-note-mat {
   position: relative;
   display: block;
-  aspect-ratio: 16 / 9;
+  /* The photograph's own shape (1024 x 768), so none of it is cropped. */
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--night-800);
   border-radius: inherit;
 }
 
-.hz-note-frame[data-ready="false"] .hz-note-mat {
+/* The plate the loading page holds while the route is on its way. */
+.hz-note-skel-plate .hz-note-mat {
   animation: hz-skel 1.8s var(--ease-in-out-calm) infinite;
 }
 
+/* Always shown: it is never held back waiting for a load event. */
 .hz-note-shot {
   object-fit: cover;
   object-position: center;
-  opacity: 0;
-  transition: opacity var(--dur-slow) var(--ease-out-soft);
-}
-
-.hz-note-frame[data-ready="true"] .hz-note-shot {
-  opacity: 1;
 }
 
 /* --- Lightbox ------------------------------------------------------------ */
@@ -158,13 +155,8 @@
     animation: none;
   }
 
-  .hz-note-frame[data-ready="false"] .hz-note-mat {
+  .hz-note-skel-plate .hz-note-mat {
     animation: none;
-  }
-
-  .hz-note-shot {
-    opacity: 1;
-    transition: none;
   }
 
   .hz-note-skel {

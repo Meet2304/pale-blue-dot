@@ -306,18 +306,12 @@
 }
 
 .tab:hover .mark,
-.tab[aria-expanded="true"] .mark,
-.tab[data-filtered="true"] .mark {
+.tab[aria-expanded="true"] .mark {
   opacity: 1;
 }
 
 .tab[aria-expanded="true"] {
   border-bottom-color: var(--kind);
-}
-
-/* The kind the years are filtered to stays lit. */
-.tab[data-filtered="true"] {
-  color: var(--kind-soft);
 }
 
 .phoneTab {
@@ -541,18 +535,6 @@
   color: var(--soft);
 }
 
-.menuFoot {
-  display: flex;
-  align-items: center;
-  gap: 1.1rem;
-  margin-top: auto;
-  padding-top: 1rem;
-}
-
-.menuFoot .barCta {
-  margin-left: 0;
-}
-
 /* The site-wide link style (base.css) gives every anchor a bottom border
    and turns every border blue on hover. In the bar and its panels the lines
    are drawn here instead, so that one stands down: links light by colour,
@@ -593,8 +575,7 @@
 .barCta:focus-visible,
 .ticks button:focus-visible,
 .links a:focus-visible,
-.visit:focus-visible,
-.table a:focus-visible {
+.visit:focus-visible {
   outline: 1px solid var(--fg);
   outline-offset: 3px;
 }
@@ -621,8 +602,8 @@
   opacity: 0;
   translate: 0 8px;
   transition:
-    opacity 500ms,
-    translate 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity 220ms,
+    translate 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .chapter[data-on="true"] .column {
@@ -765,6 +746,13 @@
 .word {
   display: inline-block;
   white-space: nowrap;
+}
+
+/* The word that fixes a bug in itself when pointed at (debug-word.ts),
+   laying its pieces over itself. */
+.word[data-fix] {
+  position: relative;
+  cursor: default;
 }
 
 /* The greeting, and under it the line that says what the dot is, left
@@ -951,20 +939,6 @@
   text-wrap: pretty;
 }
 
-/* Why the body is the body it is: the bridge between the sky and the work. */
-.pieceBody {
-  margin-top: 1.1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--hair);
-  font-size: 0.875rem;
-  line-height: 1.55;
-  color: var(--soft);
-}
-
-.bodyName {
-  color: var(--kind-soft);
-}
-
 .visit {
   display: inline-block;
   margin-top: 1.3rem;
@@ -994,8 +968,8 @@
   opacity: 0;
   translate: 0 12px;
   transition:
-    opacity 600ms 150ms,
-    translate 800ms 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity 240ms,
+    translate 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .withLogo .aside {
@@ -1012,14 +986,15 @@
    corner (universe-canvas.tsx), quieter, part of the setting; a soft
    shadow lifts the picture in front of it. */
 @media (min-width: 861px), (min-aspect-ratio: 4/3) and (min-height: 521px) {
-  /* As wide as fits beside the copy, never over it. */
+  /* As wide as fits beside the copy, never over it; a little below the
+     middle, to leave the sky above it for the body. */
   .withMedia .aside {
-    top: 50%;
+    top: 57%;
     bottom: auto;
     width: min(
-      44vw,
-      46rem,
-      calc(58vh * var(--aspect, 1.6)),
+      41vw,
+      44rem,
+      calc(52vh * var(--aspect, 1.6)),
       calc(88vw - min(29rem, 40vw) - 7rem)
     );
     translate: 0 calc(-50% + 12px);
@@ -1272,8 +1247,7 @@
   opacity: 0;
 }
 
-.links a,
-.table a {
+.links a {
   color: var(--fg);
   text-decoration: underline;
   text-decoration-color: var(--mute);
@@ -1282,8 +1256,7 @@
   transition: text-decoration-color 200ms;
 }
 
-.links a:hover,
-.table a:hover {
+.links a:hover {
   text-decoration-color: var(--fg);
 }
 
@@ -1292,49 +1265,6 @@
   flex-wrap: wrap;
   gap: 0.6rem 1.4rem;
   margin-top: 1.4rem;
-}
-
-/* ---------------------------------------------------------------- Index */
-
-.index {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 8rem 6vw 6rem;
-}
-
-.indexTitle {
-  font-weight: 300;
-  font-size: 2rem;
-  letter-spacing: -0.03em;
-}
-
-.table {
-  width: 100%;
-  margin-top: 2rem;
-  border-collapse: collapse;
-  font-size: 0.9375rem;
-}
-
-.table th {
-  padding: 0 1rem 0.6rem 0;
-  text-align: left;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 400;
-  color: var(--mute);
-}
-
-.table td {
-  padding: 0.75rem 1rem 0.75rem 0;
-  border-top: 1px solid var(--hair);
-  vertical-align: top;
-}
-
-.table td:first-child,
-.table td:nth-child(3) {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------- Small */
@@ -1428,17 +1358,9 @@
   .ticks {
     display: none;
   }
-  .table th:nth-child(4),
-  .table td:nth-child(4) {
-    display: none;
-  }
 }
 
 @media (max-width: 560px) {
-  .table th:nth-child(1),
-  .table td:nth-child(1) {
-    display: none;
-  }
 }
 
 /* A small screen held upright (a phone, a tablet in portrait): the canvas
@@ -1520,14 +1442,6 @@
     font-size: 0.8125rem;
     line-height: 1.45;
   }
-  .pieceBody {
-    margin-top: 0.5rem;
-    padding-top: 0.45rem;
-    font-size: 0.75rem;
-  }
-  .about {
-    display: none;
-  }
   .visit {
     margin-top: 0.5rem;
   }
@@ -1568,14 +1482,6 @@
     margin-top: 0.7rem;
     font-size: 0.9375rem;
     line-height: 1.5;
-  }
-  .pieceBody {
-    margin-top: 0.7rem;
-    padding-top: 0.6rem;
-    font-size: 0.8125rem;
-  }
-  .about {
-    display: none;
   }
   .visit {
     margin-top: 0.8rem;
@@ -1841,34 +1747,16 @@
 .menuButton {
   display: none;
   align-items: center;
-  gap: 0.55rem;
-  height: 1.9rem;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
   margin-left: auto;
-  padding: 0 0.7rem;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  border-radius: 999px;
+  margin-right: -0.4rem;
+  padding: 0;
+  border: 0;
   background: none;
   color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
   cursor: pointer;
-}
-
-.menuLines {
-  display: grid;
-  gap: 4px;
-}
-
-.menuLines i {
-  display: block;
-  width: 14px;
-  height: 1px;
-  background: currentColor;
-}
-
-.menuLines i:last-child {
-  width: 9px;
-  justify-self: end;
 }
 
 .drawerScrim {
@@ -1940,11 +1828,6 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   cursor: pointer;
-}
-
-.drawerClose span {
-  font-size: 1rem;
-  line-height: 1;
 }
 
 .drawerLabel {
@@ -2062,6 +1945,9 @@
 }
 
 .drawerLinks a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   padding: 0.65rem 0;
   border-bottom: 1px solid var(--hair);
   color: var(--fg);

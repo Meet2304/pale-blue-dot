@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useRef, type RefObject } from "react";
 
+import { debugWord } from "./debug-word";
 import { createIntroSound } from "./intro-sound";
 import {
   GREETING_WORDS,
@@ -73,17 +74,20 @@ function Letters({
   words,
   live,
   set,
+  fix,
 }: {
   words: string[];
   live: boolean;
   set: boolean;
+  /** The word that plays when pointed at (see `Headline`). */
+  fix?: number;
 }) {
   /* Each word is held together: every letter is its own box, and a line
      may otherwise break between any two of them. */
   return words.map((w, wi) => (
     <Fragment key={wi}>
       {wi > 0 && " "}
-      <span className={s.word}>
+      <span className={s.word} data-fix={wi === fix ? "" : undefined}>
         {[...w].map((c, i) => (
           <span
             key={i}
@@ -125,7 +129,10 @@ export function Greeting({
   );
 }
 
-/** The hero's headline, the opening's second line settled. */
+/**
+ * The hero's headline, the opening's second line settled. Pointing at
+ * "Engineer." sets it fixing a bug in itself (debug-word.ts).
+ */
 export function Headline({
   className,
   ref,
@@ -133,10 +140,37 @@ export function Headline({
   className?: string;
   ref?: RefObject<HTMLHeadingElement | null>;
 }) {
+  const own = useRef<HTMLHeadingElement>(null);
+  const el = ref ?? own;
+
+  useEffect(() => {
+    const word = el.current?.querySelector<HTMLElement>("[data-fix]");
+    if (!word) return;
+    let busy = false;
+    let timer = 0;
+    const go = () => {
+      if (busy || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      /* Not while the opening is still bringing the line in. */
+      if (word.closest('[data-intro]:not([data-intro="done"])')) return;
+      busy = true;
+      timer = window.setTimeout(() => (busy = false), debugWord(word));
+    };
+    word.addEventListener("pointerenter", go);
+    return () => {
+      word.removeEventListener("pointerenter", go);
+      window.clearTimeout(timer);
+    };
+  }, [el]);
+
   return (
-    <h1 ref={ref} className={className}>
+    <h1 ref={el} className={className}>
       <span className={s.srOnly}>{HEADLINE}</span>
-      <Letters words={HEADLINE_WORDS} live={false} set />
+      <Letters
+        words={HEADLINE_WORDS}
+        live={false}
+        set
+        fix={HEADLINE_WORDS.length - 1}
+      />
     </h1>
   );
 }
@@ -395,6 +429,7 @@ export function Intro({
  * it is already in view when the page loads, or motion is reduced, it is
  * simply there.
  */
+
 export function SpokenTitle({
   spoken,
   className,
@@ -430,11 +465,10 @@ export function SpokenTitle({
         /* A quick scroll can bring several crossings in one batch (0.3,
            0.66, 1): the last is where the heading is now. */
         const e = entries[entries.length - 1];
-        /* As soon as most of it is on screen, so it is never scrolled
-           past unspoken. */
-        if (!e.isIntersecting || e.intersectionRatio < 0.5) return;
+        /* As soon as a little of it is on screen, so it has spoken before
+           anyone can read it, however fast they scroll. */
+        if (!e.isIntersecting || e.intersectionRatio < 0.15) return;
         io.disconnect();
-        /* A beat after the chapter starts to rise in. */
         timer = window.setTimeout(() => {
           sound = createIntroSound();
           const pans = letters.map(panOf);
@@ -447,7 +481,7 @@ export function SpokenTitle({
               if (l.dataset.set !== undefined) return;
               pending = true;
               const g = glyphs[i];
-              if (t >= spoken.letterAt[i] + SCRAMBLE) {
+              if (t >= spoken.letterAt[i] + spoken.scramble) {
                 l.dataset.set = "";
                 if (g) g.textContent = "";
               } else if (g) {
@@ -459,9 +493,9 @@ export function SpokenTitle({
             else sound?.close();
           };
           raf = requestAnimationFrame(step);
-        }, 250);
+        }, 0);
       },
-      { threshold: [0, 0.6, 1] },
+      { threshold: [0, 0.15, 0.6, 1] },
     );
     io.observe(el);
 

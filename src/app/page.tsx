@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageTransition } from "@/components/site/page-transition";
 import { Universe } from "@/components/universe/universe";
 
 import { plexVariables } from "./fonts";
@@ -20,8 +21,10 @@ export const metadata: Metadata = {
  */
 export default function Home() {
   return (
-    <div className={plexVariables}>
-      <Universe />
-    </div>
+    <PageTransition universe>
+      <div className={plexVariables}>
+        <Universe />
+      </div>
+    </PageTransition>
   );
 }

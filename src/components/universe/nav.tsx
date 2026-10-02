@@ -16,7 +16,6 @@ import { routes } from "@/lib/routes";
 import { hash, type Cell } from "./bodies";
 import { KINDS, KIND_ORDER, kindColors } from "./encoding";
 import { fit, mulberry32 } from "./helpers";
-import { FIRST } from "./chapters";
 import { Drawer } from "./drawer";
 import { GLYPHS } from "./intro-timeline";
 import { Logo } from "./logo";
@@ -32,9 +31,7 @@ import s from "./universe.module.css";
  * beside the kind's name, why that body stands for it, and the work itself.
  * The body resolves out of a point of light as the panel opens; hovering it
  * brings it up, frames it with the four-tick reticle, and the scanner
- * follows the pointer across it to show its hidden structure. "Show only
- * these" dims every other kind in the years, and from the hero or the deep
- * sky flies on to the first year to show them.
+ * follows the pointer across it to show its hidden structure.
  *
  * Moving along the tabs with the panel open morphs it from one kind to the
  * next rather than swapping it: one panel serves every tab; the body morphs
@@ -54,18 +51,10 @@ const OPEN_DELAY = 90;
 const CLOSE_DELAY = 240;
 
 export function UniverseNav({
-  filter,
-  setFilter,
   goTo,
-  chapter,
   docked,
 }: {
-  filter: Kind | "all";
-  setFilter: (k: Kind | "all") => void;
   goTo: (chapter: number) => void;
-  /** The chapter on screen: showing a kind from before the years goes to
-      the first of them. */
-  chapter: number;
   /** Past the hero: the bar docks to the top edge (see `.nav`). */
   docked: boolean;
 }) {
@@ -108,12 +97,6 @@ export function UniverseNav({
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  const show = (k: Kind | "all") => {
-    setFilter(k);
-    setOpen(false);
-    if (chapter < FIRST) goTo(FIRST);
-  };
-
   return (
     <header
       ref={headerRef}
@@ -144,7 +127,6 @@ export function UniverseNav({
             style={{ ...kindVars(k), "--i": i + 1 } as CSSProperties}
             aria-expanded={open && kind === k}
             aria-controls={panelId}
-            data-filtered={filter === k}
             onPointerEnter={(e) => {
               if (e.pointerType !== "mouse") return;
               setKind(k);
@@ -214,16 +196,12 @@ export function UniverseNav({
           {/* Contact, set apart from the pages: a hairline between, and an @
               for its mark, as each kind of work has its own. */}
           <span className={`${s.barRule} ${s.barWider}`} aria-hidden />
-          <a
-            className={`${s.barItem} ${s.barWider}`}
-            href={`mailto:${CONTACT.email}`}
-            title={CONTACT.email}
-          >
+          <Link className={`${s.barItem} ${s.barWider}`} href={routes.contact}>
             <span className={s.barAt} aria-hidden>
               @
             </span>
             say hello
-          </a>
+          </Link>
         </span>
         <a
           className={s.barCta}
@@ -237,15 +215,7 @@ export function UniverseNav({
         <Drawer goTo={goTo} />
       </nav>
 
-      <KindMenu
-        id={panelId}
-        open={open}
-        kind={kind}
-        setKind={setKind}
-        filter={filter}
-        show={show}
-        hold={hold}
-      />
+      <KindMenu id={panelId} open={open} kind={kind} setKind={setKind} hold={hold} />
     </header>
   );
 }
@@ -304,21 +274,16 @@ function KindMenu({
   open,
   kind,
   setKind,
-  filter,
-  show,
   hold,
 }: {
   id: string;
   open: boolean;
   kind: Kind;
   setKind: (k: Kind) => void;
-  filter: Kind | "all";
-  show: (k: Kind | "all") => void;
   hold: () => void;
 }) {
   const info = KINDS[kind];
   const units = UNITS.filter((u) => u.kind === kind);
-  const shown = filter === kind;
   /* The panel's height glides between kinds (they hold different numbers
      of pieces of work) instead of jumping. */
   const innerRef = useRef<HTMLDivElement>(null);
@@ -369,7 +334,6 @@ function KindMenu({
                 <span className={s.mark} aria-hidden>
                   {info.mark}
                 </span>
-                <Scramble text={`drawn as a ${info.bodyName}`} />
                 <span className={s.menuCount}>
                   <Scramble text={`${units.length} in all`} />
                 </span>
@@ -400,26 +364,12 @@ function KindMenu({
                   </li>
                 ))}
               </ul>
-
-              <div className={s.menuFoot}>
-                <button
-                  type="button"
-                  className={s.barCta}
-                  aria-pressed={shown}
-                  onClick={() => show(shown ? "all" : kind)}
-                >
-                  {shown ? "show everything" : "show only these"}
-                </button>
-                <a className={s.menuLink} href="#index">
-                  all {UNITS.length} in the index
-                </a>
-              </div>
             </div>
           </div>
 
           <nav className={s.footLinks} aria-label="More">
             <Link href={routes.story}>story</Link>
-            <a href={`mailto:${CONTACT.email}`}>say hello</a>
+            <Link href={routes.contact}>say hello</Link>
           </nav>
         </div>
       </div>

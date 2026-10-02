@@ -196,9 +196,26 @@ function gasAt(nx: number, ny: number, id: number, f: Parameters<BodyFn>[3]) {
   return out;
 }
 
+/* The pointer on a nebula, in place of the scanner's circle: no edge and no
+   mark of its own. Around it the gas brightens a step and churns faster,
+   and slow ripples run out through it, their fronts bent by the gas,
+   fading with distance; where there is no gas, nothing is drawn, so it
+   stays part of the cloud. Measured on screen (before any mirroring), so it
+   is exactly where the pointer is. */
+const STIR_REACH = 1.7;
+const stirOn = (nx: number, ny: number, f: Parameters<BodyFn>[3]) => {
+  if (f.sr <= 0) return 0;
+  const d = Math.hypot(nx - f.sx, ny - f.sy) / (f.sr * STIR_REACH);
+  return d >= 1 ? 0 : (1 - d * d) ** 2;
+};
+
 const nebula: BodyFn = (nx0, ny, id, f, o) => {
   const nx = f.look?.flip ? -nx0 : nx0;
-  const [v, fil, core] = gasAt(nx, ny, id, f);
+  const [gasV, fil, core] = gasAt(nx, ny, id, f);
+  const stir = stirOn(nx0, ny, f);
+  /* Only gas that is there brightens: thin haze barely, so the cloud's
+     edge stays its own. */
+  const v = gasV + stir * 0.24 * Math.min(1, Math.max(0, gasV) * 4);
   if (v <= 0.04) return false;
 
   const hs = hash(id, 11);
@@ -206,20 +223,20 @@ const nebula: BodyFn = (nx0, ny, id, f, o) => {
     const tw = f.calm ? 1 : 0.55 + 0.45 * Math.sin(f.t * 1.7 + id);
     return set(o, hs > 0.9985 ? "*" : "+", 6, tw);
   }
-  if (scanning(nx, ny, f)) {
-    const q = v * 10;
-    if (Math.abs(q - Math.round(q)) < 0.1) return set(o, "~", 4, 0.95);
-    return hash(id, 5) < 0.4 ? set(o, "·", 1, 0.4) : false;
-  }
   /* The faintest gas is a haze, drawn sparsely. */
   if (v < 0.1) return hash(id, 6) < 0.3 ? set(o, ".", 0, 0.45) : false;
   const tier = v < 0.22 ? 0 : v < 0.4 ? 1 : v < 0.6 ? 2 : v < 0.85 ? 3 : 4;
+  if (stir > 0.04 && !f.calm) {
+    const wave = Math.sin(Math.hypot(nx0 - f.sx, ny - f.sy) * 24 - f.t * 4 + gasV * 6);
+    if (wave > 1 - 0.32 * stir)
+      return set(o, tier >= 2 ? "≈" : "~", Math.min(4, tier + 1), 0.6 + 0.35 * stir);
+  }
   /* Filaments are drawn as waves, a step brighter, so the eye follows
      them; the heart of the cloud, where the young stars are, runs warm. */
   if (fil > 0.6 && tier >= 1)
     return set(o, "~", Math.min(4, tier + 1), 0.7 + tier * 0.07);
   const k = tier >= 3 && core > 0.55 ? 5 : tier;
-  return set(o, pick(GAS[tier], id, f.t, f.calm), k, 0.5 + tier * 0.12);
+  return set(o, pick(GAS[tier], id, f.t, f.calm, 0.5 + stir * 5), k, 0.5 + tier * 0.12);
 };
 
 const nebulaUnder: Light = (g, { cx, cy, R, colors, alpha, look }) => {

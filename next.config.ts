@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   // `*.vercel.app`, and a custom production domain; `/story` must resolve
   // against whichever host the visitor is already on.
   redirects() {
-    return ["/about", "/work", "/contact", "/changelog", "/resume"].map((source) => ({
+    return ["/about", "/work", "/changelog", "/resume"].map((source) => ({
       source,
       destination: "/",
       permanent: false,

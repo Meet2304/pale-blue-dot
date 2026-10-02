@@ -20,10 +20,13 @@ export const routes = {
 export type Route = (typeof routes)[keyof typeof routes];
 
 /**
- * Pages built on the Terminal system: the universe at `/` and the per-unit
- * pages under `/work/`. They draw their own sky and their own controls, so the
+ * Pages built on the Terminal system: the universe at `/`, the contact page,
+ * and the per-unit pages under `/work/`. They draw their own sky and their own controls, so the
  * Horizon chrome (star field, nav bar, edge blurs, dot-field footer) stands
  * down on them.
  */
 export const isTerminalRoute = (pathname: string) =>
-  pathname === routes.home || pathname.startsWith(`${routes.work}/`);
+  pathname === routes.home ||
+  pathname === routes.story ||
+  pathname === routes.contact ||
+  pathname.startsWith(`${routes.work}/`);

@@ -4,6 +4,12 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 
+import { ExternalLink } from "@/components/animate-ui/icons/external-link";
+import { AnimateIcon } from "@/components/animate-ui/icons/icon";
+import { Menu } from "@/components/animate-ui/icons/menu";
+import { MessageCircle } from "@/components/animate-ui/icons/message-circle";
+import { Orbit } from "@/components/animate-ui/icons/orbit";
+import { X } from "@/components/animate-ui/icons/x";
 import { CONTACT, UNITS, type Kind } from "@/content/work";
 import { routes } from "@/lib/routes";
 
@@ -62,29 +68,28 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
 
   return (
     <>
-      <button
-        ref={menuRef}
-        type="button"
-        className={s.menuButton}
-        aria-expanded={open}
-        aria-controls="drawer"
-        onPointerEnter={prepare}
-        onPointerDown={prepare}
-        onFocus={prepare}
-        onClick={() => {
-          if (ready) setOpen(true);
-          else {
-            setReady(true);
-            requestAnimationFrame(() => setOpen(true));
-          }
-        }}
-      >
-        <span className={s.menuLines} aria-hidden>
-          <i />
-          <i />
-        </span>
-        menu
-      </button>
+      <AnimateIcon asChild animateOnHover animateOnTap>
+        <button
+          ref={menuRef}
+          type="button"
+          className={s.menuButton}
+          aria-expanded={open}
+          aria-controls="drawer"
+          aria-label="Menu"
+          onPointerEnter={prepare}
+          onPointerDown={prepare}
+          onFocus={prepare}
+          onClick={() => {
+            if (ready) setOpen(true);
+            else {
+              setReady(true);
+              requestAnimationFrame(() => setOpen(true));
+            }
+          }}
+        >
+          <Menu size={20} aria-hidden />
+        </button>
+      </AnimateIcon>
 
       {ready &&
         createPortal(
@@ -108,17 +113,19 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
                   <Logo />
                   <span className={s.srOnly}>Meet Bhatt: back to the top</span>
                 </button>
-                <button
-                  ref={closeRef}
-                  type="button"
-                  className={s.drawerClose}
-                  onClick={() => setOpen(false)}
-                >
-                  <span aria-hidden>×</span> close
-                </button>
+                <AnimateIcon asChild animateOnHover animateOnTap>
+                  <button
+                    ref={closeRef}
+                    type="button"
+                    className={s.drawerClose}
+                    onClick={() => setOpen(false)}
+                  >
+                    <X size={14} aria-hidden /> close
+                  </button>
+                </AnimateIcon>
               </div>
 
-              <p className={s.drawerLabel}>The work, by what it is drawn as</p>
+              <p className={s.drawerLabel}>The work</p>
               <ul className={s.drawerKinds}>
                 {KIND_ORDER.map((k) => {
                   const units = UNITS.filter((u) => u.kind === k);
@@ -171,18 +178,24 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
               </ul>
 
               <nav className={s.drawerLinks} aria-label="More">
-                <Link href={routes.story} onClick={() => setOpen(false)}>
-                  story
-                </Link>
-                <a href={`mailto:${CONTACT.email}`}>
-                  <span className={s.barAt} aria-hidden>
-                    @
-                  </span>{" "}
-                  say hello
-                </a>
-                <a href={CONTACT.resume} target="_blank" rel="noreferrer">
-                  resume ↗
-                </a>
+                <AnimateIcon asChild animateOnHover animateOnTap>
+                  <Link href={routes.story} onClick={() => setOpen(false)}>
+                    <Orbit size={16} aria-hidden />
+                    story
+                  </Link>
+                </AnimateIcon>
+                <AnimateIcon asChild animateOnHover animateOnTap>
+                  <Link href={routes.contact} onClick={() => setOpen(false)}>
+                    <MessageCircle size={16} aria-hidden />
+                    say hello
+                  </Link>
+                </AnimateIcon>
+                <AnimateIcon asChild animateOnHover animateOnTap>
+                  <a href={CONTACT.resume} target="_blank" rel="noreferrer">
+                    <ExternalLink size={16} aria-hidden />
+                    resume
+                  </a>
+                </AnimateIcon>
               </nav>
               <p className={s.drawerElse}>
                 <a href={CONTACT.github} target="_blank" rel="noreferrer">

@@ -1,0 +1,337 @@
+/* The foot of every page (footer.tsx). Type and hairlines; the glyphs are
+   the only picture, and the only colour is the pale blue dot's. */
+.foot {
+  --fg: #e7eaef;
+  --soft: #a3a9b4;
+  --mute: #6a717d;
+  --hair: rgb(255 255 255 / 0.09);
+  --pale: #92cbfb;
+
+  position: relative;
+  z-index: 3;
+  padding: 3.6rem 6vw calc(1.6rem + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background: #000;
+  color: var(--fg);
+  font-family: var(--plex-sans), sans-serif;
+}
+
+/* The Horizon pages give every link a bottom border; here, none. */
+.foot a {
+  border-bottom: 0;
+}
+
+.foot a:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+/* The "m." on the left; on the right, level with it, the ways out from
+   its top down, and the sign-off at its foot. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "mark links"
+    "mark sign";
+  column-gap: 3rem;
+  row-gap: 1.6rem;
+}
+
+/* The "m.": its box is the letters' own height (glyph-text.tsx). */
+.mark {
+  grid-area: mark;
+  display: block;
+  align-self: start;
+}
+
+.glyphs {
+  display: block;
+  width: 100%;
+  height: clamp(180px, 22vw, 320px);
+  font-family: var(--plex-sans), sans-serif;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+.links {
+  grid-area: links;
+  display: flex;
+}
+
+/* The rows spread over the height the "m." leaves them. */
+.list {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: space-between;
+  gap: 0.75rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9375rem;
+}
+
+.list li {
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--hair);
+}
+
+.list a {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.list a:hover,
+.list a:focus-visible {
+  color: var(--fg);
+}
+
+.away {
+  margin-left: -0.45rem;
+  font-size: 0.8em;
+  color: var(--mute);
+}
+
+.sign {
+  grid-area: sign;
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin: 0;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+/* ------------------------------------------------------------ The marks */
+
+.icon {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  overflow: visible;
+}
+
+/* A profile's logo, in the text's colour. */
+.logo {
+  background: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 88%;
+}
+
+.icon :is(.meridian, .leaf, .typing, .line, .flap) {
+  transform-box: view-box;
+}
+
+/* Each plays its trick when its link is pointed at or focused. */
+
+/* Home: the globe turns, its meridians sweeping across it. */
+.meridian {
+  transform-origin: 12px 12px;
+  opacity: 1;
+}
+
+.late {
+  opacity: 0;
+}
+
+[data-icon="home"]:is(:hover, :focus-visible) .meridian {
+  animation: turn 1.6s linear infinite;
+}
+
+[data-icon="home"]:is(:hover, :focus-visible) .late {
+  animation-delay: -0.8s;
+}
+
+@keyframes turn {
+  0% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleX(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scaleX(-1);
+    opacity: 1;
+  }
+}
+
+/* Story: a page lifts from the right and turns over the spine. */
+.leaf {
+  transform-origin: 12px 12px;
+  opacity: 0;
+}
+
+[data-icon="story"]:is(:hover, :focus-visible) .leaf {
+  animation: leaf 900ms cubic-bezier(0.45, 0, 0.3, 1);
+}
+
+@keyframes leaf {
+  0% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(-1);
+    opacity: 0;
+  }
+}
+
+/* Contact: three dots, typing. */
+[data-icon="contact"]:is(:hover, :focus-visible) .typing {
+  animation: typing 900ms ease-in-out infinite;
+}
+
+[data-icon="contact"]:is(:hover, :focus-visible) .typing:nth-of-type(2) {
+  animation-delay: 150ms;
+}
+
+[data-icon="contact"]:is(:hover, :focus-visible) .typing:nth-of-type(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-2.2px);
+  }
+}
+
+/* Resume: the page lifts, and its lines write themselves in. */
+.line {
+  stroke-dasharray: 7;
+  stroke-dashoffset: 0;
+}
+
+[data-icon="resume"]:is(:hover, :focus-visible) .icon {
+  animation: lift 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-icon="resume"]:is(:hover, :focus-visible) .line {
+  animation: write 500ms ease-out both;
+}
+
+[data-icon="resume"]:is(:hover, :focus-visible) .line:nth-of-type(4) {
+  animation-delay: 120ms;
+}
+
+[data-icon="resume"]:is(:hover, :focus-visible) .line:nth-of-type(5) {
+  animation-delay: 240ms;
+}
+
+@keyframes lift {
+  40% {
+    transform: translateY(-2px) rotate(-6deg);
+  }
+}
+
+@keyframes write {
+  from {
+    stroke-dashoffset: 7;
+  }
+}
+
+/* Email: the flap opens. */
+.flap {
+  transform-origin: 12px 6.8px;
+}
+
+[data-icon="email"]:is(:hover, :focus-visible) .flap {
+  animation: flap 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes flap {
+  to {
+    transform: scaleY(-0.55);
+  }
+}
+
+/* LinkedIn: a quick wave, and its own blue. */
+[data-icon="linkedin"]:is(:hover, :focus-visible) .icon {
+  background: #0a66c2;
+  animation: wave 600ms ease-in-out;
+}
+
+@keyframes wave {
+  25% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+}
+
+/* GitHub: a hop, squashing as it lands. */
+[data-icon="github"]:is(:hover, :focus-visible) .icon {
+  animation: hop 650ms cubic-bezier(0.3, 0, 0.3, 1);
+}
+
+@keyframes hop {
+  35% {
+    transform: translateY(-5px) scale(1.05, 0.95);
+  }
+  70% {
+    transform: translateY(0) scale(1.12, 0.86);
+  }
+  85% {
+    transform: translateY(-1px) scale(0.97, 1.03);
+  }
+}
+
+/* X: a full turn, settling with a little overshoot. */
+[data-icon="x"]:is(:hover, :focus-visible) .icon {
+  animation: spin 700ms cubic-bezier(0.35, 1.25, 0.5, 1);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* On a phone: the ways out, then the "m.", then the sign-off. */
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "links"
+      "mark"
+      "sign";
+    row-gap: 2.4rem;
+  }
+  .list {
+    align-content: start;
+  }
+  .glyphs {
+    height: clamp(120px, 36vw, 220px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foot .icon,
+  .foot .icon * {
+    animation: none !important;
+  }
+}

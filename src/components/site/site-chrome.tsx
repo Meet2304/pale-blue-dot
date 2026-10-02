@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 
 import { isTerminalRoute } from "@/lib/routes";
+import { notePath } from "@/lib/visit";
 
 /* The Horizon chrome is its own chunk, fetched only when a Horizon page is
    shown: the home page, on Terminal, never loads its sky, bar or blurs. */
@@ -22,6 +24,9 @@ const HorizonChrome = dynamic(() =>
  */
 export function SiteChrome() {
   const pathname = usePathname();
+
+  /* Where the visitor has been, for the back links (back-link.tsx). */
+  useEffect(() => notePath(pathname), [pathname]);
 
   /* The Terminal pages bring their own sky and their own controls; only the
      skip link carries over. */

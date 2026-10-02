@@ -1,0 +1,43 @@
+/* The story page (page.tsx). The note keeps its own type (note.css); around
+   it, the Terminal system's frame, as on the contact page. */
+.root {
+  --fg: #e7eaef;
+  --soft: #a3a9b4;
+
+  position: relative;
+  min-height: 100svh;
+  background: #000;
+  color: var(--fg);
+}
+
+.top,
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.top {
+  display: flex;
+  padding: 1.5rem 6vw 0;
+}
+
+.home {
+  display: inline-flex;
+  gap: 0.5rem;
+  border-bottom: 0;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.home:hover,
+.home:focus-visible {
+  color: var(--fg);
+}
+
+/* There is no bar over the photograph here, so it sits nearer the top. */
+.root :global(.hz-note-sky) {
+  padding-top: clamp(2rem, 7vh, 4.5rem);
+}

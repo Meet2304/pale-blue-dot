@@ -28,6 +28,9 @@ export type Look = {
   warm: string;
   /** Size on screen against the others (1 is a middling body). */
   scale: number;
+  /** How much larger than it would fit, for a body that would otherwise
+      read small up close: it sits lower behind a picture to make room. */
+  size?: number;
   planet?: {
     type: PlanetType;
     ring: boolean;
@@ -84,7 +87,14 @@ const LOOKS: Record<string, Partial<Look>> = {
 
   /* Experience: stars, by temperature. */
   "bosch-mobility": { hue: 80, l: 0.86, c: 0.14, warm: "#ffd08a", scale: 0.9 },
-  "blink-analytics": { hue: 250, l: 0.9, c: 0.08, warm: "#d6e4ff", scale: 0.82 },
+  "blink-analytics": {
+    hue: 250,
+    l: 0.9,
+    c: 0.08,
+    warm: "#d6e4ff",
+    scale: 0.82,
+    size: 1.2,
+  },
   astar: { hue: 40, l: 0.74, c: 0.17, warm: "#ff9a5c", scale: 0.62 },
 
   /* Projects: planets. */
@@ -102,6 +112,7 @@ const LOOKS: Record<string, Partial<Look>> = {
     c: 0.15,
     warm: "#ffb38a",
     scale: 0.72,
+    size: 1.2,
     planet: { type: "rocky", ring: false, tilt: 0.2, moons: 2, bands: 0, storm: false },
   },
   icarus: {

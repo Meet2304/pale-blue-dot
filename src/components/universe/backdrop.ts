@@ -6,8 +6,8 @@ import { fbm3 } from "./noise";
  *
  *   - stars, in three depths that drift a little against each other as the
  *     camera moves, each twinkling on its own clock; around a black hole
- *     they are lensed, pushed outward and stretched into arcs, so its
- *     gravity shows in the sky itself;
+ *     they are pushed outward, the nearest drawn out a little, so its
+ *     gravity shows in the sky itself (kept to these few stars: cheap);
  *   - a soft haze in the colours of the body on screen, breathing slowly;
  *   - faint nebulosity drawn in characters, drifting with the camera;
  *   - now and then, a shooting star.
@@ -31,8 +31,6 @@ type Shot = { at: number; x: number; y: number; dx: number; dy: number; len: num
 
 export type Backdrop = {
   stars: Star[];
-  /** Faint stars drawn only near a black hole, where its lens shows them. */
-  deep: { x: number; y: number; b: number }[];
   /** A patch of noise for the nebulosity, read with mirrored edges. */
   dust: Float32Array;
   shot: Shot | null;
@@ -59,12 +57,7 @@ export function createBackdrop(): Backdrop {
   for (let y = 0; y < DUST; y++)
     for (let x = 0; x < DUST; x++)
       dust[y * DUST + x] = fbm3(x * 0.056, y * 0.056, 2.2, 3);
-  const deep = Array.from({ length: 2400 }, () => ({
-    x: rnd(),
-    y: rnd(),
-    b: 0.25 + Math.pow(rnd(), 1.8) * 0.75,
-  }));
-  return { stars, deep, dust, shot: null, nextShot: 0, rnd };
+  return { stars, dust, shot: null, nextShot: 0, rnd };
 }
 
 /* A body the backdrop answers to: where it is, how big, how lit, and, for
@@ -174,59 +167,6 @@ export function drawStars(
     g.fillText(level > 0.75 ? "*" : level > 0.45 ? "+" : "·", x, y);
   }
   g.globalAlpha = 1;
-  if (holes.length) drawLensed(g, bd, holes, o);
-}
-
-/**
- * The light behind a black hole, bent round it. A dense field of faint,
- * far stars, too faint to show on their own, is drawn only near the hole,
- * through its lens: each is seen pushed outward and drawn out along the
- * circle round the hole, the more the closer it lies to the Einstein ring,
- * where the bent light gathers into arcs. They sit deep in the sky, so as
- * the visitor scrolls, they slide past the hole and the arcs grow, swing
- * round and shrink again: the hole and everything else keep their places,
- * only the light bends.
- */
-function drawLensed(g: CanvasRenderingContext2D, bd: Backdrop, holes: Body[], o: Opts) {
-  g.lineCap = "round";
-  for (const hole of holes) {
-    const theta = hole.lens * hole.a;
-    if (theta < 4) continue;
-    const reach = theta * 4.2;
-    const tile = Math.max(o.w, o.h);
-    const fade = o.alpha * hole.a;
-    for (const st of bd.deep) {
-      /* Far behind: it drifts at a quarter of the near stars' rate. */
-      const sx = (((st.x * tile - o.driftX * 0.012) % tile) + tile) % tile;
-      const sy = (((st.y * tile - o.driftY * 0.012) % tile) + tile) % tile;
-      const dx = sx - (hole.x % tile);
-      const dy = sy - (hole.y % tile);
-      const d = Math.max(0.5, Math.hypot(dx, dy));
-      if (d > reach) continue;
-      const seen = (d + Math.sqrt(d * d + 4 * theta * theta)) / 2;
-      const ux = dx / d;
-      const uy = dy / d;
-      /* Magnified along the circle by seen / d, which the arc's length
-         shows; brighter on the ring, fading out to the edge of the reach. */
-      const arc = Math.min(seen * 0.9, (seen / d - 1) * 4.5 + 1.2);
-      const a = Math.min(
-        1,
-        st.b * fade * (0.35 + 0.65 * Math.min(1, theta / d)) * (1 - d / reach),
-      );
-      if (a < 0.03) continue;
-      g.globalAlpha = a;
-      g.strokeStyle = "#e4ebfa";
-      g.lineWidth = arc > 6 ? 1.2 : 1;
-      /* An arc of the circle through the star's seen place. */
-      const ang = Math.atan2(uy, ux);
-      const half = Math.min(1.2, arc / seen / 2);
-      g.beginPath();
-      g.arc(hole.x, hole.y, seen, ang - half, ang + half);
-      g.stroke();
-    }
-  }
-  g.globalAlpha = 1;
-  g.lineCap = "butt";
 }
 
 /**
