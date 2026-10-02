@@ -172,7 +172,7 @@
   mask-size: 88%;
 }
 
-.icon :is(.meridian, .leaf, .typing, .line, .flap) {
+.icon :is(.meridian, .leaf, .typing, .flap) {
   transform-box: view-box;
 }
 
@@ -253,40 +253,6 @@
   }
   30% {
     transform: translateY(-2.2px);
-  }
-}
-
-/* Resume: the page lifts, and its lines write themselves in. */
-.line {
-  stroke-dasharray: 7;
-  stroke-dashoffset: 0;
-}
-
-[data-icon="resume"]:is(:hover, :focus-visible) .icon {
-  animation: lift 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-[data-icon="resume"]:is(:hover, :focus-visible) .line {
-  animation: write 500ms ease-out both;
-}
-
-[data-icon="resume"]:is(:hover, :focus-visible) .line:nth-of-type(4) {
-  animation-delay: 120ms;
-}
-
-[data-icon="resume"]:is(:hover, :focus-visible) .line:nth-of-type(5) {
-  animation-delay: 240ms;
-}
-
-@keyframes lift {
-  40% {
-    transform: translateY(-2px) rotate(-6deg);
-  }
-}
-
-@keyframes write {
-  from {
-    stroke-dashoffset: 7;
   }
 }
 

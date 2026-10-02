@@ -81,7 +81,7 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
                   {u.link.label}
                 </a>
               )}
-              <BackLink>Back to the universe</BackLink>
+              <BackLink className={s.back} />
             </nav>
           </div>
         </main>

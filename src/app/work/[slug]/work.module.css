@@ -119,6 +119,12 @@
   transition: text-decoration-color 200ms;
 }
 
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .links a:hover {
   text-decoration-color: var(--fg);
 }

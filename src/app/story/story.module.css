@@ -24,7 +24,8 @@
 
 .home {
   display: inline-flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.45rem;
   border-bottom: 0;
   font-family: var(--plex-mono), monospace;
   font-size: 0.75rem;

@@ -47,9 +47,7 @@ export default function StoryPage() {
         <main id="content" className={s.root}>
           <StarField />
           <header className={s.top}>
-            <BackLink className={s.home}>
-              <span aria-hidden>←</span> Back to the universe
-            </BackLink>
+            <BackLink className={s.home} />
           </header>
           <div className={s.content}>
             <h1 className="hz-note-sr">The Pale Blue Dot</h1>
