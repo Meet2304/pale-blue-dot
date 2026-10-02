@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import {
+  buildBackdrop,
   createBackdrop,
   drawDust,
   drawHaze,
@@ -13,7 +14,7 @@ import {
 import { FIRST, SKY } from "./chapters";
 import { buildCosmos, createCosmos, drawCosmos } from "./cosmos";
 import { EARTH_COLORS, KINDS, layout } from "./encoding";
-import { fit, mulberry32 } from "./helpers";
+import { fit, mulberry32, whenIdle } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
 import { drawBody, makeFrame } from "./render";
@@ -39,6 +40,12 @@ import { drawBody, makeFrame } from "./render";
  */
 
 const TILT = (23.4 * Math.PI) / 180;
+
+/* What is costly to make and the same every time: made once a visit. */
+const made: {
+  cosmos?: ReturnType<typeof createCosmos>;
+  backdrop?: ReturnType<typeof createBackdrop>;
+} = {};
 
 /* Earth's arrival on a fresh visit: nothing while the opening speaks, then,
    as its lines fly to the hero, a single pale blue point of light that grows
@@ -115,8 +122,10 @@ export function UniverseCanvas({
     const { placed } = layout();
     const looks = placed.map((p) => lookOf(p.id, p.kind));
     const palettes = looks.map(lookColors);
-    const cosmos = createCosmos();
-    const backdrop = createBackdrop();
+    /* Built once a visit: coming back to the universe doesn't work the
+       deep sky's noise out again. */
+    const cosmos = (made.cosmos ??= createCosmos());
+    const backdrop = (made.backdrop ??= createBackdrop());
     /* The work's bodies, drawn offscreen (see "The work" below). */
     const work = {
       canvas: document.createElement("canvas"),
@@ -125,7 +134,13 @@ export function UniverseCanvas({
     };
     const wg = work.canvas.getContext("2d");
     /* Earth, drawn offscreen too (see "Earth" below). */
-    const earth = { canvas: document.createElement("canvas"), key: "", at: -1e9 };
+    const earth = {
+      canvas: document.createElement("canvas"),
+      key: "",
+      at: -1e9,
+      /* The part of the layer last drawn on, in device pixels. */
+      box: [0, 0, 0, 0] as [number, number, number, number],
+    };
     const eg = earth.canvas.getContext("2d");
 
     let w = 0;
@@ -418,11 +433,26 @@ export function UniverseCanvas({
     };
 
     let last = performance.now();
+    /* Coming back from another page (the opening has played), the page
+       arrives in a transition: for that half second the canvas draws only
+       now and then, leaving the frames to the arrival. */
+    const settleUntil = arriveRef.current === 0 ? last + 550 : 0;
+    let drawnAt = -1e9;
+    /* The deep sky and its dust are worked out in the page's quiet moments,
+       so they are ready long before anyone scrolls to them without taking
+       time from a frame. */
+    const build = (budget: number) => {
+      const start = performance.now();
+      const done =
+        buildBackdrop(backdrop, budget) &&
+        buildCosmos(cosmos, budget - (performance.now() - start), performance.now());
+      if (!done) cancelBuild = whenIdle(build);
+    };
+    let cancelBuild = whenIdle(build);
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      /* The deep sky is measured a little at a time, from the first frame,
-         so it is ready long before anyone scrolls to it. */
-      buildCosmos(cosmos, visible ? 4 : 12, now);
+      if (now < settleUntil && now - drawnAt < 80) return;
+      drawnAt = now;
       if (!visible) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -440,6 +470,12 @@ export function UniverseCanvas({
          animates a wheel's notches, and the stops glide (universe.tsx). */
       sv = target;
       const s = sv;
+      /* Scrolled out before the quiet moments have finished the deep sky,
+         the frames finish it. */
+      if (s > 0.2 && !cosmos.readyAt) {
+        buildBackdrop(backdrop, 2);
+        buildCosmos(cosmos, 4, now);
+      }
 
       const cam = camAt(s);
       const arrivedAt = arriveRef.current;
@@ -859,22 +895,35 @@ export function UniverseCanvas({
             : null;
         /* Densely set, Earth is many thousands of characters, and it turns
            slowly: while nothing else about it changes (the camera, the
-           scanner, a drag), it is redrawn thirty times a second and the
+           scanner, a drag), it is redrawn twenty times a second and the
            frames between show the last drawing. */
         const alphaE = glyphAlpha * (1 - workA);
         const earthKey = `${w}x${h}@${dpr} ${ex.toFixed(1)},${ey.toFixed(1)},${earthR.toFixed(2)} ${alphaE.toFixed(3)} ${
           earthScan ? `${earthScan.x.toFixed(3)},${earthScan.y.toFixed(3)}` : ""
         }`;
         if (eg) {
-          if (pointer.down || earthKey !== earth.key || now - earth.at > 33) {
-            const pw = Math.round(w * dpr);
-            const ph = Math.round(h * dpr);
+          const pw = Math.round(w * dpr);
+          const ph = Math.round(h * dpr);
+          /* Only the box round Earth is cleared and copied, never the whole
+             screen: copying a full-screen layer every frame was most of
+             what the hero cost. */
+          const reach = earthR * 1.12 + ech;
+          const box: [number, number, number, number] = [
+            Math.max(0, Math.floor((ex - reach) * dpr)),
+            Math.max(0, Math.floor((ey - reach) * dpr)),
+            Math.min(pw, Math.ceil((ex + reach) * dpr)),
+            Math.min(ph, Math.ceil((ey + reach) * dpr)),
+          ];
+          if (pointer.down || earthKey !== earth.key || now - earth.at > 50) {
             if (earth.canvas.width !== pw || earth.canvas.height !== ph) {
               earth.canvas.width = pw;
               earth.canvas.height = ph;
             }
             eg.setTransform(1, 0, 0, 1, 0, 0);
-            eg.clearRect(0, 0, pw, ph);
+            const [a0, b0, a1, b1] = earth.box;
+            eg.clearRect(a0, b0, a1 - a0, b1 - b0);
+            eg.clearRect(box[0], box[1], box[2] - box[0], box[3] - box[1]);
+            earth.box = box;
             eg.setTransform(dpr, 0, 0, dpr, 0, 0);
             drawBody(eg, "earth", {
               w,
@@ -901,10 +950,23 @@ export function UniverseCanvas({
             earth.key = earthKey;
             earth.at = now;
           }
-          g.save();
-          g.setTransform(1, 0, 0, 1, 0, 0);
-          g.drawImage(earth.canvas, 0, 0);
-          g.restore();
+          const [x0, y0, x1, y1] = earth.box;
+          if (x1 > x0 && y1 > y0) {
+            g.save();
+            g.setTransform(1, 0, 0, 1, 0, 0);
+            g.drawImage(
+              earth.canvas,
+              x0,
+              y0,
+              x1 - x0,
+              y1 - y0,
+              x0,
+              y0,
+              x1 - x0,
+              y1 - y0,
+            );
+            g.restore();
+          }
         }
       }
 
@@ -1058,6 +1120,7 @@ export function UniverseCanvas({
 
     return () => {
       cancelAnimationFrame(raf);
+      cancelBuild();
       ro.disconnect();
       mo.disconnect();
       cancelAnimationFrame(remeasure);

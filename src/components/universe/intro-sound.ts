@@ -19,6 +19,8 @@
  * scheduled at all, so no ticks can pile up and fire late.
  */
 
+import { whenIdle } from "./helpers";
+
 export type IntroSound = {
   /**
    * Schedule ticks at `times` (ms from `lead` ms from now), each placed at
@@ -54,18 +56,27 @@ export function createIntroSound(): IntroSound {
   const policy = (navigator as Navigator & Policy).getAutoplayPolicy?.("audiocontext");
   if (policy === "disallowed") return silent;
 
-  const ctx = new AudioContext();
-  ctx.resume().catch(() => {});
-  /* A gentle compressor keeps a quick run of ticks from ever clipping. */
-  const out = ctx.createGain();
-  out.gain.value = 0.5;
-  const limit = ctx.createDynamicsCompressor();
-  limit.threshold.value = -14;
-  limit.ratio.value = 4;
-  out.connect(limit).connect(ctx.destination);
+  /* Opening the audio device is slow (tens of ms): it waits for the first
+     quiet moment after the page has come up, which is long before the
+     text begins. */
+  let ctx: AudioContext | null = null;
+  let out: GainNode | null = null;
   let end = 0;
+  let closed = false;
+  const cancelOpen = whenIdle(() => {
+    if (closed) return;
+    ctx = new AudioContext();
+    ctx.resume().catch(() => {});
+    /* A gentle compressor keeps a quick run of ticks from ever clipping. */
+    out = ctx.createGain();
+    out.gain.value = 0.5;
+    const limit = ctx.createDynamicsCompressor();
+    limit.threshold.value = -14;
+    limit.ratio.value = 4;
+    out.connect(limit).connect(ctx.destination);
+  }, 400);
 
-  const tick = (at: number, pan: number) => {
+  const tick = (ctx: AudioContext, out: GainNode, at: number, pan: number) => {
     const place = ctx.createStereoPanner();
     place.pan.value = pan;
     place.connect(out);
@@ -94,18 +105,21 @@ export function createIntroSound(): IntroSound {
   };
 
   const play = (times: number[], pans: number[], lead: number) => {
-    if (ctx.state !== "running") return false;
+    const c = ctx;
+    const o = out;
+    if (!c || !o || c.state !== "running") return false;
     /* The screen shows a frame a little after it is drawn, and the speakers
        play a sample a little after it is scheduled; take the audio's own
        delay off so each tick lands with its glyph. */
-    const delay = ctx.outputLatency || ctx.baseLatency || 0;
-    const base = ctx.currentTime + Math.max(0, lead / 1000 - delay);
-    times.forEach((t, i) => tick(base + t / 1000, pans[i] ?? 0));
+    const delay = c.outputLatency || c.baseLatency || 0;
+    const base = c.currentTime + Math.max(0, lead / 1000 - delay);
+    times.forEach((t, i) => tick(c, o, base + t / 1000, pans[i] ?? 0));
     end = base + (times[times.length - 1] ?? 0) / 1000;
     return true;
   };
 
   const stop = () => {
+    if (!ctx || !out) return;
     const now = ctx.currentTime;
     out.gain.cancelScheduledValues(now);
     out.gain.setTargetAtTime(0, now, 0.008);
@@ -113,8 +127,12 @@ export function createIntroSound(): IntroSound {
   };
 
   const close = () => {
-    const wait = Math.max(0, end - ctx.currentTime) * 1000 + 200;
-    window.setTimeout(() => ctx.close().catch(() => {}), wait);
+    closed = true;
+    cancelOpen();
+    const c = ctx;
+    if (!c) return;
+    const wait = Math.max(0, end - c.currentTime) * 1000 + 200;
+    window.setTimeout(() => c.close().catch(() => {}), wait);
   };
 
   return { play, stop, close };

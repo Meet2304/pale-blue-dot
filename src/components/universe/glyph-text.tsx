@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { whenIdle } from "./helpers";
 import { GLYPHS } from "./intro-timeline";
 
 /* The resting glyphs, by how much of a cell the letter covers. */
@@ -199,15 +200,21 @@ export function GlyphText({
     });
 
     let live = true;
+    /* Once the type has loaded, and the page has a quiet moment: not in
+       the middle of a page arriving. */
+    let cancelIdle = () => {};
     void document.fonts.ready.then(() => {
       if (!live) return;
-      ro.observe(canvas);
-      io.observe(canvas);
+      cancelIdle = whenIdle(() => {
+        ro.observe(canvas);
+        io.observe(canvas);
+      }, 800);
     });
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerleave", leave);
     return () => {
       live = false;
+      cancelIdle();
       cancelAnimationFrame(raf);
       io.disconnect();
       ro.disconnect();

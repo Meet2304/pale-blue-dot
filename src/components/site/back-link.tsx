@@ -35,8 +35,17 @@ export function BackLink({ className }: { className?: string }) {
             return shown;
           };
           const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          if (document.startViewTransition && !calm) document.startViewTransition(back);
-          else void back();
+          if (!document.startViewTransition || calm) {
+            void back();
+            return;
+          }
+          /* Typed "back", for the same movement as any other step home
+             (globals.css); a browser without types crossfades. */
+          try {
+            document.startViewTransition({ update: back, types: ["back"] });
+          } catch {
+            document.startViewTransition(back);
+          }
         }}
       >
         <ArrowLeft size={14} aria-hidden />
