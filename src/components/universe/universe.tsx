@@ -174,7 +174,7 @@ export function Universe() {
             <Greeting ref={greetingRef} className={s.greeting} />
             <Headline ref={headlineRef} className={s.hero} />
             <p className={`${s.lede} ${s.reveal}`}>
-              I build AI products. MS in AI Engineering at Carnegie Mellon.
+              I build AI products. MS in AI and Tech Management at Carnegie Mellon.
             </p>
             <p className={`${s.hint} ${s.reveal}`}>Scroll to zoom out</p>
           </Chapter>
