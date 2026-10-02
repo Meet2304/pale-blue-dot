@@ -1161,32 +1161,35 @@
   filter: none;
 }
 
-.tryPill {
-  text-decoration: none;
-  position: absolute;
-  z-index: 1;
-  cursor: pointer;
-  top: 0.7rem;
-  right: 0.7rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid rgb(255 255 255 / 0.18);
-  border-radius: 999px;
-  background: rgb(0 0 0 / 0.72);
+/* The live site, in a new tab: a control at the end of the frame's bar,
+   plain on the bar like the address, and plainly there. */
+.openLive {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-right: -0.35rem;
+  border-radius: 4px;
   color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  text-decoration: none;
+  opacity: 0.85;
   transition:
-    background-color 200ms,
-    border-color 200ms;
+    opacity 200ms,
+    color 200ms,
+    background-color 200ms;
 }
 
-.tryPill:hover,
-.tryPill:focus-visible {
-  background: #000;
-  border-color: var(--kind);
+.openLive:hover,
+.openLive:focus-visible {
+  opacity: 1;
+  color: var(--kind-soft);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.openLive:focus-visible {
+  outline: 1px solid var(--kind-soft);
+  outline-offset: 2px;
 }
 
 .tryLive:focus-visible {

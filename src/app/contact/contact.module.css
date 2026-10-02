@@ -186,25 +186,35 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.6rem 1.8rem;
-  margin: 2.4rem 0 0;
+  gap: 0.6rem;
+  margin: 2.2rem 0 0;
   padding: 0;
   list-style: none;
   font-size: 0.9375rem;
 }
 
+/* Each way out on a dark pill of its own, so the air rising behind them
+   never takes the words. */
 .channels a {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  color: var(--soft);
+  gap: 0.55rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.62);
+  backdrop-filter: blur(6px);
+  color: var(--fg);
   text-decoration: none;
-  transition: color 200ms;
+  transition:
+    border-color 200ms,
+    background-color 200ms;
 }
 
 .channels a:hover,
 .channels a:focus-visible {
-  color: var(--fg);
+  border-color: var(--pale);
+  background: rgb(0 0 0 / 0.85);
 }
 
 /* A profile's mark, in the text's colour; LinkedIn's takes its blue under

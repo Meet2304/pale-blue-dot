@@ -368,10 +368,6 @@ export const COLLECTIONS: Collection[] = [
               src: "/work/serin/4-hire.webp",
               alt: "Hire the best candidate: every interview scored and summarised.",
             },
-            {
-              src: "/work/serin/5-end.webp",
-              alt: "The end of the page, with the Serin wordmark.",
-            },
           ],
         },
       },
