@@ -15,10 +15,8 @@ import { routes } from "@/lib/routes";
 
 import { FIRST } from "./chapters";
 import { KINDS, KIND_ORDER, kindColors } from "./encoding";
-import { fit } from "./helpers";
+import { KindThumb } from "./kind-art-lazy";
 import { Logo } from "./logo";
-import { PORTRAITS, type PortraitId } from "./portraits";
-import { drawBody, makeFrame } from "./render";
 import s from "./universe.module.css";
 
 /**
@@ -155,7 +153,7 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
                         aria-expanded={expanded}
                         onClick={() => setKind(expanded ? null : k)}
                       >
-                        <Thumb kind={k} live={open} />
+                        <KindThumb kind={k} live={open} />
                         <span className={s.drawerKindText}>
                           <span className={s.drawerKindName}>{KINDS[k].label}</span>
                           <span className={s.drawerKindBody}>
@@ -224,61 +222,4 @@ export function Drawer({ goTo }: { goTo: (chapter: number) => void }) {
         )}
     </>
   );
-}
-
-/* A kind's body, small and live: the same portrait the bar's panels draw,
-   turning slowly while the drawer is open. */
-function Thumb({ kind, live }: { kind: Kind; live: boolean }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = ref.current;
-    const g = canvas?.getContext("2d");
-    if (!canvas || !g || !live) return;
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const body = KINDS[kind].body as PortraitId;
-    const portrait = PORTRAITS[body];
-    const colors = kindColors(kind);
-    const mono =
-      getComputedStyle(canvas).getPropertyValue("--font-mono").trim() || "monospace";
-    const { w, h, dpr } = fit(canvas, 2);
-    const [rx, ry] = portrait.reach;
-    const R = Math.min(w / 2 / rx, h / 2 / ry) * 0.92;
-    const cw = portrait.cell ? Math.max(2.4, portrait.cell * 0.6) : 2.2;
-    const ch = cw * 1.72;
-    let raf = 0;
-    let last = 0;
-    const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
-      /* A dozen frames a second is plenty for a body this small. */
-      if (now - last < 80) return;
-      last = now;
-      const t = calm ? 0 : now / 1000;
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      g.clearRect(0, 0, w, h);
-      const light = { cx: w / 2, cy: h / 2, R, colors, alpha: 1, t, calm };
-      portrait.under?.(g, light);
-      drawBody(g, body, {
-        w,
-        h,
-        cx: w / 2,
-        cy: h / 2,
-        R,
-        cw,
-        ch,
-        frame: makeFrame(t, t * 0.3, 0.35, null, cw / R, ch / R, 0.4, calm),
-        colors,
-        alpha: 1,
-        font: `${ch * 0.92}px ${mono}`,
-        fn: portrait.fn,
-        extent: portrait.extent,
-        light: portrait.mapLight ?? false,
-      });
-      portrait.over?.(g, light);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [kind, live]);
-
-  return <canvas ref={ref} className={s.thumb} aria-hidden />;
 }

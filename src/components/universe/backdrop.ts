@@ -33,6 +33,8 @@ export type Backdrop = {
   stars: Star[];
   /** A patch of noise for the nebulosity, read with mirrored edges. */
   dust: Float32Array;
+  /** Its rows worked out so far (buildBackdrop). */
+  dustRows: number;
   shot: Shot | null;
   nextShot: number;
   rnd: () => number;
@@ -54,10 +56,20 @@ export function createBackdrop(): Backdrop {
     warm: rnd() < 0.14,
   }));
   const dust = new Float32Array(DUST * DUST);
-  for (let y = 0; y < DUST; y++)
+  return { stars, dust, dustRows: 0, shot: null, nextShot: 0, rnd };
+}
+
+/** Work out the dust a few rows at a time, for up to `budget` ms; true
+    once it is all there. */
+export function buildBackdrop(bd: Backdrop, budget: number) {
+  const start = performance.now();
+  while (bd.dustRows < DUST) {
+    const y = bd.dustRows++;
     for (let x = 0; x < DUST; x++)
-      dust[y * DUST + x] = fbm3(x * 0.056, y * 0.056, 2.2, 3);
-  return { stars, dust, shot: null, nextShot: 0, rnd };
+      bd.dust[y * DUST + x] = fbm3(x * 0.056, y * 0.056, 2.2, 3);
+    if (performance.now() - start > budget) break;
+  }
+  return bd.dustRows >= DUST;
 }
 
 /* A body the backdrop answers to: where it is, how big, how lit, and, for
@@ -179,7 +191,7 @@ export function drawDust(
   colors: string[],
   o: Opts,
 ) {
-  if (o.alpha < 0.02) return;
+  if (o.alpha < 0.02 || bd.dustRows < DUST) return;
   const cw = o.narrow ? 9 : 10;
   const ch = o.narrow ? 15 : 17;
   const cols = Math.ceil(o.w / cw);

@@ -16,6 +16,22 @@ export function mulberry32(seed: number) {
   };
 }
 
+/**
+ * Run `fn` once the main thread has a quiet moment (or after `timeout` ms
+ * at the latest), with how long it may take; where the browser can't say
+ * when it is idle (Safari), after a short wait. Returns a cancel.
+ */
+export function whenIdle(fn: (budget: number) => void, timeout = 1000) {
+  const idle = window.requestIdleCallback as
+    typeof window.requestIdleCallback | undefined;
+  if (!idle) {
+    const id = window.setTimeout(() => fn(8), Math.min(timeout, 200));
+    return () => window.clearTimeout(id);
+  }
+  const id = idle((d) => fn(Math.max(1, d.timeRemaining())), { timeout });
+  return () => window.cancelIdleCallback(id);
+}
+
 /** Size a canvas to its box at a capped device pixel ratio. */
 export function fit(canvas: HTMLCanvasElement, maxDpr = 2) {
   const box = canvas.getBoundingClientRect();

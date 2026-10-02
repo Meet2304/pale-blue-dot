@@ -19,7 +19,7 @@ const fade = (t: number) => t * t * (3 - 2 * t);
 const val = (x: number, y: number, z: number) =>
   PERM[(PERM[(PERM[x & 255] + y) & 511] + z) & 511] / 255;
 
-export function noise3(x: number, y: number, z: number) {
+function noise3(x: number, y: number, z: number) {
   const xi = Math.floor(x);
   const yi = Math.floor(y);
   const zi = Math.floor(z);

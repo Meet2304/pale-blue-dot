@@ -97,7 +97,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "Pursuing a Master of Science in Artificial Intelligence Engineering – Engineering and Technology Innovation Management, as a J N Tata Scholar.",
         kind: "education",
-        when: "2026 to 2027",
+        when: "Aug 2026 to Dec 2027",
         impact: 3,
         line: "Master of Science in Artificial Intelligence Engineering – Engineering and Technology Innovation Management.",
         owned: "J N Tata Scholar.",
@@ -117,7 +117,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "Finding new markets for Bosch's low-voltage actuators, in a team of six: market research, customer discovery and strategic fit.",
         kind: "experience",
-        when: "Aug to Dec 2026",
+        when: "Aug 2026 to Dec 2026",
         impact: 2,
         line: "New segments for Bosch Mobility's low-voltage actuators.",
         owned:
@@ -139,7 +139,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "An open-source Windows app I designed and built end to end: lyrics that float over your work, in time with whatever is playing.",
         kind: "projects",
-        when: "2026",
+        when: "Apr 2026 to present",
         impact: 2.8,
         line: "Lyrics that float over your work, synced to whatever is playing.",
         owned:
@@ -189,7 +189,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "Aim: help catch the earliest cell changes in cervical cancer, with a model that shows why it decided, running in the browser.",
         kind: "research",
-        when: "2025 to 2026",
+        when: "Jul 2025 to May 2026",
         impact: 3,
         line: "Catch the earliest cell changes in cervical cancer, and show why the model decided.",
         owned:
@@ -230,7 +230,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "Aim: stop harmful prompts before they reach a language model, and explain which patterns made them look risky.",
         kind: "research",
-        when: "2025",
+        when: "Jul 2025 to Oct 2025",
         impact: 2.3,
         line: "Stop harmful prompts before they reach a language model, and say why.",
         owned: "A Markov-chain detector and a module that explains high-risk patterns.",
@@ -248,7 +248,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "A smart shoe for everyday health: a wearable that tracks heart rate and gait, and a model that forecasts both ahead of time.",
         kind: "projects",
-        when: "2025",
+        when: "Jul 2025 to Nov 2025",
         impact: 2.4,
         line: "A shoe that tracks heart rate and gait, and forecasts both.",
         owned:
@@ -299,7 +299,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "Grew from RLHF contributor to team lead to leading product development; led the build of Serin, an AI interview and hiring platform.",
         kind: "experience",
-        when: "2024 to 2026",
+        when: "Aug 2024 to Jun 2026",
         impact: 3,
         line: "RLHF contributor, then team lead, then lead of product development.",
         owned:
@@ -340,7 +340,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "An AI interview platform for hiring teams. At Blink Analytics I led its development and directed the intern team that built it: live voice interviews, scored against the role.",
         kind: "experience",
-        when: "2025 to 2026",
+        when: "2025 to Jun 2026",
         impact: 3,
         line: "An AI interview platform: live voice interviews, scored against the role, checked for cheating.",
         owned: "Led development; directed the intern team.",
@@ -377,7 +377,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "A drone that flies on a flight controller I designed and built myself: custom PCB, Teensy 4.0, sensor fusion in C.",
         kind: "projects",
-        when: "2024 to 2026",
+        when: "Jul 2024 to Jun 2026",
         impact: 2,
         line: "A drone that flies on a flight controller I built.",
         owned: "Teensy 4.0 controller, custom PCB, sensor fusion in C.",
@@ -398,7 +398,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "B.Tech in Computer Engineering with a minor in IoT, graduating with a 9.55 out of 10 GPA.",
         kind: "education",
-        when: "2022 to 2026",
+        when: "Sep 2022 to Jun 2026",
         impact: 2.4,
         line: "B.Tech in Computer Engineering, minor in IoT.",
         owned: "GPA 9.55 out of 10.",
@@ -410,7 +410,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "The university's quizzing club: rose from member to head of design to president, leading a 30-member team and its flagship event.",
         kind: "leadership",
-        when: "2022 to 2026",
+        when: "Nov 2022 to Apr 2026",
         impact: 2.6,
         line: "The university's quizzing club: member, head of design, president, advisor.",
         owned: "Led a 30-member team.",
@@ -472,7 +472,7 @@ export const COLLECTIONS: Collection[] = [
         brief:
           "Founded the club and served as its charter president, leading 32 teenagers in service projects with nonprofits.",
         kind: "leadership",
-        when: "2021 to 2022",
+        when: "Jul 2021 to Jun 2022",
         impact: 2.1,
         line: "Founded it, and served as its charter president.",
         owned: "Led 32 teenagers in service projects with nonprofits.",

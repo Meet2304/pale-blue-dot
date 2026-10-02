@@ -1,0 +1,49 @@
+/* The 404 (not-found.tsx), in the Terminal system's type and colours. */
+.root {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  min-height: 80svh;
+  padding: 6rem 6vw 4rem;
+  background: #000;
+  color: #e7eaef;
+  font-family: var(--plex-sans), sans-serif;
+  text-align: center;
+}
+
+.kicker {
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  color: #6a717d;
+}
+
+.title {
+  margin-top: 0.5rem;
+  font-family: var(--plex-sans), sans-serif;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  letter-spacing: -0.035em;
+  color: inherit;
+}
+
+.lede {
+  margin-top: 0.8rem;
+  color: #a3a9b4;
+}
+
+.home {
+  margin-top: 2rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  color: inherit;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  transition: border-color 200ms;
+}
+
+.home:hover,
+.home:focus-visible {
+  border-color: #92cbfb;
+  color: inherit;
+}

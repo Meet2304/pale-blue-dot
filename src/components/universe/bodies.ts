@@ -310,7 +310,7 @@ const nebula: BodyFn = (nx, ny, id, f, o) => {
  * crossing in front. The side of the disk turning toward us is brighter.
  * The renderer paints a warm glow underneath and blacks out the shadow.
  */
-export const RS = 0.3;
+const RS = 0.3;
 const TILT = 0.1;
 
 const blackhole: BodyFn = (nx, ny, id, f, o) => {
