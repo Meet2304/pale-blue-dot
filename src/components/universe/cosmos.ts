@@ -743,7 +743,7 @@ export type Stir = {
   settled: boolean;
 };
 
-export const createStir = (): Stir => ({
+const createStir = (): Stir => ({
   x: 0,
   y: 0,
   on: 0,

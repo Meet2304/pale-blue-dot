@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { plexVariables } from "@/app/fonts";
-import { StarField } from "@/components/horizon/star-field";
+import { StarField } from "@/components/site/star-field";
 import { BackLink } from "@/components/site/back-link";
 import { PageTransition } from "@/components/site/page-transition";
 import { CopyEmail } from "@/components/universe/copy-email";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Mrs_Saint_Delafield } from "next/font/google";
 
 import { plexVariables } from "@/app/fonts";
-import { StarField } from "@/components/horizon/star-field";
+import { StarField } from "@/components/site/star-field";
 import { BackLink } from "@/components/site/back-link";
 import { PageTransition } from "@/components/site/page-transition";
 import { TheNote } from "@/components/site/the-note";
