@@ -225,6 +225,13 @@ export function Intro({
     let raf = 0;
     let t0 = 0;
     let phase: "wait" | "speak" | "hold" | "fly" = "wait";
+    /* The run of ticks, and where each sits, once the opening begins. */
+    const ticks = calm ? OPENING.calmTicks : OPENING.ticks;
+    let tickAt: number[] = [];
+    /* Whether a press has already been spent turning the sound on, and
+       whether the ticks are on the audio clock. */
+    let woke = false;
+    let ticking = false;
 
     /* Start at the top: the greeting lands in the hero. */
     window.scrollTo(0, 0);
@@ -366,18 +373,54 @@ export function Intro({
       raf = requestAnimationFrame(step);
     };
 
-    /* Any key, click, tap or scroll skips ahead to the landing, and the
-       page holds still until the line has landed. (Hiding the overflow
+    /* A first click, tap or key while the browser is keeping the opening
+       silent turns its sound on instead of skipping: that press is the
+       permission the browser waits for, and the ticks still to come are
+       scheduled from where the text has got to. Any other press, or a
+       scroll, skips ahead to the landing, and the page holds still until
+       the line has landed. (Hiding the overflow
        instead would take the scrollbar away and bring it back, shifting the
        hero sideways under the line as it lands.) */
+    const wake = () => {
+      woke = true;
+      void sound.unlock().then((on) => {
+        if (!on || ticking || cancelled || phase !== "speak") return;
+        ticking = true;
+        /* Only what is still to come, from now. */
+        const now = performance.now() - t0;
+        const rest = ticks.flatMap((at, i) => (at > now + 10 ? [i] : []));
+        sound.play(
+          rest.map((i) => ticks[i] - now),
+          rest.map((i) => tickAt[i] ?? 0),
+          0,
+        );
+      });
+    };
+    const press = () => {
+      if (!woke && !sound.running() && (phase === "wait" || phase === "speak")) wake();
+      else fly();
+    };
     const skip = (e: Event) => {
       if (e.cancelable) e.preventDefault();
       e.stopImmediatePropagation();
       fly();
     };
+    /* A mouse press counts at once; a tap only once the finger lifts, which
+       is when a phone lets a page make sound. */
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.pointerType === "mouse") press();
+    };
+    const onPress = (e: Event) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopImmediatePropagation();
+      press();
+    };
     const opts = { capture: true, passive: false } as const;
-    window.addEventListener("keydown", skip, opts);
-    window.addEventListener("pointerdown", skip, opts);
+    window.addEventListener("keydown", onPress, opts);
+    window.addEventListener("pointerdown", onPointerDown, opts);
+    window.addEventListener("touchend", onPress, opts);
     window.addEventListener("wheel", skip, opts);
     window.addEventListener("touchmove", skip, opts);
 
@@ -392,8 +435,8 @@ export function Intro({
         phase = "speak";
         /* The whole run of ticks goes onto the audio clock now; the glyphs
            start on the same beat. */
-        const ticks = calm ? OPENING.calmTicks : OPENING.ticks;
-        sound.play(ticks, tickPans(OPENING, ticks, pans, calm), LEAD);
+        tickAt = tickPans(OPENING, ticks, pans, calm);
+        ticking = sound.play(ticks, tickAt, LEAD);
         t0 = performance.now() + LEAD;
         raf = requestAnimationFrame(speak);
       });
@@ -404,8 +447,9 @@ export function Intro({
       cancelAnimationFrame(raf);
       timers.forEach(clearTimeout);
       sound.close();
-      window.removeEventListener("keydown", skip, opts);
-      window.removeEventListener("pointerdown", skip, opts);
+      window.removeEventListener("keydown", onPress, opts);
+      window.removeEventListener("pointerdown", onPointerDown, opts);
+      window.removeEventListener("touchend", onPress, opts);
       window.removeEventListener("wheel", skip, opts);
       window.removeEventListener("touchmove", skip, opts);
     };

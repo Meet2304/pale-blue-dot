@@ -14,9 +14,10 @@
  * rhythm is then identical on every visit, however the frames fall.
  *
  * Browsers only let a page make sound after the visitor has interacted with
- * it, so on most first visits this stays silent and the opening plays as
- * before. If the audio isn't running when the text begins, nothing is
- * scheduled at all, so no ticks can pile up and fire late.
+ * it, so on most first visits the opening begins silent. If the audio isn't
+ * running when the text begins, nothing is scheduled at all, so no ticks can
+ * pile up and fire late; a first click or key during the opening calls
+ * `unlock`, and the ticks still to come are scheduled then.
  */
 
 import { getMuted } from "@/lib/sound-pref";
@@ -33,9 +34,22 @@ export type IntroSound = {
   stop: () => void;
   /** Release the audio device once the last tick has rung out. */
   close: () => void;
+  /** Whether sound is coming out: the browser has let the device start. */
+  running: () => boolean;
+  /**
+   * Start the device. Call it inside a click or key handler: that gesture
+   * is what lets the browser play sound. Resolves to whether it runs.
+   */
+  unlock: () => Promise<boolean>;
 };
 
-const silent: IntroSound = { play: () => false, stop() {}, close() {} };
+const silent: IntroSound = {
+  play: () => false,
+  stop() {},
+  close() {},
+  running: () => false,
+  unlock: () => Promise.resolve(false),
+};
 
 type Policy = { getAutoplayPolicy?: (type: "audiocontext") => string };
 
@@ -85,20 +99,12 @@ export function createIntroSound(): IntroSound {
     return silent;
   }
 
-  /* Where the browser can say in advance that sound is blocked (Firefox),
-     don't open the audio device at all. */
-  const policy = (navigator as Navigator & Policy).getAutoplayPolicy?.("audiocontext");
-  if (policy === "disallowed") return silent;
-
-  /* Opening the audio device is slow (tens of ms): it waits for the first
-     quiet moment after the page has come up, which is long before the
-     text begins. */
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
   let end = 0;
   let closed = false;
-  const cancelOpen = whenIdle(() => {
-    if (closed) return;
+  const open = () => {
+    if (closed || ctx) return;
     ctx = new AudioContext();
     ctx.resume().catch(() => {});
     /* A gentle compressor keeps a quick run of ticks from ever clipping. */
@@ -108,7 +114,29 @@ export function createIntroSound(): IntroSound {
     limit.threshold.value = -14;
     limit.ratio.value = 4;
     out.connect(limit).connect(ctx.destination);
-  }, 400);
+  };
+  /* Opening the audio device is slow (tens of ms): it waits for the first
+     quiet moment after the page has come up, which is long before the
+     text begins. Where the browser can say in advance that sound is blocked
+     (Firefox), it waits for `unlock` instead. */
+  const policy = (navigator as Navigator & Policy).getAutoplayPolicy?.("audiocontext");
+  const cancelOpen = policy === "disallowed" ? () => {} : whenIdle(open, 400);
+
+  const running = () => (ctx as AudioContext | null)?.state === "running";
+
+  const unlock = async () => {
+    open();
+    const c = ctx as AudioContext | null;
+    if (!c) return false;
+    if (c.state !== "running") {
+      /* Never wait long: the opening goes on with or without sound. */
+      await Promise.race([
+        c.resume().catch(() => {}),
+        new Promise<void>((r) => setTimeout(r, 300)),
+      ]);
+    }
+    return c.state === "running";
+  };
 
   const play = (times: number[], pans: number[], lead: number) => {
     const c = ctx;
@@ -141,7 +169,7 @@ export function createIntroSound(): IntroSound {
     window.setTimeout(() => c.close().catch(() => {}), wait);
   };
 
-  return { play, stop, close };
+  return { play, stop, close, running, unlock };
 }
 
 /**
