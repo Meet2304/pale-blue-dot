@@ -82,6 +82,12 @@ const BEHIND: Partial<Record<string, [number, number]>> = {
    alone, so it holds its own next to the picture. */
 const BESIDE = 1.3;
 
+/* Earth's own slow turn (rad/s); the most a flick sends it spinning at,
+   and how quickly (s) a glide eases back to that turn. */
+const IDLE_SPIN = 0.12;
+const MAX_FLICK = 3;
+const GLIDE_S = 0.45;
+
 /* How much closer than the deep sky the pale blue dot is framed: close
    enough that the sky is a soft glow around it, not yet the whole view. */
 const DOT = 2.6;
@@ -203,8 +209,13 @@ export function UniverseCanvas({
     }));
 
     let yaw = 0;
-    let yawVel = 0.12;
+    let yawVel = IDLE_SPIN;
     let tilt = TILT;
+    /* A drag turns Earth with the pointer, the point held staying under it;
+       let go, it glides on at the drag's last speed (capped) and eases back
+       to its own slow turn within a second, rather than spinning on. */
+    let flick = 0;
+    let movedAt = 0;
     const pointer = {
       x: -1e4,
       y: -1e4,
@@ -505,8 +516,10 @@ export function UniverseCanvas({
       const voidA = clamp01(-out / Math.log(6));
       const workA = s <= SKY ? 0 : smooth(clamp01((out - Math.log(2.5)) / Math.log(4)));
 
-      if (!pointer.down && !calm) yawVel += (0.12 - yawVel) * 0.02;
-      yaw += calm ? 0 : yawVel * dt;
+      if (!pointer.down && !calm) {
+        yawVel += (IDLE_SPIN - yawVel) * (1 - Math.exp(-dt / GLIDE_S));
+        yaw += yawVel * dt;
+      }
 
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.globalAlpha = 1;
@@ -1079,8 +1092,17 @@ export function UniverseCanvas({
       const x = e.clientX - box.left;
       const y = e.clientY - box.top;
       if (pointer.down) {
-        yawVel = (x - pointer.lastX) * 0.9;
-        tilt = Math.max(-0.2, Math.min(0.9, tilt + (y - pointer.lastY) * 0.004));
+        /* Turning by the pointer's travel over Earth's radius, against
+           the sense of yaw (which carries the surface the other way), keeps
+           the point held under the pointer. */
+        const reach = Math.max(60, camNow.z);
+        const turn = -(x - pointer.lastX) / reach;
+        yaw += turn;
+        const ms = Math.max(8, e.timeStamp - movedAt);
+        movedAt = e.timeStamp;
+        const speed = Math.max(-MAX_FLICK, Math.min(MAX_FLICK, turn / (ms / 1000)));
+        flick = flick * 0.6 + speed * 0.4;
+        tilt = Math.max(-0.2, Math.min(0.9, tilt - (y - pointer.lastY) / reach));
         pointer.moved += Math.abs(x - pointer.lastX) + Math.abs(y - pointer.lastY);
       }
       pointer.lastX = x;
@@ -1094,13 +1116,17 @@ export function UniverseCanvas({
       pointer.lastX = e.clientX - box.left;
       pointer.lastY = e.clientY - box.top;
       pointer.moved = 0;
-      /* Dragging spins the Earth only while it is big enough to hold. */
+      flick = 0;
+      movedAt = e.timeStamp;
+      /* Dragging turns the Earth only while it is big enough to hold. */
       pointer.down =
         camNow.z > 60 &&
         Math.hypot(pointer.lastX - camNow.ax * w, pointer.lastY - camNow.ay * h) <
           camNow.z * 1.3;
     };
-    const onUp = () => {
+    const onUp = (e: PointerEvent) => {
+      /* Held still before letting go, it doesn't glide at all. */
+      if (pointer.down) yawVel = e.timeStamp - movedAt > 90 ? 0 : flick;
       pointer.down = false;
     };
     const onClick = () => {

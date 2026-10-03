@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 /**
  * The contact page: a horizon. The rim of a world rises at the foot of the
  * screen, lit from behind, its air drawn in the terminal's characters and
- * alive (horizon-glyphs.tsx), under a twinkling sky; above it, "Say hello.",
+ * alive (horizon-glyphs.tsx), under a twinkling sky; above it, "Say hello!",
  * the address with a way to copy it, and where else Meet is. The world's
  * dark runs on, without an edge, into the foot of the page. Arriving, the
  * world rises into place; leaving, it sets below the screen.
@@ -50,18 +50,13 @@ export default function ContactPage() {
           </header>
 
           <section className={s.center}>
-            <p className={s.kicker}>Contact</p>
-            <h1 className={s.title}>Say hello.</h1>
+            <h1 className={s.title}>Say hello!</h1>
             <p className={s.lede}>
               Questions, ideas, or work you think I&apos;d care about: write to me. I
               read everything.
             </p>
             <div className={s.mail}>
-              <CopyEmail
-                email={CONTACT.email}
-                className={s.address}
-                buttonClassName={s.copy}
-              />
+              <CopyEmail email={CONTACT.email} className={s.address} />
             </div>
             <ul className={s.channels}>
               {SOCIAL_LINKS.map((l) => (

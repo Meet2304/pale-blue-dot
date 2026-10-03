@@ -3,7 +3,6 @@
 .root {
   --fg: #e7eaef;
   --soft: #a3a9b4;
-  --mute: #6a717d;
   --hair: rgb(255 255 255 / 0.09);
   --pale: #92cbfb;
 
@@ -116,15 +115,8 @@
   text-align: center;
 }
 
-.kicker {
-  margin: 0;
-  font-family: var(--plex-mono), monospace;
-  font-size: 0.75rem;
-  color: var(--mute);
-}
-
 .title {
-  margin: 0.5rem 0 0;
+  margin: 0;
   font-family: var(--font-marcellus), serif;
   font-weight: 400;
   font-size: clamp(3.4rem, 9vw, 8.5rem);
@@ -150,37 +142,11 @@
   margin-top: 2rem;
 }
 
+/* The address and its copy icon, as one line (copy-email.tsx). */
 .address {
   font-size: clamp(1.15rem, 2.4vw, 1.6rem);
   font-weight: 300;
   color: var(--fg);
-  text-decoration: underline;
-  text-decoration-color: rgb(146 203 251 / 0.5);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.3em;
-  word-break: break-all;
-  transition: text-decoration-color 200ms;
-}
-
-.address:hover {
-  text-decoration-color: var(--pale);
-}
-
-.copy {
-  padding: 0.35rem 0.8rem;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  border-radius: 999px;
-  background: none;
-  color: var(--fg);
-  font-family: var(--plex-mono), monospace;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: border-color 200ms;
-}
-
-.copy:hover,
-.copy:focus-visible {
-  border-color: var(--pale);
 }
 
 .channels {

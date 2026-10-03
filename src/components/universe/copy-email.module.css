@@ -1,0 +1,111 @@
+/* The address and its copy icon as one line (copy-email.tsx): no box round
+   either, one hairline under both. Copying fills the hairline from the left
+   in the result's colour as the icon morphs; it drains back as the icon
+   returns. */
+.unit {
+  --line: rgb(146 203 251 / 0.5);
+  --tone: #4ade80;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  max-width: 100%;
+  padding-bottom: 0.3em;
+}
+
+/* The hairline, and its fill over it. */
+.unit::before,
+.unit::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  pointer-events: none;
+}
+
+.unit::before {
+  background: var(--line);
+  transition: background-color 200ms;
+}
+
+.unit::after {
+  background: var(--tone);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 450ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unit:has(a:hover, button:hover) {
+  --line: rgb(146 203 251 / 0.9);
+}
+
+.unit:is([data-state="done"], [data-state="failed"])::after {
+  transform: scaleX(1);
+  transform-origin: left;
+  transition-duration: 550ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.unit[data-state="failed"] {
+  --tone: #f87171;
+}
+
+.address {
+  min-width: 0;
+  border-bottom: 0;
+  color: inherit;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.address:hover {
+  color: inherit;
+}
+
+/* The icon, standing at the end of the line like its last character. */
+.copy {
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0.15em;
+  margin: -0.15em;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: rgb(231 234 239 / 0.6);
+  cursor: pointer;
+  transition: color 300ms;
+}
+
+.copy:hover {
+  color: rgb(231 234 239);
+}
+
+.copy:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
+.unit[data-state="done"] .copy {
+  color: #4ade80;
+}
+
+.unit[data-state="failed"] .copy {
+  color: #f87171;
+}
+
+/* The result, said aloud and not shown. */
+.said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unit::after {
+    transition: none;
+  }
+}
