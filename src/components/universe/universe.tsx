@@ -18,6 +18,7 @@ import {
   type Unit,
 } from "@/content/work";
 import { routes } from "@/lib/routes";
+import { markIntroOver } from "@/lib/sound-pref";
 import { takeChapter } from "@/lib/visit";
 
 import { KINDS } from "./encoding";
@@ -87,6 +88,7 @@ export function Universe() {
   }, []);
   const onIntroDone = useCallback(() => {
     introPlayed = true;
+    markIntroOver();
     setIntro("done");
   }, []);
   const sectionRef = useRef<HTMLElement>(null);
