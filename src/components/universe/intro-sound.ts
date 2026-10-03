@@ -46,6 +46,34 @@ const TICK_SHAPE = Float32Array.from({ length: 48 }, (_, i) => {
   return 0.6 * Math.sin(Math.PI * x) ** 2 * (1 - 0.35 * x);
 });
 
+const tick = (ctx: AudioContext, out: GainNode, at: number, pan: number) => {
+  const place = ctx.createStereoPanner();
+  place.pan.value = pan;
+  place.connect(out);
+
+  /* The tick itself. */
+  const tone = ctx.createOscillator();
+  const toneEnv = ctx.createGain();
+  tone.frequency.value = 1300;
+  toneEnv.gain.value = 0;
+  toneEnv.gain.setValueCurveAtTime(TICK_SHAPE, at, TICK_MS / 1000);
+  tone.connect(toneEnv).connect(place);
+  tone.start(at);
+  tone.stop(at + TICK_MS / 1000 + 0.005);
+
+  /* The body under it: a faint low ring that lingers a little. */
+  const body = ctx.createOscillator();
+  const bodyEnv = ctx.createGain();
+  body.frequency.value = 190;
+  bodyEnv.gain.setValueAtTime(0, at + 0.002);
+  bodyEnv.gain.linearRampToValueAtTime(0.08, at + 0.004);
+  bodyEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.026);
+  body.connect(bodyEnv).connect(place);
+  body.start(at);
+  body.stop(at + 0.03);
+  body.onended = () => place.disconnect();
+};
+
 export function createIntroSound(): IntroSound {
   if (typeof window === "undefined" || typeof AudioContext === "undefined") {
     return silent;
@@ -75,34 +103,6 @@ export function createIntroSound(): IntroSound {
     limit.ratio.value = 4;
     out.connect(limit).connect(ctx.destination);
   }, 400);
-
-  const tick = (ctx: AudioContext, out: GainNode, at: number, pan: number) => {
-    const place = ctx.createStereoPanner();
-    place.pan.value = pan;
-    place.connect(out);
-
-    /* The tick itself. */
-    const tone = ctx.createOscillator();
-    const toneEnv = ctx.createGain();
-    tone.frequency.value = 1300;
-    toneEnv.gain.value = 0;
-    toneEnv.gain.setValueCurveAtTime(TICK_SHAPE, at, TICK_MS / 1000);
-    tone.connect(toneEnv).connect(place);
-    tone.start(at);
-    tone.stop(at + TICK_MS / 1000 + 0.005);
-
-    /* The body under it: a faint low ring that lingers a little. */
-    const body = ctx.createOscillator();
-    const bodyEnv = ctx.createGain();
-    body.frequency.value = 190;
-    bodyEnv.gain.setValueAtTime(0, at + 0.002);
-    bodyEnv.gain.linearRampToValueAtTime(0.08, at + 0.004);
-    bodyEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.026);
-    body.connect(bodyEnv).connect(place);
-    body.start(at);
-    body.stop(at + 0.03);
-    body.onended = () => place.disconnect();
-  };
 
   const play = (times: number[], pans: number[], lead: number) => {
     const c = ctx;
@@ -136,4 +136,28 @@ export function createIntroSound(): IntroSound {
   };
 
   return { play, stop, close };
+}
+
+/**
+ * The same tick for a click: one, played the moment it is asked for, at a
+ * lower level than the opening's so it stays in the background. The audio
+ * device opens on the first click (a gesture, so the browser allows it) and
+ * stays open for the rest of the visit.
+ */
+export function createClickSound(): { ping: () => void } {
+  let ctx: AudioContext | null = null;
+  let out: GainNode | null = null;
+  return {
+    ping() {
+      if (typeof AudioContext === "undefined") return;
+      if (!ctx) {
+        ctx = new AudioContext();
+        out = ctx.createGain();
+        out.gain.value = 0.35;
+        out.connect(ctx.destination);
+      }
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      if (out) tick(ctx, out, ctx.currentTime + 0.005, 0);
+    },
+  };
 }
