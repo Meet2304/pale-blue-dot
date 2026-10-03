@@ -19,6 +19,8 @@
  * scheduled at all, so no ticks can pile up and fire late.
  */
 
+import { getMuted } from "@/lib/sound-pref";
+
 import { whenIdle } from "./helpers";
 
 export type IntroSound = {
@@ -75,7 +77,11 @@ const tick = (ctx: AudioContext, out: GainNode, at: number, pan: number) => {
 };
 
 export function createIntroSound(): IntroSound {
-  if (typeof window === "undefined" || typeof AudioContext === "undefined") {
+  if (
+    typeof window === "undefined" ||
+    typeof AudioContext === "undefined" ||
+    getMuted()
+  ) {
     return silent;
   }
 
@@ -139,8 +145,8 @@ export function createIntroSound(): IntroSound {
 }
 
 /**
- * The same tick for a click: one, played the moment it is asked for, at a
- * lower level than the opening's so it stays in the background. The audio
+ * The same tick for a click: one, played the moment it is asked for, a little
+ * lower than the opening's so it stays in the background. The audio
  * device opens on the first click (a gesture, so the browser allows it) and
  * stays open for the rest of the visit.
  */
@@ -153,7 +159,7 @@ export function createClickSound(): { ping: () => void } {
       if (!ctx) {
         ctx = new AudioContext();
         out = ctx.createGain();
-        out.gain.value = 0.35;
+        out.gain.value = 0.7;
         out.connect(ctx.destination);
       }
       if (ctx.state === "suspended") ctx.resume().catch(() => {});

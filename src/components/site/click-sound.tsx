@@ -12,13 +12,20 @@ import { getMuted } from "@/lib/sound-pref";
 export function ClickSound() {
   useEffect(() => {
     const sound = createClickSound();
-    const onClick = (e: MouseEvent) => {
+    /* On the press itself, so it lands with the finger; a key press
+       (which has no pointer) sounds on the click it makes. */
+    const onPress = (e: Event) => {
       if (getMuted() || !(e.target instanceof Element)) return;
+      if (e.type === "click" && (e as MouseEvent).detail !== 0) return;
       const hit = e.target.closest("a[href], button, [role='button']");
       if (hit && !hit.matches(":disabled")) sound.ping();
     };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    document.addEventListener("pointerdown", onPress, true);
+    document.addEventListener("click", onPress, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPress, true);
+      document.removeEventListener("click", onPress, true);
+    };
   }, []);
   return null;
 }

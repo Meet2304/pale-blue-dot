@@ -7,30 +7,29 @@ import { getMuted, setMuted, subscribeMuted } from "@/lib/sound-pref";
 import s from "./universe.module.css";
 
 /**
- * The hero's music, and the switch that silences it.
+ * The site's music, and the switch that silences it.
  *
- * It plays once the opening is over and only while the hero is on screen:
- * scrolling on fades it out, scrolling back fades it in again. Browsers
- * refuse sound before the visitor has touched the page, so when the first
- * attempt is blocked it waits for the first tap, click or key and starts
- * then (if the hero is still showing).
+ * It starts once the opening is over and plays on for the rest of the visit.
+ * Browsers refuse sound before the visitor has touched the page, so when the
+ * first attempt is blocked it waits for the first tap, click or key and
+ * starts then.
  *
  * The switch sits in the bottom-left corner, and what it was set to is
- * remembered for the next visit (sound-pref.ts). It silences the clicks too.
+ * remembered for the next visit (sound-pref.ts). It silences every sound: the music, the clicks and the opening's ticks.
  */
 
-const SRC = "/audio/broad-horizons.mp3";
+const SRC = "/audio/soft-horizon.mp3";
 const VOLUME = 0.5;
 const FADE_IN = 2200;
 const FADE_OUT = 700;
-export function HeroAudio({ ready, inHero }: { ready: boolean; inHero: boolean }) {
+export function HeroAudio({ ready }: { ready: boolean }) {
   const muted = useSyncExternalStore(subscribeMuted, getMuted, () => false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef(0);
   /* What the music should be doing right now, read by the gesture handler
      below without re-subscribing it. */
   const wantRef = useRef(false);
-  const want = ready && inHero && !muted;
+  const want = ready && !muted;
 
   /* The file, fetched while the opening plays so it is there when needed. */
   useEffect(() => {

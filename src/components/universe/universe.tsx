@@ -152,7 +152,7 @@ export function Universe() {
       {/* Outside the pinned stage, which is a layer of its own under the
           chapters' text: fixed here, the bar and its menu sit above both. */}
       <UniverseNav goTo={goTo} docked={active > 0} />
-      <HeroAudio ready={intro === "done"} inHero={active === 0} />
+      <HeroAudio ready={intro === "done"} />
       <section
         ref={sectionRef}
         data-universe
