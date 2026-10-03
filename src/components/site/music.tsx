@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
-import { getMuted, setMuted, subscribeMuted } from "@/lib/sound-pref";
+import { getIntroOver, getMuted, setMuted, subscribeMuted } from "@/lib/sound-pref";
 
-import s from "./universe.module.css";
+import s from "@/components/universe/universe.module.css";
 
 /**
  * The site's music, and the switch that silences it.
  *
- * It starts once the opening is over and plays on for the rest of the visit.
+ * It starts once the opening is over and plays on for the rest of the visit,
+ * across page changes: this lives in the layout, above every page.
  * Browsers refuse sound before the visitor has touched the page, so when the
  * first attempt is blocked it waits for the first tap, click or key and
  * starts then.
@@ -22,7 +23,8 @@ const SRC = "/audio/soft-horizon.mp3";
 const VOLUME = 0.5;
 const FADE_IN = 2200;
 const FADE_OUT = 700;
-export function HeroAudio({ ready }: { ready: boolean }) {
+export function Music() {
+  const ready = useSyncExternalStore(subscribeMuted, getIntroOver, () => false);
   const muted = useSyncExternalStore(subscribeMuted, getMuted, () => false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef(0);

@@ -152,26 +152,36 @@ export function createIntroSound(): IntroSound {
  * (an idle tab, a phone call, Safari's "interrupted"), the tick waits for
  * it to resume rather than being scheduled into a stopped clock and lost.
  */
-export function createClickSound(): { ping: () => void } {
+export function createClickSound(): { ping: () => void; unlock: () => void } {
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
   const sound = (c: AudioContext, o: GainNode) => tick(c, o, c.currentTime + 0.003, 0);
+  /* Open the device, if it isn't, and hand back what the tick needs. */
+  const open = () => {
+    if (typeof AudioContext === "undefined") return null;
+    if (!ctx || ctx.state === "closed") {
+      ctx = new AudioContext();
+      out = ctx.createGain();
+      out.gain.value = 0.7;
+      out.connect(ctx.destination);
+    }
+    return out ? ([ctx, out] as const) : null;
+  };
   return {
+    /* On the first gesture of any kind, so the device is already running
+       by the time something is pressed. */
+    unlock() {
+      const o = open();
+      if (o && o[0].state !== "running") o[0].resume().catch(() => {});
+    },
     ping() {
-      if (typeof AudioContext === "undefined") return;
-      if (!ctx || ctx.state === "closed") {
-        ctx = new AudioContext();
-        out = ctx.createGain();
-        out.gain.value = 0.7;
-        out.connect(ctx.destination);
-      }
-      const c = ctx;
-      const o = out;
+      const o = open();
       if (!o) return;
-      if (c.state === "running") sound(c, o);
+      const [c, out] = o;
+      if (c.state === "running") sound(c, out);
       else
         c.resume().then(
-          () => sound(c, o),
+          () => sound(c, out),
           () => {},
         );
     },

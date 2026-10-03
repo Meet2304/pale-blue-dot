@@ -23,3 +23,15 @@ export const setMuted = (muted: boolean) => {
   } catch {}
   listeners.forEach((fn) => fn());
 };
+
+/* Whether the home page's opening is over (or never plays, on any other
+   page): the music waits for it. Lives for the visit, not across visits. */
+let introOver = false;
+
+export const getIntroOver = () => introOver;
+
+export const markIntroOver = () => {
+  if (introOver) return;
+  introOver = true;
+  listeners.forEach((fn) => fn());
+};

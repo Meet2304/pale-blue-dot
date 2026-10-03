@@ -48,9 +48,17 @@ export function ClickSound() {
       press(e);
     };
 
+    /* Any first gesture readies the audio (touch counts when it ends). */
+    const unlock = () => sound.unlock();
+    const gestures = ["pointerdown", "keydown", "touchend"] as const;
+    gestures.forEach((g) =>
+      document.addEventListener(g, unlock, { capture: true, passive: true }),
+    );
+
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("click", onClick, true);
     return () => {
+      gestures.forEach((g) => document.removeEventListener(g, unlock, true));
       document.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("click", onClick, true);
     };

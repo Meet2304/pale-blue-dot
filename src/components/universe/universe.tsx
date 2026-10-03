@@ -18,10 +18,10 @@ import {
   type Unit,
 } from "@/content/work";
 import { routes } from "@/lib/routes";
+import { markIntroOver } from "@/lib/sound-pref";
 import { takeChapter } from "@/lib/visit";
 
 import { KINDS } from "./encoding";
-import { HeroAudio } from "./hero-audio";
 import { Greeting, Headline, Intro, SpokenTitle } from "./intro";
 import { FIRST } from "./chapters";
 import { DOT_TITLE, SKY_TITLE } from "./intro-timeline";
@@ -88,6 +88,7 @@ export function Universe() {
   }, []);
   const onIntroDone = useCallback(() => {
     introPlayed = true;
+    markIntroOver();
     setIntro("done");
   }, []);
   const sectionRef = useRef<HTMLElement>(null);
@@ -152,7 +153,6 @@ export function Universe() {
       {/* Outside the pinned stage, which is a layer of its own under the
           chapters' text: fixed here, the bar and its menu sit above both. */}
       <UniverseNav goTo={goTo} docked={active > 0} />
-      <HeroAudio ready={intro === "done"} />
       <section
         ref={sectionRef}
         data-universe
