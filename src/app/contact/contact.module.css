@@ -142,39 +142,11 @@
   margin-top: 2rem;
 }
 
+/* The address and its copy icon, as one line (copy-email.tsx). */
 .address {
   font-size: clamp(1.15rem, 2.4vw, 1.6rem);
   font-weight: 300;
   color: var(--fg);
-  text-decoration: underline;
-  text-decoration-color: rgb(146 203 251 / 0.5);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.3em;
-  word-break: break-all;
-  transition: text-decoration-color 200ms;
-}
-
-.address:hover {
-  text-decoration-color: var(--pale);
-}
-
-/* Copy: a round button with an icon that morphs to say how it went
-   (copy-email.tsx). */
-.copy {
-  display: grid;
-  place-items: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  padding: 0;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  border-radius: 999px;
-  background: none;
-  color: var(--fg);
-  cursor: pointer;
-}
-
-.copy[data-state="idle"]:is(:hover, :focus-visible) {
-  border-color: var(--pale);
 }
 
 .channels {
