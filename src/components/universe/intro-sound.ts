@@ -145,6 +145,37 @@ export function createIntroSound(): IntroSound {
 }
 
 /**
+ * The tick for a press: the opening's tick, held a little longer (about
+ * 12 ms of the same 1.3 kHz tone over a ring of the same low note) so it
+ * still reads under the music, and on a quick run of presses.
+ */
+const PRESS_SHAPE = Float32Array.from({ length: 64 }, (_, i) => {
+  const x = i / 63;
+  return 0.9 * Math.sin(Math.PI * x) ** 2 * (1 - 0.3 * x);
+});
+
+const press = (ctx: AudioContext, out: GainNode, at: number) => {
+  const tone = ctx.createOscillator();
+  const toneEnv = ctx.createGain();
+  tone.frequency.value = 1300;
+  toneEnv.gain.value = 0;
+  toneEnv.gain.setValueCurveAtTime(PRESS_SHAPE, at, 0.012);
+  tone.connect(toneEnv).connect(out);
+  tone.start(at);
+  tone.stop(at + 0.02);
+
+  const body = ctx.createOscillator();
+  const bodyEnv = ctx.createGain();
+  body.frequency.value = 190;
+  bodyEnv.gain.setValueAtTime(0, at + 0.002);
+  bodyEnv.gain.linearRampToValueAtTime(0.3, at + 0.006);
+  bodyEnv.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
+  body.connect(bodyEnv).connect(out);
+  body.start(at);
+  body.stop(at + 0.08);
+};
+
+/**
  * The same tick for a press: one, played the moment it is asked for, a little
  * lower than the opening's so it stays in the background. The audio device
  * opens on the first press (a gesture, so the browser allows it) and stays
@@ -155,15 +186,19 @@ export function createIntroSound(): IntroSound {
 export function createClickSound(): { ping: () => void; unlock: () => void } {
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
-  const sound = (c: AudioContext, o: GainNode) => tick(c, o, c.currentTime + 0.003, 0);
+  const sound = (c: AudioContext, o: GainNode) => press(c, o, c.currentTime + 0.002);
   /* Open the device, if it isn't, and hand back what the tick needs. */
   const open = () => {
     if (typeof AudioContext === "undefined") return null;
     if (!ctx || ctx.state === "closed") {
       ctx = new AudioContext();
       out = ctx.createGain();
-      out.gain.value = 0.7;
-      out.connect(ctx.destination);
+      out.gain.value = 1;
+      /* A run of quick presses must not clip. */
+      const limit = ctx.createDynamicsCompressor();
+      limit.threshold.value = -14;
+      limit.ratio.value = 4;
+      out.connect(limit).connect(ctx.destination);
     }
     return out ? ([ctx, out] as const) : null;
   };
