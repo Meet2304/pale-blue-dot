@@ -14,9 +14,9 @@
  * rhythm is then identical on every visit, however the frames fall.
  *
  * Browsers only let a page make sound after the visitor has interacted with
- * it, so the opening first asks for a click or a key and calls `unlock` in
- * that gesture. If the audio still isn't running when the text begins,
- * nothing is scheduled at all, so no ticks can pile up and fire late.
+ * it, so on most first visits this stays silent and the opening plays as
+ * before. If the audio isn't running when the text begins, nothing is
+ * scheduled at all, so no ticks can pile up and fire late.
  */
 
 import { getMuted } from "@/lib/sound-pref";
@@ -33,29 +33,11 @@ export type IntroSound = {
   stop: () => void;
   /** Release the audio device once the last tick has rung out. */
   close: () => void;
-  /**
-   * Whether sound can already play without a gesture: the browser said so,
-   * or this page has been interacted with.
-   */
-  allowed: () => Promise<boolean>;
-  /**
-   * Start the audio device. Call it inside a click or key handler: that
-   * gesture is what lets the browser play sound. Resolves once it runs, or
-   * fails to.
-   */
-  unlock: () => Promise<void>;
 };
 
-const silent: IntroSound = {
-  play: () => false,
-  stop() {},
-  close() {},
-  allowed: () => Promise.resolve(true),
-  unlock: () => Promise.resolve(),
-};
+const silent: IntroSound = { play: () => false, stop() {}, close() {} };
 
 type Policy = { getAutoplayPolicy?: (type: "audiocontext") => string };
-type Activation = { userActivation?: { hasBeenActive: boolean } };
 
 /* The tick's envelope: a smooth swell and fade over 5 ms, so the tick is
    about six cycles of a pure tone. A sharp attack instead would make it a
@@ -103,12 +85,20 @@ export function createIntroSound(): IntroSound {
     return silent;
   }
 
+  /* Where the browser can say in advance that sound is blocked (Firefox),
+     don't open the audio device at all. */
+  const policy = (navigator as Navigator & Policy).getAutoplayPolicy?.("audiocontext");
+  if (policy === "disallowed") return silent;
+
+  /* Opening the audio device is slow (tens of ms): it waits for the first
+     quiet moment after the page has come up, which is long before the
+     text begins. */
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
   let end = 0;
   let closed = false;
-  const open = () => {
-    if (closed || ctx) return;
+  const cancelOpen = whenIdle(() => {
+    if (closed) return;
     ctx = new AudioContext();
     ctx.resume().catch(() => {});
     /* A gentle compressor keeps a quick run of ticks from ever clipping. */
@@ -118,44 +108,7 @@ export function createIntroSound(): IntroSound {
     limit.threshold.value = -14;
     limit.ratio.value = 4;
     out.connect(limit).connect(ctx.destination);
-  };
-  /* Opening the audio device is slow (tens of ms): it waits for the first
-     quiet moment after the page has come up, which is long before the
-     text begins. */
-  const cancelOpen = whenIdle(open, 400);
-
-  /* Ask the browser itself: open the device and see whether it starts.
-     Where it is allowed to (a page already clicked on, a reload after a
-     click, a site Chrome trusts), it runs within a few ms; where it isn't,
-     it stays suspended until a gesture. */
-  const allowed = async () => {
-    if ((navigator as Navigator & Activation).userActivation?.hasBeenActive)
-      return true;
-    if (
-      (navigator as Navigator & Policy).getAutoplayPolicy?.("audiocontext") ===
-      "allowed"
-    )
-      return true;
-    open();
-    const c = ctx as AudioContext | null;
-    if (!c) return false;
-    await Promise.race([
-      c.resume().catch(() => {}),
-      new Promise<void>((r) => setTimeout(r, 150)),
-    ]);
-    return c.state === "running";
-  };
-
-  const unlock = () => {
-    open();
-    const c = ctx as AudioContext | null;
-    if (!c || c.state === "running") return Promise.resolve();
-    /* Never wait long: the opening goes on with or without sound. */
-    return Promise.race([
-      c.resume().catch(() => {}),
-      new Promise<void>((r) => setTimeout(r, 300)),
-    ]);
-  };
+  }, 400);
 
   const play = (times: number[], pans: number[], lead: number) => {
     const c = ctx;
@@ -188,7 +141,7 @@ export function createIntroSound(): IntroSound {
     window.setTimeout(() => c.close().catch(() => {}), wait);
   };
 
-  return { play, stop, close, allowed, unlock };
+  return { play, stop, close };
 }
 
 /**

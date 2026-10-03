@@ -6,7 +6,6 @@ import {
   getIntroOver,
   getMuted,
   markIntroOver,
-  setMusicPrimer,
   setMuted,
   subscribeMuted,
 } from "@/lib/sound-pref";
@@ -51,35 +50,11 @@ export function Music() {
     audio.preload = "auto";
     audio.volume = 0;
     audioRef.current = audio;
-    /* Started silently inside the opening's first press and stopped at
-       once, so the browser lets it play for real when the opening ends. */
-    let priming = false;
-    setMusicPrimer(() => {
-      if (!audio.paused || wantRef.current) return;
-      priming = true;
-      audio.muted = true;
-      audio.play().then(
-        () => {
-          if (!wantRef.current) {
-            audio.pause();
-            audio.currentTime = 0;
-          }
-          audio.muted = false;
-          priming = false;
-          setPlaying(!audio.paused);
-        },
-        () => {
-          audio.muted = false;
-          priming = false;
-        },
-      );
-    });
-    const on = () => !priming && setPlaying(true);
-    const off = () => !priming && setPlaying(false);
+    const on = () => setPlaying(true);
+    const off = () => setPlaying(false);
     audio.addEventListener("playing", on);
     audio.addEventListener("pause", off);
     return () => {
-      setMusicPrimer(null);
       audio.removeEventListener("playing", on);
       audio.removeEventListener("pause", off);
       cancelAnimationFrame(fadeRef.current);

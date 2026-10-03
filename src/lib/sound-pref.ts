@@ -35,14 +35,3 @@ export const markIntroOver = () => {
   introOver = true;
   listeners.forEach((fn) => fn());
 };
-
-/* The opening's first press, passed on to the music while it is still
-   inside that gesture: Safari only lets an audio element play later if it
-   was started in one. */
-let primer: (() => void) | null = null;
-
-export const setMusicPrimer = (fn: (() => void) | null) => {
-  primer = fn;
-};
-
-export const primeMusic = () => primer?.();
