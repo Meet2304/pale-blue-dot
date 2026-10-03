@@ -2,6 +2,8 @@
 
 import { Fragment, useEffect, useRef, type RefObject } from "react";
 
+import { primeMusic } from "@/lib/sound-pref";
+
 import { debugWord } from "./debug-word";
 import { createIntroSound } from "./intro-sound";
 import {
@@ -224,7 +226,10 @@ export function Intro({
     let pans: number[] = [];
     let raf = 0;
     let t0 = 0;
-    let phase: "wait" | "speak" | "hold" | "fly" = "wait";
+    let phase: "wait" | "gate" | "speak" | "hold" | "fly" = "wait";
+    /* Whether the visitor has already clicked or pressed a key: the gesture
+       the browser needs before it lets the opening make a sound. */
+    let pressed = false;
 
     /* Start at the top: the greeting lands in the hero. */
     window.scrollTo(0, 0);
@@ -366,54 +371,96 @@ export function Intro({
       raf = requestAnimationFrame(step);
     };
 
-    /* Any key, click, tap or scroll skips ahead to the landing, and the
-       page holds still until the line has landed. (Hiding the overflow
+    const begin = () => {
+      phase = "speak";
+      /* The whole run of ticks goes onto the audio clock now; the glyphs
+         start on the same beat. */
+      const ticks = calm ? OPENING.calmTicks : OPENING.ticks;
+      sound.play(ticks, tickPans(OPENING, ticks, pans, calm), LEAD);
+      t0 = performance.now() + LEAD;
+      raf = requestAnimationFrame(speak);
+    };
+
+    /* A click or key. Before the opening has begun, the first one is the
+       browser's permission for sound: the audio starts inside it, and the
+       opening follows. Once the opening is under way, it skips ahead. */
+    const press = () => {
+      if (phase === "speak" || phase === "hold") return fly();
+      if (pressed) return;
+      pressed = true;
+      const unlocked = sound.unlock();
+      primeMusic();
+      if (phase !== "gate") return;
+      phase = "wait";
+      delete root.dataset.gate;
+      void unlocked.then(() => {
+        if (!cancelled) later(BEGIN / 2, begin);
+      });
+    };
+
+    /* The page holds still until the line has landed. (Hiding the overflow
        instead would take the scrollbar away and bring it back, shifting the
-       hero sideways under the line as it lands.) */
-    const skip = (e: Event) => {
+       hero sideways under the line as it lands.) A press counts on the
+       click it makes, since on a phone a tap only allows sound once it
+       ends; a scroll skips ahead once the opening is under way. */
+    const hold = (e: Event) => {
       if (e.cancelable) e.preventDefault();
       e.stopImmediatePropagation();
-      fly();
+      if (e.type === "keydown") press();
+      else if (e.type !== "pointerdown" && (phase === "speak" || phase === "hold"))
+        fly();
+    };
+    const onClick = (e: Event) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      press();
     };
     const opts = { capture: true, passive: false } as const;
-    window.addEventListener("keydown", skip, opts);
-    window.addEventListener("pointerdown", skip, opts);
-    window.addEventListener("wheel", skip, opts);
-    window.addEventListener("touchmove", skip, opts);
+    window.addEventListener("keydown", hold, opts);
+    window.addEventListener("pointerdown", hold, opts);
+    window.addEventListener("wheel", hold, opts);
+    window.addEventListener("touchmove", hold, opts);
+    window.addEventListener("click", onClick, opts);
 
     /* Begin only once the type has loaded, so the letters decode in their
-       final shapes and the flight measures the real line. */
+       final shapes and the flight measures the real line. If sound isn't
+       allowed yet, first wait for a press, with a line that asks for one. */
     let cancelled = false;
     const fonts = document.fonts?.ready ?? Promise.resolve();
-    Promise.race([fonts, new Promise((r) => setTimeout(r, 1500))]).then(() => {
-      if (cancelled || phase !== "wait") return;
-      pans = letters.map(panOf);
-      later(BEGIN, () => {
-        phase = "speak";
-        /* The whole run of ticks goes onto the audio clock now; the glyphs
-           start on the same beat. */
-        const ticks = calm ? OPENING.calmTicks : OPENING.ticks;
-        sound.play(ticks, tickPans(OPENING, ticks, pans, calm), LEAD);
-        t0 = performance.now() + LEAD;
-        raf = requestAnimationFrame(speak);
+    Promise.race([fonts, new Promise((r) => setTimeout(r, 1500))])
+      .then(() => (pressed ? true : sound.allowed()))
+      .then((ok) => {
+        if (cancelled || phase !== "wait") return;
+        pans = letters.map(panOf);
+        if (ok || pressed) {
+          later(BEGIN, begin);
+        } else {
+          phase = "gate";
+          root.dataset.gate = "";
+        }
       });
-    });
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
       timers.forEach(clearTimeout);
       sound.close();
-      window.removeEventListener("keydown", skip, opts);
-      window.removeEventListener("pointerdown", skip, opts);
-      window.removeEventListener("wheel", skip, opts);
-      window.removeEventListener("touchmove", skip, opts);
+      window.removeEventListener("keydown", hold, opts);
+      window.removeEventListener("pointerdown", hold, opts);
+      window.removeEventListener("wheel", hold, opts);
+      window.removeEventListener("touchmove", hold, opts);
+      window.removeEventListener("click", onClick, opts);
     };
   }, [target, headline]);
 
   return (
-    <div ref={rootRef} className={s.intro} aria-hidden>
-      <div className={s.introStack}>
+    <div ref={rootRef} className={s.intro}>
+      <p className={s.introGate}>
+        <span className={s.introGateMouse}>Click anywhere to begin</span>
+        <span className={s.introGateTouch}>Tap anywhere to begin</span>
+        <span className={s.introGateNote}>Sound on</span>
+      </p>
+      <div className={s.introStack} aria-hidden>
         <Greeting ref={lineRef} className={s.introLine} live />
         <p ref={subRef} className={s.introSub}>
           <Letters words={HEADLINE_WORDS} live set={false} />
