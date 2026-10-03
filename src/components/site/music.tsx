@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { getIntroOver, getMuted, setMuted, subscribeMuted } from "@/lib/sound-pref";
+import {
+  getIntroOver,
+  getMuted,
+  markIntroOver,
+  setMuted,
+  subscribeMuted,
+} from "@/lib/sound-pref";
 
 import s from "@/components/universe/universe.module.css";
 
@@ -26,6 +32,10 @@ const FADE_OUT = 700;
 export function Music() {
   const ready = useSyncExternalStore(subscribeMuted, getIntroOver, () => false);
   const muted = useSyncExternalStore(subscribeMuted, getMuted, () => false);
+  /* Whether sound is actually coming out. On a first visit the browser
+     blocks it until the visitor touches the page, so this can be false
+     while the switch is on. */
+  const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef(0);
   /* What the music should be doing right now, read by the gesture handler
@@ -40,7 +50,13 @@ export function Music() {
     audio.preload = "auto";
     audio.volume = 0;
     audioRef.current = audio;
+    const on = () => setPlaying(true);
+    const off = () => setPlaying(false);
+    audio.addEventListener("playing", on);
+    audio.addEventListener("pause", off);
     return () => {
+      audio.removeEventListener("playing", on);
+      audio.removeEventListener("pause", off);
       cancelAnimationFrame(fadeRef.current);
       audio.pause();
       audio.removeAttribute("src");
@@ -86,8 +102,15 @@ export function Music() {
     let off = () => {};
     start().then((ok) => {
       if (ok || !wantRef.current) return;
-      /* Blocked: the first real gesture is the permission. */
-      const events = ["pointerdown", "keydown", "touchend"] as const;
+      /* Blocked: the first real gesture is the permission. (Scrolling
+         doesn't count as one in any browser; a press or a key does.) */
+      const events = [
+        "pointerdown",
+        "pointerup",
+        "click",
+        "keydown",
+        "touchend",
+      ] as const;
       const go = () => {
         off();
         if (wantRef.current) void start();
@@ -98,14 +121,22 @@ export function Music() {
     return () => off();
   }, [want]);
 
+  /* Switched on but silent (blocked, or the opening isn't over yet): a press
+     means "play", not "mute". The gesture listener above has already started
+     it by the time the click lands. */
+  const waiting = !muted && !playing;
+
   return (
     <button
       type="button"
       className={s.sound}
-      data-muted={muted}
+      data-muted={muted || waiting}
       aria-pressed={muted}
-      aria-label={muted ? "Unmute the music" : "Mute the music"}
-      onClick={() => setMuted(!muted)}
+      aria-label={muted || waiting ? "Play the music" : "Mute the music"}
+      onClick={() => {
+        if (waiting) markIntroOver();
+        else setMuted(!muted);
+      }}
     >
       <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden>
         {[3, 7, 11, 15].map((x, i) => (
