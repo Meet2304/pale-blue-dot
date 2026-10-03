@@ -5,26 +5,54 @@ import { useEffect } from "react";
 import { createClickSound } from "@/components/universe/intro-sound";
 import { getMuted } from "@/lib/sound-pref";
 
+/* Things that are pressed, by what they are. */
+const PRESSABLE =
+  "a[href], button, summary, label, select, input, [role=button], [role=link], [role=tab], [role=menuitem], [role=switch], [role=checkbox], [tabindex]:not([tabindex='-1'])";
+
+/* ...and by how they behave: the pointer turns to a hand over anything made
+   clickable some other way (a picture that opens, a body on the canvas). */
+const isPressable = (el: Element) => {
+  const hit = el.closest(PRESSABLE);
+  if (hit) return !hit.matches(":disabled, [aria-disabled='true']");
+  return getComputedStyle(el).cursor === "pointer";
+};
+
 /**
  * A quiet tick, the same one that sounds as the opening loads, for every
- * press of a button or link. Silent when the music switch is off.
+ * press of a link, button or anything else that answers to one. Silent
+ * when the music switch is off.
+ *
+ * A mouse press ticks at once, on pointer down. A touch or a key press
+ * ticks on the click it makes instead: browsers only let a page start
+ * sound from a touch when it ends, and a key has no pointer at all.
  */
 export function ClickSound() {
   useEffect(() => {
     const sound = createClickSound();
-    /* On the press itself, so it lands with the finger; a key press
-       (which has no pointer) sounds on the click it makes. */
-    const onPress = (e: Event) => {
+    let mouseDown = false;
+
+    const press = (e: Event) => {
       if (getMuted() || !(e.target instanceof Element)) return;
-      if (e.type === "click" && (e as MouseEvent).detail !== 0) return;
-      const hit = e.target.closest("a[href], button, [role='button']");
-      if (hit && !hit.matches(":disabled")) sound.ping();
+      if (isPressable(e.target)) sound.ping();
     };
-    document.addEventListener("pointerdown", onPress, true);
-    document.addEventListener("click", onPress, true);
+    const onPointerDown = (e: PointerEvent) => {
+      mouseDown = e.pointerType === "mouse";
+      if (mouseDown) press(e);
+    };
+    const onClick = (e: MouseEvent) => {
+      /* Already sounded on the press. */
+      if (mouseDown && e.detail !== 0) {
+        mouseDown = false;
+        return;
+      }
+      press(e);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("click", onClick, true);
     return () => {
-      document.removeEventListener("pointerdown", onPress, true);
-      document.removeEventListener("click", onPress, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("click", onClick, true);
     };
   }, []);
   return null;

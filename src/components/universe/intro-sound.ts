@@ -145,25 +145,35 @@ export function createIntroSound(): IntroSound {
 }
 
 /**
- * The same tick for a click: one, played the moment it is asked for, a little
- * lower than the opening's so it stays in the background. The audio
- * device opens on the first click (a gesture, so the browser allows it) and
- * stays open for the rest of the visit.
+ * The same tick for a press: one, played the moment it is asked for, a little
+ * lower than the opening's so it stays in the background. The audio device
+ * opens on the first press (a gesture, so the browser allows it) and stays
+ * open for the rest of the visit. If the browser has suspended it since
+ * (an idle tab, a phone call, Safari's "interrupted"), the tick waits for
+ * it to resume rather than being scheduled into a stopped clock and lost.
  */
 export function createClickSound(): { ping: () => void } {
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
+  const sound = (c: AudioContext, o: GainNode) => tick(c, o, c.currentTime + 0.003, 0);
   return {
     ping() {
       if (typeof AudioContext === "undefined") return;
-      if (!ctx) {
+      if (!ctx || ctx.state === "closed") {
         ctx = new AudioContext();
         out = ctx.createGain();
         out.gain.value = 0.7;
         out.connect(ctx.destination);
       }
-      if (ctx.state === "suspended") ctx.resume().catch(() => {});
-      if (out) tick(ctx, out, ctx.currentTime + 0.005, 0);
+      const c = ctx;
+      const o = out;
+      if (!o) return;
+      if (c.state === "running") sound(c, o);
+      else
+        c.resume().then(
+          () => sound(c, o),
+          () => {},
+        );
     },
   };
 }
