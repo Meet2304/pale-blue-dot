@@ -50,7 +50,6 @@ export default function ContactPage() {
           </header>
 
           <section className={s.center}>
-            <p className={s.kicker}>Contact</p>
             <h1 className={s.title}>Say hello.</h1>
             <p className={s.lede}>
               Questions, ideas, or work you think I&apos;d care about: write to me. I
