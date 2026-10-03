@@ -1,0 +1,27 @@
+/* The copy button's icon (copy-email.tsx): its colour follows the result,
+   easing between them as the shape morphs. */
+.button {
+  transition:
+    color 300ms,
+    border-color 300ms;
+}
+
+.button[data-state="done"] {
+  border-color: rgb(74 222 128 / 0.45);
+  color: #4ade80;
+}
+
+.button[data-state="failed"] {
+  border-color: rgb(248 113 113 / 0.45);
+  color: #f87171;
+}
+
+/* The result, said aloud and not shown. */
+.said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
