@@ -58,8 +58,10 @@ export function HeroAudio({ ready, inHero }: { ready: boolean; inHero: boolean }
       const from = audio.volume;
       const t0 = performance.now();
       const step = (now: number) => {
-        const p = Math.min(1, (now - t0) / ms);
-        audio.volume = from + (to - from) * p;
+        /* A frame's timestamp can precede `t0` (it is the frame's start,
+           not now), which would push the volume below 0 and throw. */
+        const p = Math.max(0, Math.min(1, (now - t0) / ms));
+        audio.volume = Math.max(0, Math.min(1, from + (to - from) * p));
         if (p < 1) fadeRef.current = requestAnimationFrame(step);
         else done?.();
       };
