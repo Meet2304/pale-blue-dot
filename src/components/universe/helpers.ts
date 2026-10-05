@@ -33,6 +33,12 @@ export function whenIdle(fn: (budget: number) => void, timeout = 1000) {
 }
 
 /** Size a canvas to its box at a capped device pixel ratio. */
+/* The characters every body is drawn in, Earth and each piece of work
+   alike, on the map and on a piece's own page, the same size whether the
+   camera is moving or still: fine enough to show detail, never so small it
+   turns to noise. In px across. */
+export const CELL = { wide: 4.6, narrow: 3.8 };
+
 export function fit(canvas: HTMLCanvasElement, maxDpr = 2) {
   const box = canvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
