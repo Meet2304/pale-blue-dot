@@ -47,6 +47,9 @@ const kindVars = (k: Kind) => {
    corner on the way into the panel, doesn't flicker it. */
 const OPEN_DELAY = 90;
 const CLOSE_DELAY = 240;
+/* How far the page has to move under an open panel before it closes: a
+   page still easing to a stop, or a nudge, leaves it open. */
+const SCROLL_CLOSE = 120;
 
 export function UniverseNav({
   goTo,
@@ -58,6 +61,10 @@ export function UniverseNav({
 }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<Kind>(KIND_ORDER[0]);
+  /* Opened by a click (or a tap, or a key): it stays open when the pointer
+     leaves, until it is clicked shut, Escape is pressed, or the visitor
+     clicks or scrolls away. Opened by hovering, it closes on leaving. */
+  const pinned = useRef(false);
   const panelId = useId();
   const headerRef = useRef<HTMLElement>(null);
   const timer = useRef(0);
@@ -66,6 +73,10 @@ export function UniverseNav({
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setOpen(next), ms);
   }, []);
+  /* Closed by any means, the panel is no longer pinned. */
+  useEffect(() => {
+    if (!open) pinned.current = false;
+  }, [open]);
   const hold = useCallback(() => window.clearTimeout(timer.current), []);
 
   /* Escape closes and hands focus back to the tab; so does a click
@@ -79,7 +90,10 @@ export function UniverseNav({
       const phone = headerRef.current?.querySelector<HTMLElement>(`[data-tab="phone"]`);
       (tab && tab.offsetParent ? tab : phone)?.focus();
     };
-    const onScroll = () => setOpen(false);
+    const from = window.scrollY;
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - from) > SCROLL_CLOSE) setOpen(false);
+    };
     const onDown = (e: PointerEvent) => {
       if (!headerRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -107,7 +121,9 @@ export function UniverseNav({
       /* One bar across the pages: it carries over a page change rather
          than going out with one page and in with the next (globals.css). */
       style={{ viewTransitionName: "site-bar" }}
-      onPointerLeave={(e) => e.pointerType === "mouse" && later(false, CLOSE_DELAY)}
+      onPointerLeave={(e) =>
+        e.pointerType === "mouse" && !pinned.current && later(false, CLOSE_DELAY)
+      }
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
@@ -139,10 +155,14 @@ export function UniverseNav({
             }}
             onClick={() => {
               hold();
-              if (open && kind === k) setOpen(false);
+              /* A click on the open kind's tab closes it only once it was
+                 opened by a click: if hovering opened it, the click keeps
+                 it open. */
+              if (open && kind === k && pinned.current) setOpen(false);
               else {
                 setKind(k);
                 setOpen(true);
+                pinned.current = true;
               }
             }}
             onKeyDown={(e) => {
@@ -163,6 +183,7 @@ export function UniverseNav({
                 e.preventDefault();
                 setKind(k);
                 setOpen(true);
+                pinned.current = true;
                 window.setTimeout(() => {
                   document
                     .getElementById(panelId)
@@ -187,7 +208,10 @@ export function UniverseNav({
           className={`${s.barItem} ${s.phoneTab}`}
           aria-expanded={open}
           aria-controls={panelId}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            pinned.current = !open;
+            setOpen(!open);
+          }}
         >
           work
         </button>
@@ -363,7 +387,7 @@ function KindMenu({
                         <Scramble text={u.when} />
                       </span>
                       <span className={s.menuUnitBrief}>
-                        <Scramble text={u.brief} />
+                        <Scramble text={u.line} />
                       </span>
                     </Link>
                   </li>

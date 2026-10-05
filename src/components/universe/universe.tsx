@@ -372,27 +372,33 @@ function Piece({
         {kind.label}, {u.when}
       </p>
       <p className={s.pieceBrief}>{u.brief}</p>
-      {(u.link || u.repo) && (
-        <p className={s.visits}>
-          {u.link && (
-            <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
-              {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>
-            </a>
-          )}
-          {u.repo && (
-            <a
-              className={`${s.visit} ${s.code}`}
-              href={u.repo}
-              target="_blank"
-              rel="noreferrer"
-              data-icon="github"
-            >
-              <WayMark icon="github" className={s.codeMark} />
-              See the code <span aria-hidden>↗</span>
-            </a>
-          )}
-        </p>
-      )}
+      <ul className={s.skills} aria-label="Skills">
+        {u.skills.map((k) => (
+          <li key={k}>{k}</li>
+        ))}
+      </ul>
+      <p className={s.visits}>
+        <Link className={`${s.visit} ${s.more}`} href={`${routes.work}/${u.id}`}>
+          What I did <span aria-hidden>→</span>
+        </Link>
+        {u.link && (
+          <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
+            {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>
+          </a>
+        )}
+        {u.repo && (
+          <a
+            className={`${s.visit} ${s.code}`}
+            href={u.repo}
+            target="_blank"
+            rel="noreferrer"
+            data-icon="github"
+          >
+            <WayMark icon="github" className={s.codeMark} />
+            See the code <span aria-hidden>↗</span>
+          </a>
+        )}
+      </p>
     </Chapter>
   );
 }

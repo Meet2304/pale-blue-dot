@@ -134,6 +134,7 @@ const LOOKS: Record<string, Partial<Look>> = {
   /* Research: constellations, a figure for each. */
   phoenix: { hue: 30, l: 0.8, c: 0.13, figure: "phoenix", scale: 0.8 },
   "prompt-classifier": { hue: 205, l: 0.82, c: 0.1, figure: "shield", scale: 0.85 },
+  "health-performance-lab": { hue: 160, l: 0.82, c: 0.1, figure: "plough", scale: 0.8 },
 
   /* Leadership: nebulae. */
   "mind-ripple": { hue: 345, l: 0.76, c: 0.14, scale: 1 },
