@@ -14,7 +14,7 @@ import {
 import { FIRST, SKY } from "./chapters";
 import { buildCosmos, createCosmos, drawCosmos } from "./cosmos";
 import { EARTH_COLORS, KINDS, layout } from "./encoding";
-import { fit, mulberry32, whenIdle } from "./helpers";
+import { CELL, fit, mulberry32, whenIdle } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
 import { drawBody, makeFrame } from "./render";
@@ -61,11 +61,6 @@ const ORBITS = [
   { r: 1.55, inc: -0.6, node: 1.2, speed: -0.14, n: 360 },
   { r: 1.85, inc: 0.9, node: 2.4, speed: 0.09, n: 300 },
 ];
-
-/* The characters every body is drawn in, Earth and each piece of work
-   alike, the same size whether the camera is moving or still: fine enough
-   to show detail, never so small it turns to noise. In px across. */
-const CELL = { wide: 4.6, narrow: 3.8 };
 
 /* A body behind a picture of its work: its radius against the picture's
    height, and how far above the picture's top edge its centre sits, in its

@@ -7,6 +7,7 @@ import { plexVariables } from "@/app/fonts";
 import { BackLink } from "@/components/site/back-link";
 import { PageTransition } from "@/components/site/page-transition";
 import { StarField } from "@/components/site/star-field";
+import { BodyPortrait } from "@/components/universe/body-portrait";
 import { Footer } from "@/components/universe/footer";
 import { lookColors, lookOf } from "@/components/universe/looks";
 import { WorkMedia } from "@/components/universe/media";
@@ -41,7 +42,8 @@ export async function generateMetadata({
  * took, all before the first row; then what came of it and what I did.
  * Why it existed and a picture of it come last, for whoever reads on. Nothing waits to be scrolled to: the whole page is there at once.
  *
- * Colour is the piece's own, the colours its body is drawn in on the map.
+ * Colour is the piece's own, the colours its body is drawn in on the map,
+ * and that body turns quietly behind the top of the page.
  */
 export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">) {
   const u = unitById((await params).slug);
@@ -62,6 +64,7 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
           style={{ "--kind": c[2], "--kind-soft": c[3] } as CSSProperties}
         >
           <StarField />
+          <BodyPortrait id={u.id} kind={u.kind} className={s.body} />
           <header className={s.top}>
             <BackLink className={s.back} />
           </header>
