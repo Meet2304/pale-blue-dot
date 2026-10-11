@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 
+import { GoogleAnalytics } from "@/components/site/google-analytics";
 import { SiteChrome } from "@/components/site/site-chrome";
+import { IdentityJsonLd } from "@/components/site/structured-data";
+import { isIndexable, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/site";
 
 import { fontVariables } from "./fonts";
 import "./globals.css";
@@ -21,7 +24,23 @@ export const metadata: Metadata = {
     default: "Meet Bhatt — This pale blue dot is where I build things.",
     template: "%s — Meet Bhatt",
   },
-  description: "Personal site of Meet Bhatt.",
+  description: SITE_DESCRIPTION,
+  authors: [{ name: SITE_NAME, url: SITE_ORIGIN }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  robots: isIndexable()
+    ? {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+          "max-video-preview": -1,
+        },
+      }
+    : { index: false, follow: false },
   /* The shared card, for every platform that reads Open Graph (LinkedIn,
      WhatsApp, Slack, Teams, Facebook, iMessage, Discord) and for X. The
      image itself is src/app/opengraph-image.jpg (and twitter-image.jpg),
@@ -31,16 +50,13 @@ export const metadata: Metadata = {
     siteName: "Meet Bhatt",
     locale: "en_US",
     title: "Meet Bhatt — AI engineer and product builder",
-    description:
-      "I am an Engineer. This pale blue dot is where I build things: AI products, research and the people who made them.",
+    description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
     site: "@Meet2304",
     creator: "@Meet2304",
-    title: "Meet Bhatt — AI engineer and product builder",
-    description:
-      "I am an Engineer. This pale blue dot is where I build things: AI products, research and the people who made them.",
+    description: SITE_DESCRIPTION,
   },
   /* The "m." mark: white on black where the browser is dark, black on
      white where it is light (public/logos). */
@@ -81,8 +97,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={fontVariables}>
       <body>
+        <IdentityJsonLd />
         <SiteChrome />
         {children}
+        <GoogleAnalytics />
       </body>
     </html>
   );

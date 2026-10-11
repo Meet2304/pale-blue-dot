@@ -7,6 +7,7 @@ import { plexVariables } from "@/app/fonts";
 import { BackLink } from "@/components/site/back-link";
 import { PageTransition } from "@/components/site/page-transition";
 import { StarField } from "@/components/site/star-field";
+import { WorkJsonLd } from "@/components/site/structured-data";
 import { BodyPortrait } from "@/components/universe/body-portrait";
 import { Footer } from "@/components/universe/footer";
 import { lookColors, lookOf } from "@/components/universe/looks";
@@ -16,6 +17,7 @@ import { WayMark } from "@/components/universe/way-mark";
 import { KINDS } from "@/components/universe/encoding";
 import { UNITS, unitById, type Unit } from "@/content/work";
 import { routes } from "@/lib/routes";
+import { pageMetadata } from "@/lib/site";
 
 import s from "./work.module.css";
 
@@ -31,7 +33,7 @@ export async function generateMetadata({
 }: PageProps<"/work/[slug]">): Promise<Metadata> {
   const u = unitById((await params).slug);
   if (!u) return {};
-  return { title: u.name, description: u.brief };
+  return pageMetadata(`/work/${u.id}`, { title: u.name, description: u.brief });
 }
 
 /**
@@ -69,6 +71,7 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
             <BackLink className={s.back} />
           </header>
 
+          <WorkJsonLd unit={u} />
           <article className={s.page}>
             <header className={s.head}>
               <p className={s.kicker}>

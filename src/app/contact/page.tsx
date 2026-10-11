@@ -1,5 +1,3 @@
-import type { Metadata } from "next";
-
 import { plexVariables } from "@/app/fonts";
 import { StarField } from "@/components/site/star-field";
 import { BackLink } from "@/components/site/back-link";
@@ -9,15 +7,16 @@ import { Footer } from "@/components/universe/footer";
 import { PageNav } from "@/components/universe/page-nav";
 import { WayMark } from "@/components/universe/way-mark";
 import { CONTACT } from "@/content/work";
+import { pageMetadata } from "@/lib/site";
 import { SOCIAL_LINKS } from "@/lib/socials";
 
 import s from "./contact.module.css";
 import { HorizonGlyphs } from "./horizon-glyphs";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata("/contact", {
   title: "Contact",
-  description: "How to reach Meet Bhatt: email, LinkedIn, GitHub and X.",
-};
+  description: "How to reach Meet Bhatt: email, LinkedIn, GitHub, X, and his résumé.",
+});
 
 /**
  * The contact page: a horizon. The rim of a world rises at the foot of the
@@ -61,7 +60,7 @@ export default function ContactPage() {
             <ul className={s.channels}>
               {SOCIAL_LINKS.map((l) => (
                 <li key={l.id}>
-                  <a href={l.href} target="_blank" rel="noreferrer" data-icon={l.id}>
+                  <a href={l.href} target="_blank" rel="me noreferrer" data-icon={l.id}>
                     <WayMark icon={l.id} className={s.mark} />
                     {l.label}
                   </a>
