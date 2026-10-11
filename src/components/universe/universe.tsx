@@ -185,6 +185,7 @@ export function Universe() {
           <Chapter>
             <Greeting ref={greetingRef} className={s.greeting} />
             <Headline ref={headlineRef} className={s.hero} />
+            <p className={s.srOnly}>Meet Bhatt, AI engineer and product builder.</p>
             <p className={`${s.lede} ${s.reveal}`}>
               I build AI products. MS in AI and Tech Management at Carnegie Mellon.
             </p>

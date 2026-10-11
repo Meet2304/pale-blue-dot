@@ -1,18 +1,17 @@
-import type { Metadata } from "next";
-
 import { PageTransition } from "@/components/site/page-transition";
+import { ProfileJsonLd } from "@/components/site/structured-data";
 import { Universe } from "@/components/universe/universe";
+import { pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
 
 import { plexVariables } from "./fonts";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata("/", {
   title: {
     absolute:
       "Meet Bhatt — I am an Engineer. This pale blue dot is where I build things.",
   },
-  description:
-    "Meet Bhatt, AI engineer and product builder. Everything he has worked on, drawn as one universe around the pale blue dot.",
-};
+  description: SITE_DESCRIPTION,
+});
 
 /**
  * The universe: Earth up close, then the whole map around the pale blue dot,
@@ -22,6 +21,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <PageTransition universe>
+      <ProfileJsonLd />
       <div className={plexVariables}>
         <Universe />
       </div>

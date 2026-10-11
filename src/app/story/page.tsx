@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Mrs_Saint_Delafield } from "next/font/google";
 
 import { plexVariables } from "@/app/fonts";
@@ -9,6 +8,7 @@ import { TheNote } from "@/components/site/the-note";
 import { ThePhotograph } from "@/components/site/the-photograph";
 import { Footer } from "@/components/universe/footer";
 import { PageNav } from "@/components/universe/page-nav";
+import { pageMetadata } from "@/lib/site";
 
 import s from "./story.module.css";
 
@@ -25,11 +25,11 @@ const signature = Mrs_Saint_Delafield({
   preload: false,
 });
 
-export const metadata: Metadata = {
-  title: "Story",
+export const metadata = pageMetadata("/story", {
+  title: "The Pale Blue Dot",
   description:
-    "A short note about the pale blue dot, and about adding something to it.",
-};
+    "Meet Bhatt on the photograph of Earth from six billion kilometers away, and on adding something to that point of light.",
+});
 
 /**
  * The one page that explains itself.

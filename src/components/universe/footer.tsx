@@ -12,7 +12,13 @@ import { WayMark, type WayIcon } from "./way-mark";
 
 /* Every way off the page: the site's pages, the resume, the profiles, and
    a way to write. */
-const WAYS: { label: string; href: string; icon: WayIcon; away?: boolean }[] = [
+const WAYS: {
+  label: string;
+  href: string;
+  icon: WayIcon;
+  away?: boolean;
+  me?: boolean;
+}[] = [
   { label: "Home", href: routes.home, icon: "home" },
   { label: "Story", href: routes.story, icon: "story" },
   { label: "Contact", href: routes.contact, icon: "contact" },
@@ -22,6 +28,8 @@ const WAYS: { label: string; href: string; icon: WayIcon; away?: boolean }[] = [
     href: l.href,
     icon: l.id,
     away: true,
+    /* rel=me: these profiles are the same person as this site. */
+    me: true,
   })),
   { label: "Email", href: `mailto:${CONTACT.email}`, icon: "email" },
 ];
@@ -61,7 +69,14 @@ export function Footer() {
                     <a
                       href={w.href}
                       data-icon={w.icon}
-                      {...(w.away ? { target: "_blank", rel: "noreferrer" } : {})}
+                      {...(w.away ? { target: "_blank" as const } : {})}
+                      {...(w.away || w.me
+                        ? {
+                            rel: [w.me ? "me" : null, w.away ? "noreferrer" : null]
+                              .filter(Boolean)
+                              .join(" "),
+                          }
+                        : {})}
                     >
                       {inner}
                     </a>
