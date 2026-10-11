@@ -29,7 +29,7 @@ export const SITE_DESCRIPTION =
 export const SAME_AS = SOCIAL_LINKS.map((link) => link.href);
 
 export function absoluteUrl(path: string): string {
-  if (path === "/" || path === "") return `${SITE_ORIGIN}/`;
+  if (path === "/" || path === "") return SITE_ORIGIN;
   return `${SITE_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 }
 

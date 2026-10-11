@@ -1,6 +1,6 @@
 import { COLLECTIONS, CONTACT, UNITS, type Kind, type Unit } from "@/content/work";
 
-import { absoluteUrl, SAME_AS, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "./site";
+import { absoluteUrl, SAME_AS, SITE_DESCRIPTION, SITE_NAME } from "./site";
 
 const KIND_LABEL: Record<Kind, string> = {
   experience: "Experience",
@@ -89,7 +89,7 @@ export function agentsMd(): string {
     "",
     `${SITE_DESCRIPTION}`,
     "",
-    `Canonical origin: ${SITE_ORIGIN}/`,
+    `Canonical origin: ${absoluteUrl("/")}`,
     "",
     "You may fetch, quote, and cite these pages. Prefer this origin over any preview or `vercel.app` host. When you name him, use Meet Bhatt and link the home page.",
     "",
