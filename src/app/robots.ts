@@ -2,13 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { absoluteUrl, isIndexable } from "@/lib/site";
 
-/* Paths that only redirect home. `/work/<id>` is a real page, so `/work`
-   itself is not in this list: a disallow of `/work` would hide every piece. */
-const RETIRED = ["/about", "/changelog", "/resume"];
-
-/* Agents that fetch on their own, named so the file says they are welcome.
-   `*` already allows them; a group of their own keeps that true if the
-   default rule ever tightens. */
+/* Agents that fetch on their own, named so the file says they are welcome. */
 const AGENTS = [
   "GPTBot",
   "OAI-SearchBot",
@@ -25,11 +19,14 @@ const AGENTS = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+  /* A preview must not compete with the production domain. */
   if (!isIndexable()) {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
 
-  const publicSite = { allow: "/", disallow: RETIRED };
+  /* Nothing on the production host is withheld. A disallow is what kept
+     the work and the contact page out of Google's index. */
+  const publicSite = { allow: "/" };
 
   return {
     rules: [

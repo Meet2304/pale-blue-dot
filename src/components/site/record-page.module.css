@@ -1,0 +1,142 @@
+/* A reading page: About, the work list, the résumé, the record.
+   The same frame as the story page, with a column instead of the photograph. */
+.root {
+  --fg: #e7eaef;
+  --soft: #a3a9b4;
+  --hair: rgb(255 255 255 / 0.1);
+
+  position: relative;
+  min-height: 100svh;
+  background: #000;
+  color: var(--fg);
+}
+
+.top,
+.page {
+  position: relative;
+  z-index: 1;
+}
+
+.top {
+  display: flex;
+  padding: 4.5rem 6vw 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 0;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.back:hover,
+.back:focus-visible {
+  color: var(--fg);
+}
+
+.page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 8vh, 5rem) 6vw 6rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-marcellus), serif;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 1.1rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--soft);
+}
+
+.page p {
+  margin: 0.9rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.page a {
+  color: inherit;
+  text-underline-offset: 0.18em;
+}
+
+.page a:hover,
+.page a:focus-visible {
+  color: var(--fg);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--soft);
+}
+
+.group {
+  margin-top: 2.4rem;
+}
+
+.group h2 {
+  margin: 0;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--soft);
+}
+
+.entries {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entries li {
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--hair);
+}
+
+.entries a {
+  text-decoration: none;
+}
+
+.entries a:hover,
+.entries a:focus-visible {
+  text-decoration: underline;
+}
+
+.name {
+  font-size: 1.15rem;
+}
+
+.meta {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--plex-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--soft);
+}
+
+.line {
+  margin-top: 0.35rem;
+  color: var(--soft);
+  font-size: 0.975rem;
+  line-height: 1.5;
+}
