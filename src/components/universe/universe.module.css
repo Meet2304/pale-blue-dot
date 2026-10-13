@@ -722,15 +722,18 @@
 
 /* ------------------------------------------------------------- Chapters */
 
+/* The chapters run down over the pinned stage: drawn up by its height, so
+   the section is exactly as tall as they are. A chapter is a screen tall,
+   or taller when its words and picture need the room (chapter-map.ts). */
 .chapters {
-  position: absolute;
-  inset: 0;
+  position: relative;
   z-index: 2;
+  margin-top: -100svh;
   pointer-events: none;
 }
 
 .chapter {
-  height: 100svh;
+  min-height: 100svh;
   display: flex;
   align-items: center;
   padding: 5rem 6vw;
@@ -1715,12 +1718,18 @@
       transparent
     );
   }
-  /* A piece of work stacks: its body at the top, then the copy, then the
-     picture, which joins the flow under the copy. */
+  /* A piece of work stacks: first its stage, the top of the screen kept
+     clear for its body; then the copy; then the picture, in the flow under
+     the copy. The chapter grows to hold them, so one piece ends before the
+     next one's stage begins, and the camera holds the body while the rest
+     is read (chapter-map.ts). */
   .piece {
+    --stage: 46svh;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: stretch;
+    padding-top: var(--stage);
+    padding-bottom: 4.5rem;
   }
   .withLogo .aside {
     width: min(55%, calc(15vh * var(--aspect, 1.6)));
@@ -1732,6 +1741,11 @@
   }
   .piece .column {
     max-width: 34rem;
+  }
+  /* A figure is a drawing to read: the full width, now that a chapter can
+     grow to hold it. */
+  .aside:has(.figureFrame) {
+    width: 100%;
   }
 }
 

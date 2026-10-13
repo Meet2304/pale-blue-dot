@@ -12,13 +12,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import {
-  CONTACT,
-  COLLECTIONS,
-  UNITS,
-  type Collection,
-  type Unit,
-} from "@/content/work";
+import { CONTACT, COLLECTIONS, type Collection, type Unit } from "@/content/work";
 import { routes } from "@/lib/routes";
 import { markIntroOver } from "@/lib/sound-pref";
 import {
@@ -37,18 +31,16 @@ import { WorkMedia } from "./media";
 import { UniverseNav } from "./nav";
 import { Footer } from "./footer";
 import { WayMark } from "./way-mark";
+import { measureChapters } from "./chapter-map";
 import { createSmoothScroll, type SmoothScroll } from "./smooth-scroll";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
 
-/* The story: who I am, on Earth; Earth from far enough away to be a pale
-   blue dot, where I build things; further out, my impact so far; then one
-   piece of work at a time, newest first; and all of it, in the void still
-   ahead. */
-const CHAPTERS = ["earth", "dot", "impact", ...UNITS.map((u) => u.id), "next"];
-
-/* The chapter index: each piece of work is marked by its year, which is
-   named once, at the first of the year's pieces. */
+/* The story, a chapter each: who I am, on Earth; Earth from far enough
+   away to be a pale blue dot, where I build things; further out, my impact
+   so far; then one piece of work at a time, newest first; and all of it, in
+   the void still ahead. The chapter index names them, and marks each piece
+   of work by its year, named once, at the first of the year's pieces. */
 const TICKS = [
   { label: "earth", first: true },
   { label: "dot", first: true },
@@ -68,9 +60,12 @@ const lookVars = (u: Unit) => {
   return { "--kind": c[2], "--kind-soft": c[3] } as CSSProperties;
 };
 
-/* A chapter's height: 100svh, which on a phone is not always the window's
-   height (the address bar comes and goes). */
-const chapterHeight = (section: HTMLElement) => section.offsetHeight / CHAPTERS.length;
+/* Where chapter `n` starts on the page, in px: chapters can be taller than
+   the screen (chapter-map.ts), so it is measured, not multiplied out. */
+const chapterTop = (section: HTMLElement, n: number) => {
+  const el = section.querySelectorAll("[data-chapter]")[n];
+  return el ? el.getBoundingClientRect().top + window.scrollY : 0;
+};
 
 /* The opening plays once per visit: on every fresh load, but not again when
    someone comes back to the home page from /story or a unit's page within
@@ -120,10 +115,15 @@ export function Universe() {
     const el = sectionRef.current;
     if (!el) return;
     const smooth = createSmoothScroll({
+      /* Each chapter's top; and, for one taller than the screen, its last
+         screen too, so the keys read a chapter to its end before moving on. */
       stops: () => {
         const top = el.getBoundingClientRect().top + window.scrollY;
-        const h = chapterHeight(el);
-        return CHAPTERS.map((_, i) => top + i * h);
+        const view = window.innerHeight;
+        const { tops, heights } = measureChapters(el);
+        return tops.flatMap((t, i) =>
+          heights[i] > view + 1 ? [top + t, top + t + heights[i] - view] : [top + t],
+        );
       },
     });
     scrollRef.current = smooth;
@@ -137,8 +137,7 @@ export function Universe() {
   const goTo = useCallback((chapter: number) => {
     const el = sectionRef.current;
     if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    scrollRef.current?.glideTo(top + chapter * chapterHeight(el));
+    scrollRef.current?.glideTo(() => chapterTop(el, chapter));
   }, []);
 
   /* Asked for from another page's bar (page-nav.tsx): once the opening is
@@ -163,12 +162,7 @@ export function Universe() {
       {/* Outside the pinned stage, which is a layer of its own under the
           chapters' text: fixed here, the bar and its menu sit above both. */}
       <UniverseNav goTo={goTo} docked={docked} />
-      <section
-        ref={sectionRef}
-        data-universe
-        className={s.universe}
-        style={{ height: `${CHAPTERS.length * 100}svh` }}
-      >
+      <section ref={sectionRef} data-universe className={s.universe}>
         <div className={s.stage}>
           <UniverseCanvas
             arriveRef={arriveRef}
