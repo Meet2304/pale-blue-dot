@@ -4,7 +4,6 @@
  */
 export const routes = {
   home: "/",
-  about: "/about",
   work: "/work",
   story: "/story",
   contact: "/contact",

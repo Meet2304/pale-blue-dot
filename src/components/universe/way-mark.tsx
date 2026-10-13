@@ -6,7 +6,7 @@ import { ResumeMark } from "./resume-mark";
 import s from "./way-mark.module.css";
 
 export type WayIcon =
-  "home" | "story" | "about" | "work" | "contact" | "resume" | "email" | SocialId;
+  "home" | "story" | "work" | "contact" | "resume" | "email" | SocialId;
 type Drawn = Exclude<WayIcon, SocialId | "resume">;
 
 /* Each profile's own mark, from svglogos.dev (public/logos/social/). */
@@ -59,13 +59,6 @@ const DRAWINGS: Record<Drawn, ReactNode> = {
       <path d="M3.5 12h17" />
       <ellipse className={s.meridian} cx="12" cy="12" rx="4" ry="8.5" />
       <ellipse className={`${s.meridian} ${s.late}`} cx="12" cy="12" rx="4" ry="8.5" />
-    </>
-  ),
-  /* A ring: the person, not a portrait. */
-  about: (
-    <>
-      <circle cx="12" cy="9" r="3" />
-      <path d="M5.5 19.5c1.2-3 3.4-4.5 6.5-4.5s5.3 1.5 6.5 4.5" />
     </>
   ),
   /* Four points: the pieces of work. */
