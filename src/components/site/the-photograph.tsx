@@ -3,8 +3,7 @@
 import { useCallback, useId, useState, useRef } from "react";
 import Image from "next/image";
 
-import { AnimateIcon } from "@/components/animate-ui/icons/icon";
-import { X } from "@/components/animate-ui/icons/x";
+import { X } from "@/components/site/icons";
 
 const PHOTO = {
   src: "/pale-blue-dot.jpg",
@@ -73,11 +72,14 @@ export function ThePhotograph() {
         }}
       >
         <form method="dialog" className="hz-note-lightbox-bar">
-          <AnimateIcon asChild animateOnHover animateOnTap>
-            <button type="submit" className="hz-note-lightbox-close" aria-label="Close">
-              <X size={22} />
-            </button>
-          </AnimateIcon>
+          <button
+            data-animate-icon
+            type="submit"
+            className="hz-note-lightbox-close"
+            aria-label="Close"
+          >
+            <X size={22} />
+          </button>
         </form>
         <Image
           src={PHOTO.src}
