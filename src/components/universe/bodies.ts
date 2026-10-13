@@ -466,9 +466,14 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
 
   /* The Milky Way: a soft diagonal band of faint stars and dust behind. */
   const band = Math.abs(ny * 0.8 + nx * 0.45 + 0.1 * Math.sin(nx * 2 + f.seed * 9));
-  const dust = fbm3(nx * 2.2 + f.seed * 5, ny * 2.2, 0.3, 3);
-  const density = Math.exp(-band * band * 6) * (0.35 + dust);
-  if (hash(id, 23) < density * 0.22) {
+  /* The dust is at most 1: where even the densest band could not show this
+     cell, its noise is never worked out. */
+  const core = Math.exp(-band * band * 6);
+  const pick = hash(id, 23);
+  if (
+    pick < core * 1.35 * 0.22 &&
+    pick < core * (0.35 + fbm3(nx * 2.2 + f.seed * 5, ny * 2.2, 0.3, 3)) * 0.22
+  ) {
     const bright = hash(id, 24);
     return set(
       o,

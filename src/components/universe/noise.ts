@@ -19,6 +19,8 @@ const fade = (t: number) => t * t * (3 - 2 * t);
 const val = (x: number, y: number, z: number) =>
   PERM[(PERM[(PERM[x & 255] + y) & 511] + z) & 511] / 255;
 
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
 function noise3(x: number, y: number, z: number) {
   const xi = Math.floor(x);
   const yi = Math.floor(y);
@@ -26,7 +28,6 @@ function noise3(x: number, y: number, z: number) {
   const xf = fade(x - xi);
   const yf = fade(y - yi);
   const zf = fade(z - zi);
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   const x0 = xi & 255;
   const y0 = yi & 255;
   const z0 = zi & 255;

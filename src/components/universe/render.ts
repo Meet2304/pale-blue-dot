@@ -6,6 +6,7 @@ import {
   type Cell,
   type Frame,
 } from "./bodies";
+import { fillGlyphs } from "./glyph-gl";
 
 /**
  * Draw one body into the character grid. The grid is absolute (cells sit at
@@ -21,6 +22,37 @@ const bx: number[][] = Array.from({ length: BUCKETS }, () => []);
 const by: number[][] = Array.from({ length: BUCKETS }, () => []);
 const bc: string[][] = Array.from({ length: BUCKETS }, () => []);
 const cell: Cell = { c: "", k: 0, a: 0 };
+
+/**
+ * A body's characters as last worked out, kept where the body itself is:
+ * each cell's offset from its centre (in radii), glyph and bucket. Working
+ * the characters out is the costly part of a body (a shading function per
+ * cell), and they change on their own clock, a few times a second; the
+ * camera moves every frame. So while the camera moves, the last cells are
+ * carried along with the body, and worked out afresh only as often as they
+ * would be if it were still.
+ */
+export type BodyCache = {
+  at: number;
+  R: number;
+  nx: number[];
+  ny: number[];
+  c: string[];
+  b: number[];
+};
+
+export const bodyCache = (): BodyCache => ({
+  at: -1e9,
+  R: 0,
+  nx: [],
+  ny: [],
+  c: [],
+  b: [],
+});
+
+/* How far beyond the screen the cells are worked out when they are kept,
+   so a body sliding in has its edge ready. */
+const MARGIN = 0.15;
 
 export function drawBody(
   g: CanvasRenderingContext2D,
@@ -43,6 +75,11 @@ export function drawBody(
     /** The light under the glyphs and the photon ring; off when the
         caller draws its own. */
     light?: boolean;
+    /** Keep the cells here, and reuse them while they are younger than
+        `maxAge` ms (at `now`) and the body is near the same size. */
+    cache?: BodyCache;
+    now?: number;
+    maxAge?: number;
   },
 ) {
   const { w, h, cx, cy, R, cw, ch, frame, colors, alpha, light = true } = o;
@@ -90,43 +127,69 @@ export function drawBody(
     by[b].length = 0;
     bc[b].length = 0;
   }
-  const gy0 = Math.max(0, Math.floor((cy - reach) / ch));
-  const gy1 = Math.min(Math.ceil(h / ch), Math.ceil((cy + reach) / ch));
-  const gx0 = Math.max(0, Math.floor((cx - reach) / cw));
-  const gx1 = Math.min(Math.ceil(w / cw), Math.ceil((cx + reach) / cw));
+  const keep = o.cache;
+  const now = o.now ?? 0;
+  if (keep && now - keep.at < (o.maxAge ?? 80) && Math.abs(R / keep.R - 1) < 0.2) {
+    /* Carried along: the same cells, where the body is now. */
+    const { nx, ny, c, b } = keep;
+    for (let i = 0; i < nx.length; i++) {
+      const X = cx + nx[i] * R;
+      const Y = cy + ny[i] * R;
+      if (X < -cw || Y < -ch || X > w + cw || Y > h + ch) continue;
+      bx[b[i]].push(X);
+      by[b[i]].push(Y);
+      bc[b[i]].push(c[i]);
+    }
+  } else {
+    const mx = keep ? w * MARGIN : 0;
+    const my = keep ? h * MARGIN : 0;
+    const gy0 = Math.max(Math.floor(-my / ch), Math.floor((cy - reach) / ch));
+    const gy1 = Math.min(Math.ceil((h + my) / ch), Math.ceil((cy + reach) / ch));
+    const gx0 = Math.max(Math.floor(-mx / cw), Math.floor((cx - reach) / cw));
+    const gx1 = Math.min(Math.ceil((w + mx) / cw), Math.ceil((cx + reach) / cw));
+    if (keep) {
+      keep.at = now;
+      keep.R = R;
+      keep.nx.length = keep.ny.length = keep.c.length = keep.b.length = 0;
+    }
 
-  for (let gy = gy0; gy < gy1; gy++) {
-    for (let gx = gx0; gx < gx1; gx++) {
-      const X = (gx + 0.5) * cw;
-      const Y = (gy + 0.5) * ch;
-      const nx = (X - cx) / R;
-      const ny = (Y - cy) / R;
-      if (nx * nx + ny * ny > extent * extent) continue;
-      if (!fn(nx, ny, gx * 131 + gy * 977, frame, cell)) continue;
-      const lvl = Math.min(
-        LEVELS - 1,
-        Math.max(0, Math.floor(cell.a * LEVELS - 0.001)),
-      );
-      const b = cell.k * LEVELS + lvl;
-      bx[b].push(X);
-      by[b].push(Y);
-      bc[b].push(cell.c);
+    for (let gy = gy0; gy < gy1; gy++) {
+      for (let gx = gx0; gx < gx1; gx++) {
+        const X = (gx + 0.5) * cw;
+        const Y = (gy + 0.5) * ch;
+        const nx = (X - cx) / R;
+        const ny = (Y - cy) / R;
+        if (nx * nx + ny * ny > extent * extent) continue;
+        if (!fn(nx, ny, gx * 131 + gy * 977, frame, cell)) continue;
+        const lvl = Math.min(
+          LEVELS - 1,
+          Math.max(0, Math.floor(cell.a * LEVELS - 0.001)),
+        );
+        const b = cell.k * LEVELS + lvl;
+        if (keep) {
+          keep.nx.push(nx);
+          keep.ny.push(ny);
+          keep.c.push(cell.c);
+          keep.b.push(b);
+        }
+        if (X < -cw || Y < -ch || X > w + cw || Y > h + ch) continue;
+        bx[b].push(X);
+        by[b].push(Y);
+        bc[b].push(cell.c);
+      }
     }
   }
 
-  g.font = o.font;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  for (let b = 0; b < BUCKETS; b++) {
-    const xs = bx[b];
-    if (!xs.length) continue;
-    g.fillStyle = colors[Math.floor(b / LEVELS)];
-    g.globalAlpha = (((b % LEVELS) + 1) / LEVELS) * alpha;
-    const ys = by[b];
-    const cs = bc[b];
-    for (let j = 0; j < xs.length; j++) g.fillText(cs[j], xs[j], ys[j]);
-  }
-  g.globalAlpha = 1;
+  fillGlyphs(
+    g,
+    o.font,
+    BUCKETS,
+    (b) => colors[Math.floor(b / LEVELS)],
+    (b) => (((b % LEVELS) + 1) / LEVELS) * alpha,
+    bx,
+    by,
+    bc,
+  );
 
   /* The photon ring, drawn as light: a thin circle with a bloom. */
   if (light && body === "blackhole" && R > 20) {

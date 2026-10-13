@@ -12,12 +12,14 @@ import {
   type Body,
 } from "./backdrop";
 import { FIRST, SKY } from "./chapters";
-import { buildCosmos, createCosmos, drawCosmos } from "./cosmos";
+import { buildCosmos, createCosmos, drawCosmos, warmCosmos } from "./cosmos";
+import { buildCosmosOffThread } from "./cosmos-off-thread";
 import { EARTH_COLORS, KINDS, layout } from "./encoding";
+import { glyphs } from "./glyph-gl";
 import { CELL, fit, mulberry32, whenIdle } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
-import { drawBody, makeFrame } from "./render";
+import { bodyCache, drawBody, makeFrame } from "./render";
 
 /**
  * One universe, one camera, driven by scroll.
@@ -114,7 +116,9 @@ export function UniverseCanvas({
 
   useEffect(() => {
     const canvas = ref.current;
-    const g = canvas?.getContext("2d");
+    /* Opaque: it is painted black edge to edge every frame, so the
+       compositor need not blend it with what lies under it. */
+    const g = canvas?.getContext("2d", { alpha: false });
     if (!canvas || !g) return;
 
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -143,6 +147,10 @@ export function UniverseCanvas({
       box: [0, 0, 0, 0] as [number, number, number, number],
     };
     const eg = earth.canvas.getContext("2d");
+    /* Each body's characters, carried along while the camera moves
+       (render.ts). */
+    const cells = placed.map(() => bodyCache());
+    const earthCells = bodyCache();
 
     let w = 0;
     let h = 0;
@@ -444,15 +452,25 @@ export function UniverseCanvas({
        now and then, leaving the frames to the arrival. */
     const settleUntil = arriveRef.current === 0 ? last + 550 : 0;
     let drawnAt = -1e9;
-    /* The deep sky and its dust are worked out in the page's quiet moments,
-       so they are ready long before anyone scrolls to them without taking
-       time from a frame. */
+    let shownCursor = "";
+    /* The deep sky is measured in a worker (cosmos.worker.ts), and the
+       dust in the page's quiet moments, so both are ready long before
+       anyone scrolls to them without taking time from a frame. Without a
+       worker, the quiet moments measure the sky too. */
+    let live = true;
+    const warm = () => {
+      if (live) cancelWarm = whenIdle(() => warmCosmos(cosmos), 3000);
+    };
+    let cancelWarm = () => {};
+    const offThread = buildCosmosOffThread(cosmos, warm);
     const build = (budget: number) => {
       const start = performance.now();
       const done =
         buildBackdrop(backdrop, budget) &&
-        buildCosmos(cosmos, budget - (performance.now() - start), performance.now());
+        (offThread ||
+          buildCosmos(cosmos, budget - (performance.now() - start), performance.now()));
       if (!done) cancelBuild = whenIdle(build);
+      else if (!offThread) warm();
     };
     let cancelBuild = whenIdle(build);
     const frame = (now: number) => {
@@ -476,11 +494,11 @@ export function UniverseCanvas({
          animates a wheel's notches, and the stops glide (universe.tsx). */
       sv = target;
       const s = sv;
-      /* Scrolled out before the quiet moments have finished the deep sky,
-         the frames finish it. */
+      /* Scrolled out before the quiet moments have finished the dust (and,
+         without a worker, the deep sky), the frames finish it. */
       if (s > 0.2 && !cosmos.readyAt) {
         buildBackdrop(backdrop, 2);
-        buildCosmos(cosmos, 4, now);
+        if (!offThread) buildCosmos(cosmos, 4, now);
       }
 
       const cam = camAt(s);
@@ -527,18 +545,25 @@ export function UniverseCanvas({
         1,
         Math.max(0, (Math.log(keys[0].z) - Math.log(cam.z)) / 2),
       );
-      g.fillStyle = "#dfe6f5";
+      /* On the GPU, all of them in one go: one fillRect each was 900
+         canvas calls a frame. */
+      const dots = glyphs();
+      if (dots) dots.begin(g, "");
+      else g.fillStyle = "#dfe6f5";
+      const fade = (0.4 + zoomOut * 0.4) * (1 - 0.6 * skyA) * (1 - 0.9 * voidA);
       for (const st of stars) {
         const px = (((st.x * w - cam.x * cam.z * 0.004 * st.z) % w) + w) % w;
         const py = (((st.y * h - cam.y * cam.z * 0.004 * st.z) % h) + h) % h;
-        g.globalAlpha =
-          st.b *
-          (0.4 + zoomOut * 0.4) *
-          (1 - 0.6 * skyA) *
-          (1 - 0.9 * voidA) *
-          (calm ? 1 : 0.7 + 0.3 * Math.sin(t + st.p));
-        g.fillRect(px, py, 1.1, 1.1);
+        const a = st.b * fade * (calm ? 1 : 0.7 + 0.3 * Math.sin(t + st.p));
+        if (dots) {
+          dots.color("#dfe6f5", a);
+          dots.dot(px, py, 1.1);
+        } else {
+          g.globalAlpha = a;
+          g.fillRect(px, py, 1.1, 1.1);
+        }
       }
+      dots?.end();
       g.globalAlpha = 1;
 
       /* The stars behind Earth. They belong to the close-up: as the camera
@@ -552,9 +577,14 @@ export function UniverseCanvas({
         const pull = cam.z / keys[0].z;
         const clear = cam.z * earthScale * 1.12;
         const count = Math.min(skyStars.length, Math.round((w * h) / 9000));
-        g.font = `${narrow ? 10 : 11}px ${mono}`;
-        g.textAlign = "center";
-        g.textBaseline = "middle";
+        const font = `${narrow ? 10 : 11}px ${mono}`;
+        const gpu = glyphs();
+        if (gpu) gpu.begin(g, font);
+        else {
+          g.font = font;
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+        }
         let tint = -1;
         for (const st of skyStars) {
           /* A density, not a fixed number, so a phone gets a sparser sky.
@@ -566,13 +596,20 @@ export function UniverseCanvas({
           if (Math.hypot(px - ex0, py - ey0) < clear) continue;
           const tw = calm ? 0.8 : (0.5 + 0.5 * Math.sin(t * st.rate + st.p)) ** 2;
           const level = st.b * (0.3 + 0.7 * tw);
+          const glyph = level > 0.72 ? "*" : level > 0.42 ? "+" : "·";
+          if (gpu) {
+            gpu.color(TINTS[st.tint], level * near * 1.1);
+            gpu.add(glyph, px, py);
+            continue;
+          }
           if (st.tint !== tint) {
             tint = st.tint;
             g.fillStyle = TINTS[tint];
           }
           g.globalAlpha = Math.min(1, level * near * 1.1);
-          g.fillText(level > 0.72 ? "*" : level > 0.42 ? "+" : "·", px, py);
+          g.fillText(glyph, px, py);
         }
+        gpu?.end();
         g.globalAlpha = 1;
       }
 
@@ -589,9 +626,14 @@ export function UniverseCanvas({
         const ex0 = toX(0);
         const ey0 = toY(0);
         const half = Math.max(w, h) * 0.5;
-        g.font = `${narrow ? 10 : 11}px ${mono}`;
-        g.textAlign = "center";
-        g.textBaseline = "middle";
+        const font = `${narrow ? 10 : 11}px ${mono}`;
+        const gpu = glyphs();
+        if (gpu) gpu.begin(g, font);
+        else {
+          g.font = font;
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+        }
         for (const shell of shells) {
           /* How wide the shell is on screen, against the screen: it shows
              from well beyond the edges down to a small cluster. */
@@ -606,11 +648,18 @@ export function UniverseCanvas({
             if (px < -8 || py < -8 || px > w + 8 || py > h + 8) continue;
             const tw = calm ? 0.8 : 0.6 + 0.4 * Math.sin(t * st.rate + st.p);
             const level = st.b * tw;
+            const glyph = level > 0.7 ? "+" : "·";
+            if (gpu) {
+              gpu.color(TINTS[st.tint], level * la * travel);
+              gpu.add(glyph, px, py);
+              continue;
+            }
             g.fillStyle = TINTS[st.tint];
             g.globalAlpha = Math.min(1, level * la * travel);
-            g.fillText(level > 0.7 ? "+" : "·", px, py);
+            g.fillText(glyph, px, py);
           }
         }
+        gpu?.end();
         g.globalAlpha = 1;
       }
 
@@ -829,6 +878,11 @@ export function UniverseCanvas({
             fn: portrait.fn,
             extent,
             light: portrait.mapLight ?? false,
+            /* Under the pointer it answers every frame. */
+            cache: scan ? undefined : cells[i],
+            now,
+            /* A little apart, so no two are worked out in the same frame. */
+            maxAge: 72 + (i % 5) * 5,
           });
           portrait.over?.(wg, light);
 
@@ -954,6 +1008,10 @@ export function UniverseCanvas({
               colors: EARTH_COLORS,
               alpha: alphaE,
               font: `${ech * 0.92}px ${mono}`,
+              /* Scanned or dragged, it answers every frame. */
+              cache: earthScan || pointer.down ? undefined : earthCells,
+              now,
+              maxAge: 50,
             });
             earth.key = earthKey;
             earth.at = now;
@@ -1058,7 +1116,9 @@ export function UniverseCanvas({
          and squeezed across, shrinks, and fades as it reaches the shadow.
          The chapter would otherwise fade its copy as it leaves the screen;
          while the hole pulls, the copy stays lit until it is swallowed. */
-      canvas.style.cursor = hovered ? "pointer" : "";
+      /* Only on a change: a style written every frame dirties the page. */
+      const cursor = hovered ? "pointer" : "";
+      if (cursor !== shownCursor) canvas.style.cursor = shownCursor = cursor;
     };
 
     resize();
@@ -1141,7 +1201,9 @@ export function UniverseCanvas({
 
     return () => {
       cancelAnimationFrame(raf);
+      live = false;
       cancelBuild();
+      cancelWarm();
       ro.disconnect();
       mo.disconnect();
       cancelAnimationFrame(remeasure);
