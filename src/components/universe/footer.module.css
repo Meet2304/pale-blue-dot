@@ -140,6 +140,16 @@
     border-color 200ms;
 }
 
+/* The foot's last pixel, watched to tell when the page has run out. */
+.endMark {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
 .toEarth[data-shown="true"] {
   opacity: 1;
   translate: 0 0;

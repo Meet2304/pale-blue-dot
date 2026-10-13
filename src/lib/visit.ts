@@ -40,3 +40,26 @@ export const takeChapter = () => {
   chapter = null;
   return n;
 };
+
+/* The opening plays on a first visit. Seen within the last month, a visit
+   lands on the hero at once: the greeting has been said. Kept in
+   localStorage under this key, as when it was last seen (ms). */
+export const SEEN_KEY = "pbd-opening-seen";
+export const SEEN_FOR = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Runs before the page is first painted (an inline script, so before any
+ * of the site's JS has loaded): marks <html> `data-returning` for a recent
+ * visitor, so the server's HTML shows the hero rather than the opening's
+ * black. Kept tiny and self-contained: it is inlined as a string.
+ */
+export const RETURNING_SCRIPT = `try{var t=+localStorage.getItem(${JSON.stringify(SEEN_KEY)});if(t&&Date.now()-t<${SEEN_FOR})document.documentElement.dataset.returning=""}catch(e){}`;
+
+export const isReturning = () =>
+  typeof document !== "undefined" && "returning" in document.documentElement.dataset;
+
+export const markOpeningSeen = () => {
+  try {
+    localStorage.setItem(SEEN_KEY, String(Date.now()));
+  } catch {}
+};

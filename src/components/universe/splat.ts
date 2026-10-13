@@ -12,9 +12,10 @@
  *   - double-click to go back to where the photo was taken;
  *   - just pointing leans the view a little.
  *
- * Kind to the device: three.js and Spark are fetched only when the picture
- * is about a screen away, and the splat file after them; the photograph
- * shows until the splat is ready and then gives way to it; it draws only
+ * Kind to the device: the splat file is fetched once the picture has held
+ * the screen a moment, and three.js and Spark only when a pointer or focus
+ * reaches it; the photograph shows until the splat is ready and then gives
+ * way to it; it draws only
  * while the camera moves (and a moment after, while Spark re-sorts); the
  * pixel ratio is capped at 1.5. Phones, reduced motion, Data Saver and
  * browsers without WebGL2 keep the photograph.
@@ -115,9 +116,10 @@ export function mountSplat(
 
   async function start() {
     try {
-      const [THREE, { SparkRenderer, SplatMesh }] = await Promise.all([
+      const [THREE, { SparkRenderer, SplatMesh }, fileBytes] = await Promise.all([
         import("three"),
         import("@sparkjsdev/spark"),
+        prefetch(),
       ]);
       if (dead) return;
       const renderer = new THREE.WebGLRenderer({
@@ -133,7 +135,7 @@ export function mountSplat(
       camera.zoom = 1.1;
       const spark = new SparkRenderer({ renderer });
       scene.add(spark);
-      const mesh = new SplatMesh({ url: src });
+      const mesh = new SplatMesh({ fileBytes, fileName: src });
       /* SHARP writes OpenCV axes (y down, z forward): turn them over. */
       mesh.quaternion.set(1, 0, 0, 0);
       scene.add(mesh);
@@ -240,20 +242,34 @@ export function mountSplat(
   host.addEventListener("wheel", wheel, { passive: false });
   host.addEventListener("dblclick", reset);
 
-  let fetched = false;
-  const near = new IntersectionObserver(
-    (entries) => {
-      if (!fetched && entries[entries.length - 1].isIntersecting) {
-        fetched = true;
-        void start();
-      }
-    },
-    { rootMargin: "100% 0px" },
-  );
-  near.observe(host);
+  /* At rest the splat is the photograph, pixel for pixel, so the
+     photograph shows until someone reaches for it: a pointer over it, or
+     a key's focus. Building the splat (three.js and Spark's shaders, a
+     million splats) holds the main thread for the best part of a second;
+     done on the way past, it stalled the scroll. The file itself (16 MB)
+     is fetched once the chapter has held the screen for a moment, which
+     costs the page nothing, so by the time a pointer reaches the picture
+     there is little left to wait for. */
+  let started = false;
+  let bytes: Promise<ArrayBuffer> | null = null;
+  const prefetch = () =>
+    (bytes ??= fetch(src, { priority: "low" } as RequestInit).then((r) => {
+      if (!r.ok) throw new Error(`splat ${r.status}`);
+      return r.arrayBuffer();
+    }));
+  const intent = () => {
+    if (started || dead) return;
+    started = true;
+    void start();
+  };
+  let dwell = 0;
+  host.addEventListener("pointerenter", intent);
+  host.addEventListener("focusin", intent);
   const view = new IntersectionObserver(
     (entries) => {
       visible = entries[entries.length - 1].isIntersecting;
+      window.clearTimeout(dwell);
+      if (visible && !bytes) dwell = window.setTimeout(prefetch, 1200);
       if (visible) run();
     },
     { threshold: 0.25 },
@@ -277,7 +293,9 @@ export function mountSplat(
     host.removeEventListener("pointerleave", leave);
     host.removeEventListener("wheel", wheel);
     host.removeEventListener("dblclick", reset);
-    near.disconnect();
+    host.removeEventListener("pointerenter", intent);
+    host.removeEventListener("focusin", intent);
+    window.clearTimeout(dwell);
     view.disconnect();
     sizer.disconnect();
     dispose();

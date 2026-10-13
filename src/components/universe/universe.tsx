@@ -3,10 +3,12 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type ReactNode,
+  type RefObject,
 } from "react";
 import Link from "next/link";
 
@@ -19,7 +21,12 @@ import {
 } from "@/content/work";
 import { routes } from "@/lib/routes";
 import { markIntroOver } from "@/lib/sound-pref";
-import { takeChapter } from "@/lib/visit";
+import {
+  isReturning,
+  markOpeningSeen,
+  RETURNING_SCRIPT,
+  takeChapter,
+} from "@/lib/visit";
 
 import { KINDS } from "./encoding";
 import { Greeting, Headline, Intro, SpokenTitle } from "./intro";
@@ -73,7 +80,9 @@ let introPlayed = false;
 type IntroPhase = "intro" | "landing" | "done";
 
 export function Universe() {
-  const [active, setActive] = useState(0);
+  /* Past the hero, the bar docks. Only this crossing renders the page
+     again; which chapter is on screen lives in the index (ChapterIndex). */
+  const [docked, setDocked] = useState(false);
   const [intro, setIntro] = useState<IntroPhase>(() =>
     introPlayed ? "done" : "intro",
   );
@@ -88,7 +97,20 @@ export function Universe() {
   }, []);
   const onIntroDone = useCallback(() => {
     introPlayed = true;
+    markOpeningSeen();
     markIntroOver();
+    setIntro("done");
+  }, []);
+  /* A recent visitor has heard the greeting: the hero is there at once
+     (the server's HTML already shows it, see RETURNING_SCRIPT), and Earth
+     grows in from a point of light as it does after the opening. Before
+     the browser paints, so the opening is never seen. */
+  useLayoutEffect(() => {
+    if (introPlayed || !isReturning()) return;
+    introPlayed = true;
+    arriveRef.current = performance.now();
+    markIntroOver();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- has to land before the first paint; the server can't know
     setIntro("done");
   }, []);
   const sectionRef = useRef<HTMLElement>(null);
@@ -127,21 +149,9 @@ export function Universe() {
     if (n !== null && n > 0) goTo(n);
   }, [intro, goTo]);
 
-  /* Which chapter is on screen, for the index on the right. */
-  useEffect(() => {
-    const onScroll = () => {
-      const el = sectionRef.current;
-      if (!el) return;
-      const s = -el.getBoundingClientRect().top / chapterHeight(el);
-      setActive(Math.max(0, Math.min(CHAPTERS.length - 1, Math.round(s))));
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <main id="content" className={s.root} data-intro={intro}>
+      <script dangerouslySetInnerHTML={{ __html: RETURNING_SCRIPT }} />
       {intro !== "done" && (
         <Intro
           target={greetingRef}
@@ -152,7 +162,7 @@ export function Universe() {
       )}
       {/* Outside the pinned stage, which is a layer of its own under the
           chapters' text: fixed here, the bar and its menu sit above both. */}
-      <UniverseNav goTo={goTo} docked={active > 0} />
+      <UniverseNav goTo={goTo} docked={docked} />
       <section
         ref={sectionRef}
         data-universe
@@ -165,20 +175,11 @@ export function Universe() {
             onPick={(i) => goTo(i + FIRST)}
             className={s.canvas}
           />
-          <ol className={s.ticks} aria-label="Chapters">
-            {TICKS.map(({ label, first }, i) => (
-              <li key={`${label}-${i}`}>
-                <button
-                  type="button"
-                  data-first={first}
-                  aria-current={active === i ? "step" : undefined}
-                  onClick={() => goTo(i)}
-                >
-                  <span>{label[0].toUpperCase() + label.slice(1)}</span>
-                </button>
-              </li>
-            ))}
-          </ol>
+          <ChapterIndex
+            sectionRef={sectionRef}
+            goTo={goTo}
+            onChapter={(n) => setDocked(n > 0)}
+          />
         </div>
 
         <div className={s.chapters}>
@@ -275,6 +276,64 @@ export function Universe() {
   );
 }
 
+/**
+ * The chapter index down the right edge, which knows which chapter is on
+ * screen: the one across the middle of the screen, watched rather than
+ * measured on every scroll (which forced the page's layout each time). It
+ * keeps that to itself, so a chapter going by renders the index again, not
+ * the whole page.
+ */
+function ChapterIndex({
+  sectionRef,
+  goTo,
+  onChapter,
+}: {
+  sectionRef: RefObject<HTMLElement | null>;
+  goTo: (chapter: number) => void;
+  onChapter: (chapter: number) => void;
+}) {
+  const [active, setActive] = useState(0);
+  const report = useRef(onChapter);
+  useEffect(() => {
+    report.current = onChapter;
+  }, [onChapter]);
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const chapters = [...el.querySelectorAll<HTMLElement>("[data-chapter]")];
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const n = chapters.indexOf(e.target as HTMLElement);
+          setActive(n);
+          report.current(n);
+        }
+      },
+      { rootMargin: "-50% 0px -50% 0px" },
+    );
+    chapters.forEach((c) => io.observe(c));
+    return () => io.disconnect();
+  }, [sectionRef]);
+
+  return (
+    <ol className={s.ticks} aria-label="Chapters">
+      {TICKS.map(({ label, first }, i) => (
+        <li key={`${label}-${i}`}>
+          <button
+            type="button"
+            data-first={first}
+            aria-current={active === i ? "step" : undefined}
+            onClick={() => goTo(i)}
+          >
+            <span>{label[0].toUpperCase() + label.slice(1)}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Chapter({
   children,
   aside,
@@ -314,6 +373,7 @@ function Chapter({
       className={`${s.chapter} ${className ?? ""}`}
       style={style}
       data-on={on}
+      data-chapter
       data-piece={piece}
     >
       <div className={s.column} data-part="copy">

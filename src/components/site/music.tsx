@@ -43,11 +43,15 @@ export function Music() {
   const wantRef = useRef(false);
   const want = ready && !muted;
 
-  /* The file, fetched while the opening plays so it is there when needed. */
+  /* The file (3.5 MB) is fetched only once it is wanted: it streams, so
+     it starts within moments, and a visit that never plays it (sound off,
+     or blocked and never unblocked) never pays for it. Fetched up front,
+     it competed with the page itself for the connection. */
   useEffect(() => {
-    const audio = new Audio(SRC);
+    const audio = new Audio();
     audio.loop = true;
-    audio.preload = "auto";
+    audio.preload = "none";
+    audio.src = SRC;
     audio.volume = 0;
     audioRef.current = audio;
     const on = () => setPlaying(true);
@@ -99,8 +103,11 @@ export function Music() {
         () => false,
       );
 
+    /* Before any press or key, a browser refuses to play, and asking
+       anyway can start fetching the file for nothing: wait for the press. */
+    const pressed = navigator.userActivation?.hasBeenActive ?? true;
     let off = () => {};
-    start().then((ok) => {
+    (pressed ? start() : Promise.resolve(false)).then((ok) => {
       if (ok || !wantRef.current) return;
       /* Blocked: the first real gesture is the permission. (Scrolling
          doesn't count as one in any browser; a press or a key does.) */
@@ -138,20 +145,17 @@ export function Music() {
         else setMuted(!muted);
       }}
     >
-      <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden>
-        {[3, 7, 11, 15].map((x, i) => (
-          <rect
-            key={x}
+      {/* Four bars, as boxes rather than SVG: a box's transform animates on
+          the compositor, where an SVG shape's repainted the page every frame. */}
+      <span className={s.soundBars} aria-hidden>
+        {[0, 1, 2, 3].map((i) => (
+          <i
+            key={i}
             className={s.soundBar}
-            x={x}
-            y="4"
-            width="2"
-            height="12"
-            rx="1"
             style={{ animationDelay: `${i * -0.35}s` }}
           />
         ))}
-      </svg>
+      </span>
     </button>
   );
 }
