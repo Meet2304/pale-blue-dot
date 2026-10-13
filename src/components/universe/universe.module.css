@@ -1070,12 +1070,6 @@
   color: var(--mute);
 }
 
-.count {
-  margin-left: 0.9rem;
-  padding-left: 0.9rem;
-  border-left: 1px solid var(--hair);
-}
-
 .pieceName {
   margin-top: 0.7rem;
   font-weight: 300;
@@ -1120,61 +1114,14 @@
   color: var(--soft);
 }
 
-/* Where the work is: its own page first, then the thing itself, and its
-   code. */
+/* Where the work is, in one row (piece-links.tsx): its own page first, in
+   a frame, then the thing itself and its code, quieter, beside it. */
 .visits {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.6rem 1.6rem;
+  gap: 0.4rem 1.4rem;
   margin: 1.3rem 0 0;
-}
-
-.visit {
-  display: inline-block;
-  border-bottom: 0;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--fg);
-  text-decoration: underline;
-  text-decoration-color: var(--kind);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.35em;
-  transition: text-decoration-color 200ms;
-}
-
-.visit:hover {
-  text-decoration-color: var(--fg);
-}
-
-/* Its own page: the arrow leans on toward it when pointed at. */
-.more span {
-  display: inline-block;
-  transition: translate 200ms;
-}
-
-.more:is(:hover, :focus-visible) span {
-  translate: 0.2em 0;
-}
-
-/* The code: no underline, just quiet text that takes the piece's colour,
-   logo and all, when pointed at. */
-.visit.code {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: var(--soft);
-  text-decoration: none;
-  transition: color 200ms;
-}
-
-.visit.code:is(:hover, :focus-visible) {
-  color: var(--kind);
-}
-
-.codeMark {
-  width: 1rem;
-  height: 1rem;
 }
 
 /* The picture of the work: under the body, right of the copy, as large as
@@ -1788,8 +1735,8 @@
     font-size: 0.8125rem;
     line-height: 1.45;
   }
-  .visit {
-    margin-top: 0.5rem;
+  .visits {
+    margin-top: 1.8rem;
   }
   /* No room for the tags here, or for all of the brief: the piece's page
      has both. */
@@ -1840,8 +1787,9 @@
     font-size: 0.9375rem;
     line-height: 1.5;
   }
-  .visit {
-    margin-top: 0.8rem;
+  .visits {
+    column-gap: 1rem;
+    margin-top: 1.7rem;
   }
   /* The first three tags, the most telling; the piece's page has the
      rest. */
