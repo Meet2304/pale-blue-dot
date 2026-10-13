@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, type RefObject } from "react";
 
 import { debugWord } from "./debug-word";
-import { createIntroSound } from "./intro-sound";
+import { createIntroSound, introSoundLive } from "./intro-sound";
 import {
   GREETING_WORDS,
   HEADLINE,
@@ -514,9 +514,11 @@ export function SpokenTitle({
         if (!e.isIntersecting || e.intersectionRatio < 0.15) return;
         io.disconnect();
         timer = window.setTimeout(() => {
-          sound = createIntroSound();
-          const pans = letters.map(panOf);
-          sound.play(spoken.ticks, tickPans(spoken, spoken.ticks, pans, false), LEAD);
+          if (introSoundLive()) {
+            sound = createIntroSound();
+            const pans = letters.map(panOf);
+            sound.play(spoken.ticks, tickPans(spoken, spoken.ticks, pans, false), LEAD);
+          }
           const t0 = performance.now() + LEAD;
           const step = (now: number) => {
             const t = now - t0;

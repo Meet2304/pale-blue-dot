@@ -1,0 +1,123 @@
+/* The icons' motion (icons.tsx). Each part moves about its own box, as
+   Animate UI moved it, when the control it sits in (marked
+   `data-animate-icon`) is pointed at, focused from the keyboard, or pressed.
+   ease-in-out is the curve those used. */
+
+.part {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    translate 300ms ease-in-out,
+    rotate 400ms ease-in-out,
+    opacity 200ms ease-in-out;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) .arrowLeft {
+  translate: -25% 0;
+}
+
+/* The arrow out of a box: 2 px up and right. */
+.outQuick {
+  transition-duration: 300ms;
+}
+
+.out {
+  transition-duration: 400ms;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) :is(.out, .outQuick) {
+  translate: 2px -2px;
+}
+
+/* The bars fold into an arrow, with the slight overshoot of a spring. */
+.menuTop,
+.menuBottom {
+  transition:
+    translate 450ms cubic-bezier(0.3, 1.25, 0.5, 1),
+    rotate 450ms cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+.menuTop {
+  transform-origin: top right;
+}
+
+.menuBottom {
+  transform-origin: bottom right;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) .menuTop {
+  translate: -2.35px 0.35px;
+  rotate: -45deg;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) .menuMid {
+  opacity: 0;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) .menuBottom {
+  translate: -2.35px -0.35px;
+  rotate: 45deg;
+}
+
+/* The bubble wiggles once, from its tail. */
+.wiggle {
+  transform-origin: bottom left;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) .wiggle {
+  animation: wiggle 800ms;
+}
+
+@keyframes wiggle {
+  0% {
+    rotate: 0deg;
+    animation-timing-function: ease-in-out;
+  }
+  40% {
+    rotate: 8deg;
+    animation-timing-function: ease-in-out;
+  }
+  60% {
+    rotate: -8deg;
+    animation-timing-function: ease-in-out;
+  }
+  80% {
+    rotate: 2deg;
+    animation-timing-function: ease-in-out;
+  }
+  100% {
+    rotate: 0deg;
+  }
+}
+
+/* The orbit turns while pointed at. */
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) .orbit {
+  animation: turn 2s linear infinite;
+}
+
+@keyframes turn {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* The cross's strokes turn a quarter, the second 100 ms behind. */
+.xTwo {
+  transition-delay: 100ms;
+}
+
+:global([data-animate-icon]):is(:hover, :focus-visible, :active) :is(.xOne, .xTwo) {
+  rotate: 90deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .part {
+    transition: none;
+    animation: none !important;
+    translate: none !important;
+    rotate: none !important;
+  }
+  :global([data-animate-icon]):is(:hover, :focus-visible, :active) .menuMid {
+    opacity: 1;
+  }
+}

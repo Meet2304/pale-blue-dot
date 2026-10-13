@@ -1,7 +1,19 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Malicious prompt classifier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet">
-<script>if(location.search.includes("bare"))document.documentElement.classList.add("bare")</script>
+<script>if(location.search.includes("bare"))document.documentElement.classList.add("bare");(() => {
+  const STEP = 1000 / 30;
+  let next = 0, quietUntil = 0;
+  try {
+    if (parent !== window)
+      parent.addEventListener("scroll", () => { quietUntil = performance.now() + 180; }, { passive: true });
+  } catch (e) {}
+  window.paced = (cb) => requestAnimationFrame(function go(t) {
+    if (t < quietUntil || t < next) { requestAnimationFrame(go); return; }
+    next = Math.max(next + STEP, t - STEP / 2);
+    cb(t);
+  });
+})();</script>
 <style>
 .iso{
   --anatomy-page:#0b0b0b;--anatomy-card:#131313;--anatomy-text:#a3a3a3;--anatomy-strong:#e6e6e6;--anatomy-muted:#6e6e6e;
@@ -1036,9 +1048,9 @@ function tick(now) {
   draw();
   const settled = !touring && Math.abs(target - b) < 0.01;
   if (settled) b = target;
-  frame = visible && !settled ? requestAnimationFrame(tick) : 0;
+  frame = visible && !settled ? paced(tick) : 0;
 }
-const run = () => { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } };
+const run = () => { if (!frame && visible) { last = 0; frame = paced(tick); } };
 new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
 
 let grab = null;

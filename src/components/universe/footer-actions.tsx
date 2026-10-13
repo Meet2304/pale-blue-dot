@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -51,29 +51,32 @@ export function HomeLink({
  */
 export function BackToEarth() {
   const [atEnd, setAtEnd] = useState(false);
+  const mark = useRef<HTMLSpanElement>(null);
+  /* A mark at the foot's last pixel, watched rather than measured: reading
+     the page's height on every scroll forced a layout each time. */
   useEffect(() => {
-    const check = () => {
-      const end = document.documentElement.scrollHeight - window.innerHeight;
-      setAtEnd(end > 0 && window.scrollY >= end - 24);
-    };
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-    return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-    };
+    const el = mark.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => setAtEnd(entries[entries.length - 1].isIntersecting),
+      { rootMargin: "0px 0px 24px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
   return (
-    <button
-      type="button"
-      className={s.toEarth}
-      data-shown={atEnd}
-      tabIndex={atEnd ? 0 : -1}
-      aria-hidden={!atEnd}
-      onClick={toTop}
-    >
-      <span aria-hidden>↑</span> Back to Earth
-    </button>
+    <>
+      <span ref={mark} className={s.endMark} aria-hidden />
+      <button
+        type="button"
+        className={s.toEarth}
+        data-shown={atEnd}
+        tabIndex={atEnd ? 0 : -1}
+        aria-hidden={!atEnd}
+        onClick={toTop}
+      >
+        <span aria-hidden>↑</span> Back to Earth
+      </button>
+    </>
   );
 }

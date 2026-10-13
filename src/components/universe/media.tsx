@@ -9,8 +9,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 
-import { AnimateIcon } from "@/components/animate-ui/icons/icon";
-import { SquareArrowOutUpRight } from "@/components/animate-ui/icons/square-arrow-out-up-right";
+import { SquareArrowOutUpRight } from "@/components/site/icons";
 import type { FramedMedia, Media } from "@/content/work";
 
 import { FigureMedia, SplatMedia } from "./pictures";
@@ -214,18 +213,17 @@ function Framed({ media }: { media: FramedMedia }) {
               </a>
               {/* The live site, in a new tab: at the bar's end, as a
                   browser's own control would be; it moves when pointed at. */}
-              <AnimateIcon asChild animateOnHover>
-                <a
-                  className={s.openLive}
-                  href={media.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`Open ${media.label} in a new tab`}
-                  title={`Open ${media.label} in a new tab`}
-                >
-                  <SquareArrowOutUpRight size={16} aria-hidden />
-                </a>
-              </AnimateIcon>
+              <a
+                data-animate-icon
+                className={s.openLive}
+                href={media.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${media.label} in a new tab`}
+                title={`Open ${media.label} in a new tab`}
+              >
+                <SquareArrowOutUpRight size={16} aria-hidden />
+              </a>
             </div>
             <div className={s.screen}>
               <button

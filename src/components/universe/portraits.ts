@@ -312,6 +312,49 @@ function cratersFor(seed: number) {
 }
 const ROCK = [".", ",", ":", ";", "o", "0"];
 
+type Planet = NonNullable<Look["planet"]>;
+
+/* Whether a ring is at elliptical radius `e`, and the ring's glyph there.
+   Kept out of `planet`, which runs for every cell: as closures inside it
+   they were made anew for each one. */
+const ringAt = (pl: Planet, e: number) =>
+  pl.ring &&
+  e > RING_IN &&
+  e < RING_OUT &&
+  Math.abs(e - GAP) > 0.055 &&
+  Math.sin(e * 30) > -0.7;
+
+const ringGlyph = (o: Cell, er: number, rx: number, ry: number) => {
+  const b = (1 - Math.abs(er - 1.6) / 0.62) * (er < GAP ? 1 : 0.75);
+  /* The planet's shadow falls across the far side of the rings. */
+  const shade = ry < 0 && rx > 0 && rx < 1 ? 0.35 : 1;
+  const v = Math.max(0, b) * shade;
+  return set(o, v > 0.6 ? "=" : v > 0.3 ? "-" : "·", v > 0.6 ? 3 : 2, 0.4 + v * 0.55);
+};
+
+/* Where each moon is at time `tt`: the same for every cell of a frame, so
+   worked out once a frame, not once a cell. */
+type Moon = { mx: number; my: number; size: number };
+let moonsFor: { pl: Planet | null; tt: number; list: Moon[] } = {
+  pl: null,
+  tt: NaN,
+  list: [],
+};
+const moonsAt = (pl: Planet, tt: number) => {
+  if (moonsFor.pl === pl && moonsFor.tt === tt) return moonsFor.list;
+  const list = Array.from({ length: pl.moons }, (_, m) => {
+    const orbit = (pl.ring ? 2.05 : 1.55) + m * 0.42;
+    const ma = 2.4 + m * 2.3 + tt * (0.05 + m * 0.03);
+    return {
+      mx: Math.cos(ma) * orbit,
+      my: Math.sin(ma) * orbit * 0.22 - orbit * 0.3,
+      size: 0.13 - m * 0.03,
+    };
+  });
+  moonsFor = { pl, tt, list };
+  return list;
+};
+
 const planet: BodyFn = (nx, ny, id, f, o) => {
   const pl = f.look?.planet ?? GIANT;
   const tt = f.calm ? 0 : f.t;
@@ -320,27 +363,11 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
   const rx = nx * c + ny * s;
   const ry = -nx * s + ny * c;
   const er = Math.hypot(rx, ry / FLAT);
-  const ringAt = (e: number) =>
-    pl.ring &&
-    e > RING_IN &&
-    e < RING_OUT &&
-    Math.abs(e - GAP) > 0.055 &&
-    Math.sin(e * 30) > -0.7;
-  const ringGlyph = () => {
-    const b = (1 - Math.abs(er - 1.6) / 0.62) * (er < GAP ? 1 : 0.75);
-    /* The planet's shadow falls across the far side of the rings. */
-    const shade = ry < 0 && rx > 0 && rx < 1 ? 0.35 : 1;
-    const v = Math.max(0, b) * shade;
-    return set(o, v > 0.6 ? "=" : v > 0.3 ? "-" : "·", v > 0.6 ? 3 : 2, 0.4 + v * 0.55);
-  };
 
   /* Moons, each on its own slow orbit. */
-  for (let m = 0; m < pl.moons; m++) {
-    const orbit = (pl.ring ? 2.05 : 1.55) + m * 0.42;
-    const ma = 2.4 + m * 2.3 + tt * (0.05 + m * 0.03);
-    const mx = Math.cos(ma) * orbit;
-    const my = Math.sin(ma) * orbit * 0.22 - orbit * 0.3;
-    const size = 0.13 - m * 0.03;
+  const moons = moonsAt(pl, tt);
+  for (let m = 0; m < moons.length; m++) {
+    const { mx, my, size } = moons[m];
     const md = Math.hypot(nx - mx, ny - my);
     if (md < size) {
       const lit = (-(nx - mx) * 0.62 - (ny - my) * 0.42) / size;
@@ -350,7 +377,7 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
 
   const d2 = nx * nx + ny * ny;
   if (d2 > 1) {
-    if (ringAt(er)) return ringGlyph();
+    if (ringAt(pl, er)) return ringGlyph(o, er, rx, ry);
     /* A thin atmosphere on the lit limb; a rocky world has almost none. */
     if (d2 < 1.1 && nx - ny < 0.3)
       return hash(id, 3) < (pl.type === "rocky" ? 0.15 : 0.55)
@@ -359,7 +386,7 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
     return false;
   }
   /* The near half of the rings crosses in front of the disc. */
-  if (ry > 0 && ringAt(er)) return ringGlyph();
+  if (ry > 0 && ringAt(pl, er)) return ringGlyph(o, er, rx, ry);
 
   const nz = Math.sqrt(1 - d2);
   const lambert = nx * -0.62 - ny * 0.42 + nz * 0.66;
@@ -371,7 +398,7 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
     if (Math.abs(q - Math.round(q)) < 0.14) return set(o, "-", 2, 1);
   }
   if (lambert < 0.02) return hash(id, 4) < 0.1 ? set(o, "·", 0, 0.8) : false;
-  const ringShadow = ringAt(Math.hypot(rx, (ry - 0.12) / FLAT)) && ry < 0.2;
+  const ringShadow = ringAt(pl, Math.hypot(rx, (ry - 0.12) / FLAT)) && ry < 0.2;
   let b = Math.min(1, lambert * 1.1 + 0.05);
   if (ringShadow) b *= 0.4;
 
@@ -521,12 +548,46 @@ const FIGURES: Record<Figure, Chart> = {
    below the figure, and hour lines running out from it. */
 const POLE: [number, number] = [0.1, 3.4];
 
+/* Where a figure's stars, halos and lines can fall: the box round its
+   stars (and companion), and the widest halo, in cells. A cell outside it,
+   by more than that halo or half a line, can't touch any of them, and most
+   of the chart is outside it. */
+const reachOfFigure = new Map<
+  Chart,
+  { x0: number; x1: number; y0: number; y1: number; halo: number }
+>();
+const figureBox = (fig: Chart) => {
+  let box = reachOfFigure.get(fig);
+  if (!box) {
+    const pts = [
+      ...fig.stars.map(([x, y]) => [x, y]),
+      ...(fig.companion ? [fig.companion] : []),
+    ];
+    box = {
+      x0: Math.min(...pts.map((p) => p[0])),
+      x1: Math.max(...pts.map((p) => p[0])),
+      y0: Math.min(...pts.map((p) => p[1])),
+      y1: Math.max(...pts.map((p) => p[1])),
+      halo: 1.2 + Math.max(...fig.stars.map(([, , m]) => m)) * 2.2,
+    };
+    reachOfFigure.set(fig, box);
+  }
+  return box;
+};
+
+const NO_LINES: Chart["lines"] = [];
+
 const constellation: BodyFn = (nx, ny, id, f, o) => {
   const tt = f.calm ? 0 : f.t;
   const cell = Math.max(f.px, f.py);
   const fig = FIGURES[f.look?.figure ?? "plough"];
+  const box = figureBox(fig);
+  const mx = Math.max(box.halo * f.px, cell * 0.5);
+  const my = Math.max(box.halo * f.py, cell * 0.5);
+  const near =
+    nx > box.x0 - mx && nx < box.x1 + mx && ny > box.y0 - my && ny < box.y1 + my;
 
-  for (let k = 0; k < fig.stars.length; k++) {
+  for (let k = 0; near && k < fig.stars.length; k++) {
     const [x, y, m] = fig.stars[k];
     const dx = (nx - x) / f.px;
     const dy = (ny - y) / f.py;
@@ -540,6 +601,7 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
   }
   const comp = fig.companion;
   if (
+    near &&
     comp &&
     Math.abs(nx - comp[0]) < f.px * 0.5 &&
     Math.abs(ny - comp[1]) < f.py * 0.5
@@ -547,7 +609,7 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
     return set(o, "·", 6, 0.8);
   }
 
-  for (const [a, b] of fig.lines) {
+  for (const [a, b] of near ? fig.lines : NO_LINES) {
     const [x0, y0] = fig.stars[a];
     const [x1, y1] = fig.stars[b];
     const dx = x1 - x0;
@@ -588,9 +650,14 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
   const band = Math.abs(
     ny * 0.85 - nx * 0.5 - 0.5 + 0.12 * Math.sin(nx * 2 + f.seed * 9),
   );
+  /* The dust is at most 1, so where even the densest band could not show
+     this cell, its noise is never worked out: most of the chart. */
+  const core = Math.exp(-band * band * 5);
+  const pick = hash(id, 23);
+  if (pick >= core * 1.3 * 0.28) return false;
   const dust = fbm3(nx * 2.4 + f.seed * 5, ny * 2.4, 0.3, 3);
-  const density = Math.exp(-band * band * 5) * (0.3 + dust);
-  if (hash(id, 23) < density * 0.28) {
+  const density = core * (0.3 + dust);
+  if (pick < density * 0.28) {
     const bright = hash(id, 24);
     return set(
       o,

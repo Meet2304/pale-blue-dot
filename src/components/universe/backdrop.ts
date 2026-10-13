@@ -1,3 +1,4 @@
+import { glyphs } from "./glyph-gl";
 import { mulberry32 } from "./helpers";
 import { fbm3 } from "./noise";
 
@@ -137,6 +138,10 @@ export function drawStars(
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.lineWidth = 1;
+  /* The points go to the GPU in one batch; a lensed star, drawn out into
+     an arc, is stroked at once. They never overlap, so the order is moot. */
+  const gpu = glyphs();
+  gpu?.begin(g, g.font);
   for (let i = 0; i < count; i++) {
     const st = bd.stars[i];
     const k = DEPTHS[st.depth];
@@ -175,9 +180,16 @@ export function drawStars(
       continue;
     }
     const level = st.b * (0.3 + 0.7 * tw);
+    const glyph = level > 0.75 ? "*" : level > 0.45 ? "+" : "·";
+    if (gpu) {
+      gpu.color(color, a);
+      gpu.add(glyph, x, y);
+      continue;
+    }
     g.fillStyle = color;
-    g.fillText(level > 0.75 ? "*" : level > 0.45 ? "+" : "·", x, y);
+    g.fillText(glyph, x, y);
   }
+  gpu?.end();
   g.globalAlpha = 1;
 }
 
@@ -222,11 +234,19 @@ export function drawDust(
     }
   }
   const alphas = [0.16, 0.24, 0.32];
+  const gpu = glyphs();
+  if (gpu) gpu.begin(g, g.font);
   buckets.forEach((list, lvl) => {
+    if (gpu) {
+      gpu.color(colors[lvl === 2 ? 2 : 1], alphas[lvl] * o.alpha);
+      for (const [x, y, c] of list) gpu.add(c, x, y);
+      return;
+    }
     g.fillStyle = colors[lvl === 2 ? 2 : 1];
     g.globalAlpha = alphas[lvl] * o.alpha;
     for (const [x, y, c] of list) g.fillText(c, x, y);
   });
+  gpu?.end();
   g.globalAlpha = 1;
 }
 

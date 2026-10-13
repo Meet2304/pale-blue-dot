@@ -1,3 +1,5 @@
+import { ditherGL } from "./dither-gl";
+import { fillGlyphs } from "./glyph-gl";
 import { mulberry32 } from "./helpers";
 import { fbm3 } from "./noise";
 
@@ -123,7 +125,6 @@ export type Cosmos = {
 };
 
 export function createCosmos(): Cosmos {
-  const n = COLS * ROWS;
   const rnd = mulberry32(23);
   const stars: Star[] = [];
   const tints = (r: number) => (r < 0.7 ? 6 : r < 0.85 ? 2 : r < 0.95 ? 5 : 3);
@@ -178,12 +179,7 @@ export function createCosmos(): Cosmos {
   }
 
   return {
-    I: new Float32Array(n),
-    top: new Float32Array(n),
-    col: new Uint8Array(n),
-    kind: new Uint8Array(n),
-    dust: new Float32Array(n),
-    ph: new Uint8Array(n),
+    ...skyArrays(),
     built: 0,
     readyAt: 0,
     stars,
@@ -259,6 +255,29 @@ function ridgeAt(x: number, y: number) {
 }
 
 /* ------------------------------------------------------------- Measuring */
+
+export type Sky = Pick<Cosmos, "I" | "top" | "col" | "kind" | "dust" | "ph">;
+
+export const SKY_ROWS = ROWS;
+
+const skyArrays = (): Sky => {
+  const n = COLS * ROWS;
+  return {
+    I: new Float32Array(n),
+    top: new Float32Array(n),
+    col: new Uint8Array(n),
+    kind: new Uint8Array(n),
+    dust: new Float32Array(n),
+    ph: new Uint8Array(n),
+  };
+};
+
+/** The whole sky's light at once: for the worker (cosmos.worker.ts). */
+export function buildSky(): Sky {
+  const c = { ...skyArrays(), built: 0, readyAt: 0 } as Cosmos;
+  buildCosmos(c, Infinity, 1);
+  return { I: c.I, top: c.top, col: c.col, kind: c.kind, dust: c.dust, ph: c.ph };
+}
 
 /**
  * Measure a few more rows of the sky, for at most `budget` ms. Returns true
@@ -673,6 +692,42 @@ export function drawCosmos(
 
 type DrawOpts = Parameters<typeof drawCosmos>[2];
 
+/**
+ * Ready the GPU for the sky in a quiet moment, once the sky is built: the
+ * shader compiled and the sky's light uploaded. Done on first sight
+ * instead, it cost a frame of about 80 ms.
+ */
+export function warmCosmos(c: Cosmos) {
+  if (!c.readyAt) return;
+  ditherGL()?.draw(
+    { I: c.I, col: c.col, ph: c.ph, cols: COLS, rows: ROWS, version: c.readyAt },
+    {
+      gw: 1,
+      gh: 1,
+      fx0: 0,
+      fy0: 0,
+      scale: 1,
+      D: 1,
+      calm: true,
+      tick: 0,
+      breath: BREATH,
+      palette: RGB,
+      stir: {
+        box: null,
+        x: 0,
+        y: 0,
+        on: 0,
+        R: 1,
+        lens: 0,
+        cell: 1,
+        f: BREATH,
+        cols: 0,
+        rows: 0,
+      },
+    },
+  );
+}
+
 const ditherSize = (o: DrawOpts) => (o.narrow ? 2 : o.w > 1800 ? 4 : 3);
 const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
@@ -920,17 +975,50 @@ function drawDither(g: CanvasRenderingContext2D, c: Cosmos, o: DrawOpts, area: B
   const px1 = Math.min(gw, Math.ceil(area.x1 / D));
   const py1 = Math.min(gh, Math.ceil(area.y1 / D));
   if (px1 <= px0 || py1 <= py0) return;
-  for (let py = py0; py < py1; py++)
-    data.fill(0, (py * gw + px0) * 4, (py * gw + px1) * 4);
   const { cam, t, calm } = o;
   const I = c.I;
   const s = c.stir;
   const scale = D / cam.z / STEP;
   const fx0 = (cam.x - (cam.ax * o.w) / cam.z - X0) / STEP - 0.5 + scale * 0.5;
   const fy0 = (cam.y - (cam.ay * o.h) / cam.z - Y0) / STEP - 0.5 + scale * 0.5;
-  const LV = [0, 0.13 * 255, 0.25 * 255, 0.4 * 255];
   const tick = calm ? 0 : Math.floor(t * 3);
   breathe(t, 0.2, calm);
+  /* On the GPU where it can (dither-gl.ts): the same dots, in one pass. */
+  const gpu = ditherGL();
+  const drawn = gpu?.draw(
+    { I, col: c.col, ph: c.ph, cols: COLS, rows: ROWS, version: c.readyAt },
+    {
+      gw,
+      gh,
+      fx0,
+      fy0,
+      scale,
+      D,
+      calm,
+      tick,
+      breath: BREATH,
+      palette: RGB,
+      stir: {
+        box: s.box,
+        x: s.x,
+        y: s.y,
+        on: s.on,
+        R: STIR_R,
+        lens: LENS,
+        cell: STIR_CELL,
+        f: s.f,
+        cols: s.cols,
+        rows: s.rows,
+      },
+    },
+  );
+  if (gpu && drawn) {
+    gpu.copy(() => blit(g, drawn, D, px0, py0, px1, py1));
+    return;
+  }
+  for (let py = py0; py < py1; py++)
+    data.fill(0, (py * gw + px0) * 4, (py * gw + px1) * 4);
+  const LV = [0, 0.13 * 255, 0.25 * 255, 0.4 * 255];
   for (let py = py0; py < py1; py++) {
     const brow = (py & 3) * 4;
     const Y = (py + 0.5) * D;
@@ -968,10 +1056,23 @@ function drawDither(g: CanvasRenderingContext2D, c: Cosmos, o: DrawOpts, area: B
     }
   }
   canvas.getContext("2d")?.putImageData(img, 0, 0, px0, py0, px1 - px0, py1 - py0);
+  blit(g, canvas, D, px0, py0, px1, py1);
+}
+
+/* The dots' image, D px a dot, onto the layer: only the part redrawn. */
+function blit(
+  g: CanvasRenderingContext2D,
+  img: HTMLCanvasElement,
+  D: number,
+  px0: number,
+  py0: number,
+  px1: number,
+  py1: number,
+) {
   const smoothing = g.imageSmoothingEnabled;
   g.imageSmoothingEnabled = false;
   g.drawImage(
-    canvas,
+    img,
     px0,
     py0,
     px1 - px0,
@@ -1054,19 +1155,16 @@ function drawGlyphs(g: CanvasRenderingContext2D, c: Cosmos, o: DrawOpts, area: B
       );
     }
   }
-  g.font = `${o.narrow ? 9.5 : 11}px ${o.mono}`;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  for (let b = 0; b < BUCKETS; b++) {
-    const xs = bx[b];
-    if (!xs.length) continue;
-    g.fillStyle = PALETTE[Math.floor(b / levels)];
-    g.globalAlpha = GLYPH_ALPHA[b % levels];
-    const ys = by[b];
-    const cs = bc[b];
-    for (let j = 0; j < xs.length; j++) g.fillText(cs[j], xs[j], ys[j]);
-  }
-  g.globalAlpha = 1;
+  fillGlyphs(
+    g,
+    `${o.narrow ? 9.5 : 11}px ${o.mono}`,
+    BUCKETS,
+    (b) => PALETTE[Math.floor(b / levels)],
+    (b) => GLYPH_ALPHA[b % levels],
+    bx,
+    by,
+    bc,
+  );
 }
 
 const STAR_ALPHA = [0.3, 0.5, 0.75, 1];
@@ -1100,19 +1198,16 @@ function drawStars(g: CanvasRenderingContext2D, c: Cosmos, o: DrawOpts, alpha: n
     by[b].push(Y);
     bc[b].push(lvl === 3 ? "*" : lvl === 2 ? "+" : lvl === 1 ? "·" : ".");
   }
-  g.font = `${o.narrow ? 9.5 : 11}px ${o.mono}`;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  for (let b = 0; b < PALETTE.length * 4; b++) {
-    const xs = bx[b];
-    if (!xs.length) continue;
-    g.fillStyle = PALETTE[Math.floor(b / 4)];
-    g.globalAlpha = STAR_ALPHA[b % 4] * alpha;
-    const ys = by[b];
-    const cs = bc[b];
-    for (let j = 0; j < xs.length; j++) g.fillText(cs[j], xs[j], ys[j]);
-  }
-  g.globalAlpha = 1;
+  fillGlyphs(
+    g,
+    `${o.narrow ? 9.5 : 11}px ${o.mono}`,
+    PALETTE.length * 4,
+    (b) => PALETTE[Math.floor(b / 4)],
+    (b) => STAR_ALPHA[b % 4] * alpha,
+    bx,
+    by,
+    bc,
+  );
 }
 
 /* The brightest foreground stars, with the six long spikes and two short

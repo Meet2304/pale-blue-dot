@@ -90,6 +90,29 @@ const tick = (ctx: AudioContext, out: GainNode, at: number, pan: number) => {
   body.onended = () => place.disconnect();
 };
 
+/* One audio device for every spoken line in a visit. Making one takes the
+   main thread for tens of ms, which every title used to pay as it
+   scrolled into view. Between lines it is suspended, so it costs nothing. */
+let shared: { ctx: AudioContext; out: GainNode } | null = null;
+let rest = 0;
+const device = () => {
+  window.clearTimeout(rest);
+  if (shared && shared.ctx.state !== "closed") return shared;
+  const ctx = new AudioContext();
+  /* A gentle compressor keeps a quick run of ticks from ever clipping. */
+  const out = ctx.createGain();
+  const limit = ctx.createDynamicsCompressor();
+  limit.threshold.value = -14;
+  limit.ratio.value = 4;
+  out.connect(limit).connect(ctx.destination);
+  return (shared = { ctx, out });
+};
+
+/** Whether the audio device is open and sounding: a title, spoken as it
+    scrolls into view, ticks only then, rather than opening one mid-scroll
+    (which cost a frame and, unlocked by no press, stayed silent anyway). */
+export const introSoundLive = () => shared?.ctx.state === "running";
+
 export function createIntroSound(): IntroSound {
   if (
     typeof window === "undefined" ||
@@ -105,15 +128,12 @@ export function createIntroSound(): IntroSound {
   let closed = false;
   const open = () => {
     if (closed || ctx) return;
-    ctx = new AudioContext();
-    ctx.resume().catch(() => {});
-    /* A gentle compressor keeps a quick run of ticks from ever clipping. */
-    out = ctx.createGain();
+    const dev = device();
+    ctx = dev.ctx;
+    out = dev.out;
+    out.gain.cancelScheduledValues(0);
     out.gain.value = 0.5;
-    const limit = ctx.createDynamicsCompressor();
-    limit.threshold.value = -14;
-    limit.ratio.value = 4;
-    out.connect(limit).connect(ctx.destination);
+    ctx.resume().catch(() => {});
   };
   /* Opening the audio device is slow (tens of ms): it waits for the first
      quiet moment after the page has come up, which is long before the
@@ -165,8 +185,10 @@ export function createIntroSound(): IntroSound {
     cancelOpen();
     const c = ctx;
     if (!c) return;
+    /* Suspended, not closed: the next title reuses it. */
     const wait = Math.max(0, end - c.currentTime) * 1000 + 200;
-    window.setTimeout(() => c.close().catch(() => {}), wait);
+    window.clearTimeout(rest);
+    rest = window.setTimeout(() => c.suspend().catch(() => {}), wait);
   };
 
   return { play, stop, close, running, unlock };
