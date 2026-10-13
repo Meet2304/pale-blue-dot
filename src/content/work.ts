@@ -62,8 +62,12 @@ export type Media =
       src: string;
       fov: number;
       focus: number;
-      /** A short orbit, for the bar's panel. */
-      clip?: string;
+      /**
+       * For the bar's panel: the camera turned from left to right round the
+       * subject, in frames laid out 5 across on one sheet, which the pointer
+       * steps through as it crosses the picture.
+       */
+      turn?: string;
       width: number;
       height: number;
       alt: string;
@@ -90,13 +94,15 @@ export type Peek = {
   clip?: string;
   /** A site's screens (half size), stepped through while shown. */
   screens?: string[];
+  /** A splat's turn: its sheet of frames, 5 across, the middle one `still`. */
+  turn?: { src: string; frames: number };
   /** Width over height, kept whole: never cropped. */
   aspect: number;
 };
 
 /**
  * The panel's picture of a piece of work: a photo; a site's screens; a
- * splat's still and its orbit loop; or a figure's still and loop, both
+ * splat's still and its turn, moved only by the pointer; or a figure's still and loop, both
  * recorded from the figure itself (public/figures/<id>.webp and .mp4).
  */
 export function peekOf(media: Media): Peek {
@@ -112,8 +118,10 @@ export function peekOf(media: Media): Peek {
       };
     case "splat":
       return {
-        still: media.clip ? media.clip.replace(/\.mp4$/, ".webp") : sm(media.color),
-        clip: media.clip,
+        still: media.turn
+          ? media.turn.replace(/-turn\.webp$/, "-rest.webp")
+          : media.color,
+        turn: media.turn ? { src: media.turn, frames: 25 } : undefined,
         aspect: media.width / media.height,
       };
     case "figure":
@@ -210,7 +218,7 @@ export const COLLECTIONS: Collection[] = [
           kind: "splat",
           color: "/work/carnegie-mellon/splat-color.webp",
           src: "/work/carnegie-mellon/splat.spz",
-          clip: "/work/carnegie-mellon/splat-orbit.mp4",
+          turn: "/work/carnegie-mellon/splat-turn.webp",
           fov: 35.75,
           focus: 45,
           width: 1280,
@@ -661,7 +669,7 @@ export const COLLECTIONS: Collection[] = [
           kind: "splat",
           color: "/work/pdeu/splat-color.webp",
           src: "/work/pdeu/splat.spz",
-          clip: "/work/pdeu/splat-orbit.mp4",
+          turn: "/work/pdeu/splat-turn.webp",
           fov: 43.6,
           focus: 35.75,
           width: 1280,

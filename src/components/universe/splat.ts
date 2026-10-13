@@ -5,8 +5,9 @@
  * moves round it. Spark (World Labs' renderer for three.js) draws them.
  *
  * From where the photo was taken the splat lines up with the photo (the
- * camera's field of view is SHARP's own). Yours to move:
- *   - drag to walk round it (it keeps turning a little when let go);
+ * camera's field of view is SHARP's own). It never moves by itself, only
+ * under the pointer:
+ *   - drag to walk round it;
  *   - once clicked into, scroll (or pinch) to step in and out;
  *   - double-click to go back to where the photo was taken;
  *   - just pointing leans the view a little.
@@ -66,8 +67,6 @@ export function mountSplat(
   let visible = false;
   let frame = 0;
   let last = 0;
-  let clock = 0;
-  let introAt = -1;
   let settleUntil = 0;
   let draw: () => void = () => {};
   let resize: () => void = () => {};
@@ -77,44 +76,21 @@ export function mountSplat(
   const to = { yaw: 0, pitch: 0, dolly: 0 };
   const lean = { x: 0, y: 0 };
   const leanTo = { x: 0, y: 0 };
-  const spin = { yaw: 0, pitch: 0 };
-  let intro = 0;
-  let drag: {
-    x: number;
-    y: number;
-    yaw: number;
-    pitch: number;
-    t: number;
-    vx: number;
-    vy: number;
-  } | null = null;
+  let drag: { x: number; y: number; yaw: number; pitch: number } | null = null;
   let active = false;
   const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
   const follow = (x: number, target: number, dt: number, tau: number) =>
     x + (target - x) * (1 - Math.exp(-dt / tau));
-  const ease = (t: number) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
   const AXES = ["yaw", "pitch", "dolly"] as const;
 
   function tick(now: number) {
     const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
     last = now;
-    clock += dt;
-    if (introAt >= 0) intro = ease((clock - introAt) / 3);
-    /* Let go mid-drag, the scene keeps turning and slows. */
-    if (!drag && (spin.yaw || spin.pitch)) {
-      to.yaw = clamp(to.yaw + spin.yaw * dt, -YAW, YAW);
-      to.pitch = clamp(to.pitch + spin.pitch * dt, -PITCH, PITCH);
-      const decay = Math.exp(-dt / 0.35);
-      spin.yaw = Math.abs(spin.yaw * decay) < 1e-3 ? 0 : spin.yaw * decay;
-      spin.pitch = Math.abs(spin.pitch * decay) < 1e-3 ? 0 : spin.pitch * decay;
-    }
     for (const key of AXES) cam[key] = follow(cam[key], to[key], dt, 0.16);
     lean.x = follow(lean.x, leanTo.x, dt, 0.5);
     lean.y = follow(lean.y, leanTo.y, dt, 0.5);
     draw();
     const moving =
-      intro < 1 ||
-      Boolean(spin.yaw || spin.pitch) ||
       AXES.some((key) => Math.abs(cam[key] - to[key]) > 1e-4) ||
       Math.abs(lean.x - leanTo.x) > 1e-4 ||
       Math.abs(lean.y - leanTo.y) > 1e-4;
@@ -176,11 +152,9 @@ export function mountSplat(
         camera.updateProjectionMatrix();
       };
       draw = () => {
-        /* The first look: from in close and to the left, a slow drift back. */
-        const away = 1 - intro;
-        const yaw = cam.yaw + lean.x - away * 0.1;
-        const pitch = cam.pitch + lean.y + away * 0.02;
-        const reach = focus * (1 + cam.dolly - away * 0.15);
+        const yaw = cam.yaw + lean.x;
+        const pitch = cam.pitch + lean.y;
+        const reach = focus * (1 + cam.dolly);
         camera.position.set(
           Math.sin(yaw) * Math.cos(pitch) * reach,
           Math.sin(pitch) * reach,
@@ -196,7 +170,6 @@ export function mountSplat(
       };
       resize();
       ready = true;
-      if (visible && introAt < 0) introAt = clock;
       draw();
       onReady();
       run();
@@ -213,16 +186,7 @@ export function mountSplat(
 
   const down = (e: PointerEvent) => {
     if (!ready || e.button > 0) return;
-    drag = {
-      x: e.clientX,
-      y: e.clientY,
-      yaw: to.yaw,
-      pitch: to.pitch,
-      t: performance.now(),
-      vx: 0,
-      vy: 0,
-    };
-    spin.yaw = spin.pitch = 0;
+    drag = { x: e.clientX, y: e.clientY, yaw: to.yaw, pitch: to.pitch };
     active = true;
     host.dataset.active = "";
     host.setPointerCapture(e.pointerId);
@@ -238,11 +202,6 @@ export function mountSplat(
         -PITCH,
         PITCH,
       );
-      const now = performance.now();
-      const dt = Math.max(1, now - drag.t) / 1000;
-      drag.vx = (yaw - to.yaw) / dt;
-      drag.vy = (pitch - to.pitch) / dt;
-      drag.t = now;
       to.yaw = yaw;
       to.pitch = pitch;
     } else if (e.pointerType === "mouse") {
@@ -252,11 +211,7 @@ export function mountSplat(
     run();
   };
   const release = () => {
-    if (!drag) return;
-    spin.yaw = clamp(drag.vx, -2, 2) * 0.6;
-    spin.pitch = clamp(drag.vy, -1, 1) * 0.6;
     drag = null;
-    run();
   };
   const leave = () => {
     release();
@@ -275,7 +230,6 @@ export function mountSplat(
   };
   const reset = () => {
     to.yaw = to.pitch = to.dolly = 0;
-    spin.yaw = spin.pitch = 0;
     run();
   };
   host.addEventListener("pointerdown", down);
@@ -300,7 +254,6 @@ export function mountSplat(
   const view = new IntersectionObserver(
     (entries) => {
       visible = entries[entries.length - 1].isIntersecting;
-      if (visible && ready && introAt < 0) introAt = clock;
       if (visible) run();
     },
     { threshold: 0.25 },
