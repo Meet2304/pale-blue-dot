@@ -10,7 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import type { Media } from "@/content/work";
+import type { FramedMedia } from "@/content/work";
 
 import { Picture } from "./picture";
 import s from "./universe.module.css";
@@ -40,7 +40,7 @@ export function Lightbox({
   vars,
   onClose,
 }: {
-  media: Media;
+  media: FramedMedia;
   /** For a website, the screen to open on. */
   start: number;
   /** Where the picture was on the page, to grow out of and back into. */

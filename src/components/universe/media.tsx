@@ -11,8 +11,9 @@ import dynamic from "next/dynamic";
 
 import { AnimateIcon } from "@/components/animate-ui/icons/icon";
 import { SquareArrowOutUpRight } from "@/components/animate-ui/icons/square-arrow-out-up-right";
-import type { Media } from "@/content/work";
+import type { FramedMedia, Media } from "@/content/work";
 
+import { FigureMedia, SplatMedia } from "./pictures";
 import { Picture } from "./picture";
 import s from "./universe.module.css";
 
@@ -48,6 +49,12 @@ const SCREEN_H = 800;
  * turns under reduced motion.
  */
 export function WorkMedia({ media }: { media: Media }) {
+  if (media.kind === "splat") return <SplatMedia media={media} />;
+  if (media.kind === "figure") return <FigureMedia media={media} />;
+  return <Framed media={media} />;
+}
+
+function Framed({ media }: { media: FramedMedia }) {
   const ref = useRef<HTMLDivElement>(null);
   const [at, setAt] = useState(0);
   const [seen, setSeen] = useState(false);

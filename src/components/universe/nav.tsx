@@ -10,7 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { CONTACT, UNITS, type Kind } from "@/content/work";
+import { CONTACT, UNITS, peekOf, type Kind, type Peek } from "@/content/work";
 import { routes } from "@/lib/routes";
 
 import { Drawer } from "./drawer";
@@ -110,8 +110,15 @@ export function UniverseNav({
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   /* The panels' bodies are fetched once the page is idle, so they are
-     there by the time a tab is first pointed at. */
+     there by the time a tab is first pointed at; so are the small stills
+     each piece of work shows in its panel when pointed at. */
   useEffect(() => whenIdle(() => void loadKindArt(), 4000), []);
+  useEffect(() => {
+    if (!open) return;
+    return whenIdle(() => {
+      for (const u of UNITS) if (u.media) new Image().src = peekOf(u.media).still;
+    }, 1500);
+  }, [open]);
 
   return (
     <header
@@ -313,6 +320,42 @@ function KindMenu({
 }) {
   const info = KINDS[kind];
   const units = UNITS.filter((u) => u.kind === kind);
+  /* The piece of work pointed at in the list: its picture takes the body's
+     place until the pointer leaves the list. */
+  const [peek, setPeek] = useState<string | null>(null);
+  const shown = open && units.some((u) => u.id === peek) ? peek : null;
+  /* Leaving the list, the picture waits a moment, so the pointer can cross
+     over to it (a splat's turns under the pointer) without it going. */
+  const leaving = useRef(0);
+  const keep = (id: string | null) => {
+    window.clearTimeout(leaving.current);
+    if (id) setPeek(id);
+  };
+  const letGo = () => {
+    window.clearTimeout(leaving.current);
+    leaving.current = window.setTimeout(() => setPeek(null), 240);
+  };
+  useEffect(() => () => window.clearTimeout(leaving.current), []);
+  /* While shown, a clip plays from its start and the rest wait at theirs;
+     a site steps through its screens. */
+  const clips = useRef(new Map<string, HTMLVideoElement>());
+  const [screen, setScreen] = useState({ id: "", at: 0 });
+  useEffect(() => {
+    for (const [id, video] of clips.current) {
+      if (id === shown) void video.play().catch(() => {});
+      else {
+        video.pause();
+        video.currentTime = 0;
+      }
+    }
+    const unit = units.find((u) => u.id === shown);
+    if (!shown || unit?.media?.kind !== "site") return;
+    const timer = window.setInterval(
+      () => setScreen((sc) => ({ id: shown, at: sc.id === shown ? sc.at + 1 : 1 })),
+      1500,
+    );
+    return () => window.clearInterval(timer);
+  }, [shown, units]);
   /* The panel's height glides between kinds (they hold different numbers
      of pieces of work) instead of jumping. */
   const innerRef = useRef<HTMLDivElement>(null);
@@ -356,7 +399,63 @@ function KindMenu({
           </div>
 
           <div className={s.menuBody}>
-            <KindViewer open={open} kind={kind} />
+            <div
+              className={s.viewerCell}
+              data-peek={shown ? "" : undefined}
+              onPointerEnter={() => keep(shown)}
+              onPointerLeave={letGo}
+            >
+              <KindViewer open={open} kind={kind} />
+              <div className={s.peeks} aria-hidden>
+                {units.map((u) => {
+                  if (!u.media) return null;
+                  const pk = peekOf(u.media);
+                  const on = shown === u.id;
+                  const at =
+                    pk.screens && screen.id === u.id
+                      ? screen.at % pk.screens.length
+                      : 0;
+                  return (
+                    <div
+                      key={u.id}
+                      className={s.peek}
+                      data-on={on ? "" : undefined}
+                      style={{ "--ar": pk.aspect } as CSSProperties}
+                    >
+                      {pk.screens ? (
+                        <span
+                          className={s.peekStrip}
+                          style={{ translate: `0 ${-at * 100}%` }}
+                        >
+                          {pk.screens.map((src) => (
+                            // eslint-disable-next-line @next/next/no-img-element -- small stills, served as they are
+                            <img key={src} src={src} alt="" decoding="async" />
+                          ))}
+                        </span>
+                      ) : pk.turn ? (
+                        <Turn peek={pk} turn={pk.turn} on={on} />
+                      ) : pk.clip ? (
+                        <video
+                          ref={(el) => {
+                            if (el) clips.current.set(u.id, el);
+                            else clips.current.delete(u.id);
+                          }}
+                          src={pk.clip}
+                          poster={pk.still}
+                          muted
+                          loop
+                          playsInline
+                          preload="none"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- small stills, served as they are
+                        <img src={pk.still} alt="" decoding="async" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className={s.menuInfo}>
               <p className={s.menuHead}>
@@ -376,10 +475,16 @@ function KindMenu({
 
               {/* Rows are kept by position, so each one scrambles from the
                   last kind's piece of work into this kind's. */}
-              <ul className={s.menuUnits}>
+              <ul className={s.menuUnits} onPointerLeave={letGo}>
                 {units.map((u, i) => (
                   <li key={i}>
-                    <Link href={`${routes.work}/${u.id}`} className={s.menuUnit}>
+                    <Link
+                      href={`${routes.work}/${u.id}`}
+                      className={s.menuUnit}
+                      onPointerEnter={() => keep(u.id)}
+                      onFocus={() => keep(u.id)}
+                      onBlur={() => setPeek(null)}
+                    >
                       <span className={s.menuUnitName}>
                         <Scramble text={u.name} />
                       </span>
@@ -403,5 +508,109 @@ function KindMenu({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * A splat in the panel: the photo's own view, still. Only the pointer moves
+ * it: across the picture, the camera turns round the subject to match (one
+ * frame of the turn for each step), and back to the photo's view once the
+ * pointer leaves. The frames load when the piece is first pointed at.
+ */
+function Turn({
+  peek,
+  turn,
+  on,
+}: {
+  peek: Peek;
+  turn: NonNullable<Peek["turn"]>;
+  on: boolean;
+}) {
+  const box = useRef<HTMLSpanElement>(null);
+  const sheet = useRef<HTMLSpanElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const wanted = on || loaded;
+  useEffect(() => {
+    if (!wanted || loaded) return;
+    let live = true;
+    const img = new Image();
+    img.src = turn.src;
+    img.decode().then(
+      () => live && setLoaded(true),
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [wanted, loaded, turn.src]);
+
+  const cols = 5;
+  const rows = Math.ceil(turn.frames / cols);
+
+  /* Shown and loaded, the pointer drives it; otherwise it rests at the
+     photo's view. */
+  useEffect(() => {
+    const host = box.current;
+    const layer = sheet.current;
+    if (!host || !layer || !on || !loaded) return;
+    const last = turn.frames - 1;
+    const middle = last / 2;
+    let at = middle;
+    let to = middle;
+    let shown = -1;
+    let frame = 0;
+    let then = 0;
+    const paint = () => {
+      const f = Math.round(at);
+      if (f === shown) return;
+      shown = f;
+      const x = ((f % cols) / (cols - 1)) * 100;
+      const y = (Math.floor(f / cols) / Math.max(1, rows - 1)) * 100;
+      layer.style.backgroundPosition = `${x}% ${y}%`;
+    };
+    const step = (now: number) => {
+      const dt = then ? Math.min(now - then, 50) : 16;
+      then = now;
+      at += (to - at) * (1 - Math.exp(-dt / 70));
+      if (Math.abs(to - at) < 0.02) at = to;
+      paint();
+      frame = at === to ? 0 : requestAnimationFrame(step);
+    };
+    const aim = (target: number) => {
+      to = target;
+      if (!frame) {
+        then = 0;
+        frame = requestAnimationFrame(step);
+      }
+    };
+    const move = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const r = host.getBoundingClientRect();
+      aim(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * last);
+    };
+    const leave = () => aim(middle);
+    host.addEventListener("pointermove", move);
+    host.addEventListener("pointerleave", leave);
+    return () => {
+      cancelAnimationFrame(frame);
+      host.removeEventListener("pointermove", move);
+      host.removeEventListener("pointerleave", leave);
+      layer.style.backgroundPosition = "50% 50%";
+    };
+  }, [on, loaded, turn.frames, rows]);
+
+  return (
+    <span ref={box} className={s.turn} data-ready={loaded ? "" : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- small stills, served as they are */}
+      <img src={peek.still} alt="" decoding="async" />
+      <span
+        ref={sheet}
+        className={s.turnSheet}
+        style={{
+          backgroundImage: loaded ? `url(${turn.src})` : undefined,
+          backgroundSize: `${cols * 100}% ${rows * 100}%`,
+        }}
+      />
+    </span>
   );
 }
