@@ -4,7 +4,10 @@
  */
 export const routes = {
   home: "/",
+  about: "/about",
   work: "/work",
   story: "/story",
   contact: "/contact",
+  resume: "/resume",
+  changelog: "/changelog",
 } as const;
