@@ -49,7 +49,84 @@ export type Media =
       embed?: boolean;
       /** 1280 × 800 each, in `public`, from the site's root. */
       screens: { src: string; alt: string }[];
+    }
+  | {
+      /**
+       * A photograph rebuilt as a 3D Gaussian splat (splat.ts) by Apple's
+       * SHARP, packed as .spz: the photograph (also what shows while it
+       * loads, and where it can't run), the splat, the camera's vertical
+       * field of view and the distance to the subject, both from SHARP.
+       */
+      kind: "splat";
+      color: string;
+      src: string;
+      fov: number;
+      focus: number;
+      /** A short orbit, for the bar's panel. */
+      clip?: string;
+      width: number;
+      height: number;
+      alt: string;
+      caption?: string;
+    }
+  | {
+      /**
+       * The work drawn as a machine, an interactive figure built outside the
+       * site (pale-blue-dot-figures) and served whole from `public/figures/`,
+       * shown in a frame of its own so none of it weighs on the page until
+       * it is near.
+       */
+      kind: "figure";
+      src: string;
+      title: string;
+      caption?: string;
     };
+
+/** What a piece of work shows in the bar's panel when pointed at. */
+export type Peek = {
+  /** Shown at once, and what a clip starts from. */
+  still: string;
+  /** A short loop, played only while shown. */
+  clip?: string;
+  /** A site's screens (half size), stepped through while shown. */
+  screens?: string[];
+  /** Width over height, kept whole: never cropped. */
+  aspect: number;
+};
+
+/**
+ * The panel's picture of a piece of work: a photo; a site's screens; a
+ * splat's still and its orbit loop; or a figure's still and loop, both
+ * recorded from the figure itself (public/figures/<id>.webp and .mp4).
+ */
+export function peekOf(media: Media): Peek {
+  const sm = (src: string) => src.replace(/\.webp$/, "-sm.webp");
+  switch (media.kind) {
+    case "photo":
+      return { still: sm(media.src), aspect: media.width / media.height };
+    case "site":
+      return {
+        still: sm(media.screens[0].src),
+        screens: media.screens.map((sc) => sm(sc.src)),
+        aspect: 1280 / 800,
+      };
+    case "splat":
+      return {
+        still: media.clip ? media.clip.replace(/\.mp4$/, ".webp") : sm(media.color),
+        clip: media.clip,
+        aspect: media.width / media.height,
+      };
+    case "figure":
+      return {
+        still: media.src.replace(/\.html$/, ".webp"),
+        clip: media.src.replace(/\.html$/, ".mp4"),
+        aspect: 640 / 430,
+      };
+  }
+}
+
+/** The pictures that open in the lightbox: a photo or a site's screens. */
+export type FramedMedia = Extract<Media, { kind: "photo" | "site" }>;
 
 /** A number that shows the impact, and what it counts. */
 export type Stat = { value: string; label: string };
@@ -130,12 +207,16 @@ export const COLLECTIONS: Collection[] = [
         ],
         result: "In progress. Graduating December 2027.",
         media: {
-          kind: "photo",
-          src: "/work/carnegie-mellon/campus.webp",
-          width: 1600,
-          height: 800,
+          kind: "splat",
+          color: "/work/carnegie-mellon/splat-color.webp",
+          src: "/work/carnegie-mellon/splat.spz",
+          clip: "/work/carnegie-mellon/splat-orbit.mp4",
+          fov: 35.75,
+          focus: 45,
+          width: 1280,
+          height: 640,
           alt: "Carnegie Mellon's campus at sunset, with the Walking to the Sky sculpture.",
-          caption: "Carnegie Mellon, Pittsburgh",
+          caption: "Carnegie Mellon, Pittsburgh. Drag to look around.",
         },
       },
       {
@@ -156,13 +237,10 @@ export const COLLECTIONS: Collection[] = [
         ],
         result: "In progress, through December 2026.",
         media: {
-          kind: "photo",
-          src: "/work/bosch-mobility/csl.webp",
-          width: 960,
-          height: 720,
-          alt: "The Corporate Startup Lab's logo: CSL in white on red.",
-          logo: true,
-          caption: "Corporate Startup Lab, Bosch Mobility",
+          kind: "figure",
+          src: "/figures/bosch-mobility.html",
+          title: "One actuator, new markets",
+          caption: "Point at an application to send the actuator there.",
         },
       },
       {
@@ -237,6 +315,12 @@ export const COLLECTIONS: Collection[] = [
           "Advised by Prof. Kirk Warren Brown and Prof. J. David Creswell.",
         ],
         result: "In progress, through December 2026.",
+        media: {
+          kind: "figure",
+          src: "/figures/health-performance-lab.html",
+          title: "Who benefits, and why",
+          caption: "Move across it to scrub through the weeks.",
+        },
       },
     ],
   },
@@ -329,6 +413,12 @@ export const COLLECTIONS: Collection[] = [
           href: "https://www.sciencedirect.com/science/article/pii/S1877050926016996",
         },
         repo: "https://github.com/Meet2304/Project-Vigil",
+        media: {
+          kind: "figure",
+          src: "/figures/prompt-classifier.html",
+          title: "Prompt checkpoint",
+          caption: "Move across it to run the belt.",
+        },
       },
       {
         id: "talaria",
@@ -532,6 +622,12 @@ export const COLLECTIONS: Collection[] = [
         ],
         result: "Built and flown, with stable flight.",
         repo: "https://github.com/Meet2304/Project-Icarus",
+        media: {
+          kind: "figure",
+          src: "/figures/icarus.html",
+          title: "Icarus, inside",
+          caption: "Point at a part to see what it does.",
+        },
       },
     ],
   },
@@ -561,6 +657,19 @@ export const COLLECTIONS: Collection[] = [
         ],
         stats: [{ value: "9.55", label: "GPA, out of 10" }],
         result: "Graduated June 2026.",
+        media: {
+          kind: "splat",
+          color: "/work/pdeu/splat-color.webp",
+          src: "/work/pdeu/splat.spz",
+          clip: "/work/pdeu/splat-orbit.mp4",
+          fov: 43.6,
+          focus: 35.75,
+          width: 1280,
+          height: 853,
+          alt: "Pandit Deendayal Energy University at sunset.",
+          caption:
+            "Pandit Deendayal Energy University, Gandhinagar. Drag to look around.",
+        },
       },
       {
         id: "mind-ripple",
@@ -585,6 +694,12 @@ export const COLLECTIONS: Collection[] = [
           { value: "+10%", label: "earnings, year over year" },
         ],
         result: "The flagship event grew in reach and in earnings, year after year.",
+        media: {
+          kind: "figure",
+          src: "/figures/mind-ripple.html",
+          title: "Quiz round",
+          caption: "Point at a buzzer to make that team first.",
+        },
       },
       {
         id: "astar",
@@ -666,6 +781,12 @@ export const COLLECTIONS: Collection[] = [
         ],
         stats: [{ value: "32", label: "members led" }],
         result: "Service projects with the Pratibha Foundation, among others.",
+        media: {
+          kind: "figure",
+          src: "/figures/interact-club.html",
+          title: "Together, for the street",
+          caption: "Move across it to bring the members in.",
+        },
       },
     ],
   },

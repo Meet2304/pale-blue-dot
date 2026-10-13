@@ -346,7 +346,12 @@ function Piece({
   index: number;
 }) {
   const kind = KINDS[u.kind];
-  const aspect = u.media?.kind === "photo" ? u.media.width / u.media.height : 16 / 10;
+  const aspect =
+    u.media?.kind === "photo" || u.media?.kind === "splat"
+      ? u.media.width / u.media.height
+      : u.media?.kind === "figure"
+        ? 1.2
+        : 16 / 10;
   return (
     <Chapter
       className={`${s.piece} ${u.media ? s.withMedia : ""} ${

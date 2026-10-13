@@ -10,7 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { CONTACT, UNITS, type Kind } from "@/content/work";
+import { CONTACT, UNITS, peekOf, type Kind } from "@/content/work";
 import { routes } from "@/lib/routes";
 
 import { Drawer } from "./drawer";
@@ -110,8 +110,15 @@ export function UniverseNav({
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   /* The panels' bodies are fetched once the page is idle, so they are
-     there by the time a tab is first pointed at. */
+     there by the time a tab is first pointed at; so are the small stills
+     each piece of work shows in its panel when pointed at. */
   useEffect(() => whenIdle(() => void loadKindArt(), 4000), []);
+  useEffect(() => {
+    if (!open) return;
+    return whenIdle(() => {
+      for (const u of UNITS) if (u.media) new Image().src = peekOf(u.media).still;
+    }, 1500);
+  }, [open]);
 
   return (
     <header
@@ -313,6 +320,30 @@ function KindMenu({
 }) {
   const info = KINDS[kind];
   const units = UNITS.filter((u) => u.kind === kind);
+  /* The piece of work pointed at in the list: its picture takes the body's
+     place until the pointer leaves the list. */
+  const [peek, setPeek] = useState<string | null>(null);
+  const shown = open && units.some((u) => u.id === peek) ? peek : null;
+  /* While shown, a clip plays from its start and the rest wait at theirs;
+     a site steps through its screens. */
+  const clips = useRef(new Map<string, HTMLVideoElement>());
+  const [screen, setScreen] = useState({ id: "", at: 0 });
+  useEffect(() => {
+    for (const [id, video] of clips.current) {
+      if (id === shown) void video.play().catch(() => {});
+      else {
+        video.pause();
+        video.currentTime = 0;
+      }
+    }
+    const unit = units.find((u) => u.id === shown);
+    if (!shown || unit?.media?.kind !== "site") return;
+    const timer = window.setInterval(
+      () => setScreen((sc) => ({ id: shown, at: sc.id === shown ? sc.at + 1 : 1 })),
+      1500,
+    );
+    return () => window.clearInterval(timer);
+  }, [shown, units]);
   /* The panel's height glides between kinds (they hold different numbers
      of pieces of work) instead of jumping. */
   const innerRef = useRef<HTMLDivElement>(null);
@@ -356,7 +387,56 @@ function KindMenu({
           </div>
 
           <div className={s.menuBody}>
-            <KindViewer open={open} kind={kind} />
+            <div className={s.viewerCell} data-peek={shown ? "" : undefined}>
+              <KindViewer open={open} kind={kind} />
+              <div className={s.peeks} aria-hidden>
+                {units.map((u) => {
+                  if (!u.media) return null;
+                  const pk = peekOf(u.media);
+                  const on = shown === u.id;
+                  const at =
+                    pk.screens && screen.id === u.id
+                      ? screen.at % pk.screens.length
+                      : 0;
+                  return (
+                    <div
+                      key={u.id}
+                      className={s.peek}
+                      data-on={on ? "" : undefined}
+                      style={{ "--ar": pk.aspect } as CSSProperties}
+                    >
+                      {pk.screens ? (
+                        <span
+                          className={s.peekStrip}
+                          style={{ translate: `0 ${-at * 100}%` }}
+                        >
+                          {pk.screens.map((src) => (
+                            // eslint-disable-next-line @next/next/no-img-element -- small stills, served as they are
+                            <img key={src} src={src} alt="" decoding="async" />
+                          ))}
+                        </span>
+                      ) : pk.clip ? (
+                        <video
+                          ref={(el) => {
+                            if (el) clips.current.set(u.id, el);
+                            else clips.current.delete(u.id);
+                          }}
+                          src={pk.clip}
+                          poster={pk.still}
+                          muted
+                          loop
+                          playsInline
+                          preload="none"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- small stills, served as they are
+                        <img src={pk.still} alt="" decoding="async" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className={s.menuInfo}>
               <p className={s.menuHead}>
@@ -376,10 +456,16 @@ function KindMenu({
 
               {/* Rows are kept by position, so each one scrambles from the
                   last kind's piece of work into this kind's. */}
-              <ul className={s.menuUnits}>
+              <ul className={s.menuUnits} onPointerLeave={() => setPeek(null)}>
                 {units.map((u, i) => (
                   <li key={i}>
-                    <Link href={`${routes.work}/${u.id}`} className={s.menuUnit}>
+                    <Link
+                      href={`${routes.work}/${u.id}`}
+                      className={s.menuUnit}
+                      onPointerEnter={() => setPeek(u.id)}
+                      onFocus={() => setPeek(u.id)}
+                      onBlur={() => setPeek(null)}
+                    >
                       <span className={s.menuUnitName}>
                         <Scramble text={u.name} />
                       </span>
