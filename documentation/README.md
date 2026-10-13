@@ -2,6 +2,7 @@
 
 Dated notes about notable changes to this repo. Newest first.
 
+- [2026-10-13 — On a phone: a stage for each body, and figures without their keys](./2026-10-13-phone-chapters.md)
 - [2026-10-12 — Speed: what we measure, what was slow, and what changed](./2026-10-12-performance.md)
 - [2026-10-01 — A footer, a contact page, and pictures that always show](./2026-10-01-footer-contact-images.md)
 - [2026-10-01 — A longer story, a phone menu, a lens, and the share card](./2026-10-01-story-menu-sharing.md)
