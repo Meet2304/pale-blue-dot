@@ -200,8 +200,9 @@
 .iso.pbd .prop{fill:var(--anatomy-face);fill-opacity:.22;stroke:var(--anatomy-lo);stroke-width:var(--anatomy-weight);vector-effect:non-scaling-stroke}
 
 html,body{margin:0;background:transparent;color-scheme:dark;overflow:hidden}
-/* The site says how to use it under the frame, so the readout has the row. */
-.iso.pbd .iso-plate-corner[data-corner="hint"]{display:none}
+/* The site says how to use it under the frame, so the readout has the row;
+   and it names the piece above the frame, so the frame has no title. */
+.iso.pbd .iso-plate-corner[data-corner="hint"],.iso.pbd .iso-plate-corner[data-corner="title"]{display:none}
 body{padding:6px;font:300 15px/1.6 "IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;color:#b9bec5;-webkit-font-smoothing:antialiased}
 .iso-figure{margin:0}
 .frame{--tick:8px;position:relative}
@@ -209,9 +210,9 @@ body{padding:6px;font:300 15px/1.6 "IBM Plex Sans",ui-sans-serif,system-ui,sans-
 background:var(--c) top left/var(--tick) 1px,var(--c) top left/1px var(--tick),var(--c) top right/var(--tick) 1px,var(--c) top right/1px var(--tick),var(--c) bottom left/var(--tick) 1px,var(--c) bottom left/1px var(--tick),var(--c) bottom right/var(--tick) 1px,var(--c) bottom right/1px var(--tick);
 background-repeat:no-repeat;transition:inset 260ms cubic-bezier(.2,.8,.2,1)}
 .frame:hover::before{inset:-5px}
-/* On a phone the frame is narrow: the kind (top left) would run into the
-   title, and the site names it above the frame anyway; a long readout
-   wraps rather than running off the left edge. */
+/* On a phone the frame is narrow: the site names the kind (top left)
+   above the frame anyway, and a long readout wraps rather than running
+   off the left edge. */
 @media (max-width: 480px){
 .iso.pbd .iso-plate-corner[data-corner="fig"]{display:none}
 .iso.pbd .iso-plate-corner[data-corner="readout"]{left:0;white-space:normal;text-align:right;line-height:1.35;font-size:11.5px}
