@@ -11,6 +11,7 @@ import {
   drawStars as drawBackStars,
   type Body,
 } from "./backdrop";
+import { chapterAt, measureChapters, noSpans } from "./chapter-map";
 import { FIRST, SKY } from "./chapters";
 import { buildCosmos, createCosmos, drawCosmos, warmCosmos } from "./cosmos";
 import { buildCosmosOffThread } from "./cosmos-off-thread";
@@ -78,6 +79,11 @@ const BEHIND: Partial<Record<string, [number, number]>> = {
 /* A body beside a picture of its work is drawn this much larger than one
    alone, so it holds its own next to the picture. */
 const BESIDE = 1.3;
+
+/* How strongly a body is drawn on a phone, against a wide screen: fainter,
+   since on a small screen it sits behind the copy and the picture, and
+   should not pull the eye away from them. */
+const NARROW_GLOW = 0.55;
 
 /* Earth's own slow turn (rad/s); the most a flick sends it spinning at,
    and how quickly (s) a glide eases back to that turn. */
@@ -162,6 +168,8 @@ export function UniverseCanvas({
     /* The scroll position the camera follows: eased towards the real one,
        so the steps of a mouse wheel become one glide. */
     let sv = -1;
+    /* Where each chapter is, for the camera (chapter-map.ts). */
+    let spans = noSpans;
 
     const stars = Array.from({ length: 900 }, () => ({
       x: rnd(),
@@ -326,7 +334,10 @@ export function UniverseCanvas({
       const fits = Math.min(bw / (2 * rx), bh / (2 * ry)) * 0.94;
       /* A star's corona reaches far past its disc: it is capped smaller,
          so it glows beside the copy rather than filling the screen. */
-      const cap = KINDS[p.kind].body === "sun" ? 0.19 : 0.25;
+      /* On a phone the body has a stage of its own above the copy (the
+         page keeps it clear), and is drawn larger in it. */
+      const sun = KINDS[p.kind].body === "sun";
+      const cap = narrow ? (sun ? 0.26 : 0.34) : sun ? 0.19 : 0.25;
       let R = Math.max(30, Math.min(fits, Math.min(w, h) * cap));
       R *= (0.8 + 0.2 * Math.min(1, look.scale)) * (recede[i] ? BESIDE : 1);
       /* Drawn larger, but never past the space left for it. */
@@ -356,6 +367,7 @@ export function UniverseCanvas({
     };
 
     const measure = () => {
+      if (section) spans = measureChapters(section);
       /* Held upright and small, the copy stacks under the canvas (the page's
          CSS uses the same test). */
       const narrow = w < 860 && w <= h * (4 / 3);
@@ -485,9 +497,8 @@ export function UniverseCanvas({
       let target = 0;
       if (section) {
         const top = section.getBoundingClientRect().top;
-        /* In chapters, each as tall as the stage (100svh, which on a phone
-           can differ from the window's height). */
-        target = Math.min(keys.length - 1, Math.max(0, -top / h));
+        /* In chapters, which can be taller than the screen (chapter-map.ts). */
+        target = Math.min(keys.length - 1, chapterAt(spans, -top, h));
       }
       /* Locked to the page's own scroll, so the sky and the words never
          drift apart. The page's scroll is smooth already: the browser
@@ -805,7 +816,13 @@ export function UniverseCanvas({
           )
             continue;
           const near = nearBody(i);
-          const a = workA * (0.3 + 0.7 * smooth(near)) * (recede[i] ? 0.94 : 1);
+          /* On a phone, where the body shares the screen with the copy and
+             the picture, it is drawn fainter, so they lead. */
+          const a =
+            workA *
+            (0.3 + 0.7 * smooth(near)) *
+            (recede[i] ? 0.94 : 1) *
+            (narrow ? NARROW_GLOW : 1);
           /* At a distance, a body is only a point of light; it resolves into
              its full form as the camera closes in. */
           const bodyA = narrow
@@ -1134,7 +1151,7 @@ export function UniverseCanvas({
       remeasure = requestAnimationFrame(measure);
     });
     section
-      ?.querySelectorAll("[data-piece] [data-part]")
+      ?.querySelectorAll("[data-chapter], [data-piece] [data-part]")
       .forEach((el) => mo.observe(el));
     const io = new IntersectionObserver((entries) => {
       /* Several changes can arrive at once: the last is the current one. */

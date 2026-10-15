@@ -11,8 +11,10 @@
  */
 
 export type SmoothScroll = {
-  /** An eased glide to a position (the menus, the index). */
-  glideTo(top: number): void;
+  /** An eased glide to a position (the menus, the index); given as a
+      function, it is asked again every frame, so the glide lands there
+      even if the page changes size on the way (a figure loading). */
+  glideTo(top: number | (() => number)): void;
   destroy(): void;
 };
 
@@ -24,12 +26,13 @@ const covered = () =>
 export function createSmoothScroll({
   stops,
 }: {
-  /** Where each chapter sits (px from the top), in order, for the keys. */
+  /** Where the keys stop (px from the top), in order: each chapter's top,
+      and the last screen of a chapter taller than the screen. */
   stops: () => number[];
 }): SmoothScroll {
   const quiet = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let raf = 0;
-  let glide: { from: number; to: number; t0: number; dur: number } | null = null;
+  let glide: { from: number; to: () => number; t0: number; dur: number } | null = null;
 
   const bottom = () =>
     Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -40,30 +43,49 @@ export function createSmoothScroll({
     if (!glide) return;
     const k = Math.max(0, Math.min(1, (now - glide.t0) / glide.dur));
     const e = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
-    window.scrollTo(0, glide.from + (glide.to - glide.from) * e);
-    if (k >= 1) glide = null;
+    const to = clamp(glide.to());
+    window.scrollTo(0, glide.from + (to - glide.from) * e);
+    if (k >= 1) end();
     else raf = requestAnimationFrame(frame);
   }
 
-  const glideTo = (top: number) => {
-    const to = clamp(top);
+  /* While a glide runs, the page's position is the glide's: the browser's
+     scroll anchoring, nudging it as things above change size, would fight
+     it. The rest of the time anchoring keeps the reader's place when
+     something above them (a figure, loading) changes size. */
+  const root = document.documentElement;
+  const anchor = root.style.overflowAnchor;
+  const end = () => {
+    glide = null;
+    root.style.overflowAnchor = anchor;
+  };
+
+  const glideTo = (top: number | (() => number)) => {
+    const target = typeof top === "function" ? top : () => top;
+    const to = clamp(target());
     const from = window.scrollY;
     cancelAnimationFrame(raf);
     raf = 0;
     if (quiet || Math.abs(to - from) < 1) {
-      glide = null;
+      end();
       window.scrollTo(0, to);
       return;
     }
     const span = Math.abs(to - from) / window.innerHeight;
-    glide = { from, to, t0: performance.now(), dur: Math.min(1100, 520 + span * 300) };
+    glide = {
+      from,
+      to: target,
+      t0: performance.now(),
+      dur: Math.min(1100, 520 + span * 300),
+    };
+    root.style.overflowAnchor = "none";
     raf = requestAnimationFrame(frame);
   };
 
   /* The visitor takes the page back mid-glide: it stops where it is. */
   const cancel = () => {
     if (!glide) return;
-    glide = null;
+    end();
     cancelAnimationFrame(raf);
     raf = 0;
   };
@@ -79,7 +101,7 @@ export function createSmoothScroll({
       step = e.shiftKey ? -1 : 1;
     if (!step) return;
     const st = stops();
-    const from = glide ? glide.to : window.scrollY;
+    const from = glide ? glide.to() : window.scrollY;
     /* In the foot, below the last chapter, the keys scroll as usual. */
     if (from > st[st.length - 1] + window.innerHeight * 0.5) return;
     e.preventDefault();
@@ -89,12 +111,6 @@ export function createSmoothScroll({
     });
     glideTo(st[Math.max(0, Math.min(st.length - 1, i + step))]);
   };
-
-  /* The page's position is ours: the browser's scroll anchoring, nudging
-     it as things above change size, would only fight a glide. */
-  const root = document.documentElement;
-  const anchor = root.style.overflowAnchor;
-  root.style.overflowAnchor = "none";
 
   const opts = { passive: true } as const;
   window.addEventListener("keydown", onKey);
