@@ -24,10 +24,14 @@ const ALPHA = { wide: 0.62, narrow: 0.42 };
 export function BodyPortrait({
   id,
   kind,
+  high = false,
   className,
 }: {
   id: string;
   kind: Kind;
+  /** Higher and a little smaller, beside the head alone: for a page whose
+      next part runs the width of the screen (an award's). */
+  high?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -74,7 +78,9 @@ export function BodyPortrait({
       const narrow = w < 900;
       const box = narrow
         ? { cx: w * 0.88, cy: h * 0.2, hx: w * 0.3, hy: h * 0.17 }
-        : { cx: w * 0.8, cy: h * 0.44, hx: w * 0.17, hy: h * 0.32 };
+        : high
+          ? { cx: w * 0.78, cy: h * 0.3, hx: w * 0.15, hy: h * 0.22 }
+          : { cx: w * 0.8, cy: h * 0.44, hx: w * 0.17, hy: h * 0.32 };
       const R = Math.min(box.hx / rx, box.hy / ry) * (0.8 + 0.2 * look.scale);
       return { ...box, R, narrow };
     };
@@ -128,7 +134,7 @@ export function BodyPortrait({
       ro.disconnect();
       io.disconnect();
     };
-  }, [id, kind]);
+  }, [id, kind, high]);
 
   return <canvas ref={ref} aria-hidden className={className} />;
 }

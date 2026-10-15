@@ -10,7 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { CONTACT, UNITS, peekOf, type Kind, type Peek } from "@/content/work";
+import { CONTACT, UNITS, peekOfUnit, type Kind, type Peek } from "@/content/work";
 import { routes } from "@/lib/routes";
 
 import { Drawer } from "./drawer";
@@ -19,6 +19,7 @@ import { whenIdle } from "./helpers";
 import { GLYPHS } from "./intro-timeline";
 import { KindViewer, loadKindArt } from "./kind-art-lazy";
 import { Logo } from "./logo";
+import { newsAt } from "./news";
 import s from "./universe.module.css";
 
 /**
@@ -61,6 +62,13 @@ export function UniverseNav({
 }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<Kind>(KIND_ORDER[0]);
+  /* The kind the news is about carries a small light on its tab while it
+     is news (news.ts): from the server's guess, settled by the clock. */
+  const [fresh, setFresh] = useState<Kind | null>(() => kindOfNews(null));
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the visitor's clock, which the server can't know
+    setFresh(kindOfNews(Date.now()));
+  }, []);
   /* Opened by a click (or a tap, or a key): it stays open when the pointer
      leaves, until it is clicked shut, Escape is pressed, or the visitor
      clicks or scrolls away. Opened by hovering, it closes on leaving. */
@@ -116,7 +124,10 @@ export function UniverseNav({
   useEffect(() => {
     if (!open) return;
     return whenIdle(() => {
-      for (const u of UNITS) if (u.media) new Image().src = peekOf(u.media).still;
+      for (const u of UNITS) {
+        const pk = peekOfUnit(u);
+        if (pk) new Image().src = pk.still;
+      }
     }, 1500);
   }, [open]);
 
@@ -206,6 +217,11 @@ export function UniverseNav({
               {KINDS[k].mark}
             </span>
             {KINDS[k].label.toLowerCase()}
+            {fresh === k && (
+              <span className={s.tabNew}>
+                <span className={s.srOnly}>, new</span>
+              </span>
+            )}
           </button>
         ))}
 
@@ -408,8 +424,8 @@ function KindMenu({
               <KindViewer open={open} kind={kind} />
               <div className={s.peeks} aria-hidden>
                 {units.map((u) => {
-                  if (!u.media) return null;
-                  const pk = peekOf(u.media);
+                  const pk = peekOfUnit(u);
+                  if (!pk) return null;
                   const on = shown === u.id;
                   const at =
                     pk.screens && screen.id === u.id
@@ -613,4 +629,10 @@ function Turn({
       />
     </span>
   );
+}
+
+/** The kind of work the news is about, or null when there is none. */
+function kindOfNews(now: number | null): Kind | null {
+  const n = newsAt(now);
+  return n ? (UNITS[n.unit]?.kind ?? null) : null;
 }

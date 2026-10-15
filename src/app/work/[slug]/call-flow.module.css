@@ -1,0 +1,488 @@
+/* Vitamin Bob's call, as a picture that plays (call-flow.tsx). Hairlines on
+   black, Plex for its words, the award's colour for what is live, and a
+   muted red for an emergency. Everything moves by transition from one step
+   to the next, and only what the step is about moves. */
+
+.flow {
+  --bad: oklch(0.7 0.15 25);
+  --warm: oklch(0.82 0.13 75);
+  margin-top: 1.4rem;
+  border: 1px solid var(--hair);
+  /* Nearly solid, so the sky behind doesn't show through the drawing. */
+  background: rgb(10 12 14 / 0.88);
+  backdrop-filter: blur(4px);
+}
+
+.stage {
+  padding: 1rem 0.8rem 0;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-sans);
+}
+
+.tall {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .wide {
+    display: none;
+  }
+
+  .tall {
+    display: block;
+  }
+}
+
+/* -------------------------------------------------------------- Its parts */
+
+.name {
+  font-size: 13px;
+  fill: var(--fg);
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--mute);
+}
+
+.body {
+  fill: #0b0d0f;
+  stroke: var(--soft);
+  stroke-width: 1.2;
+}
+
+.screen {
+  fill: #15191c;
+  transition: fill 400ms;
+}
+
+.phone[data-lit] .screen {
+  fill: color-mix(in oklab, var(--kind) 55%, #0b0d0f);
+}
+
+.key {
+  fill: #2a3034;
+}
+
+.phone {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.phone[data-ring] {
+  animation: ring 220ms ease-in-out infinite alternate;
+}
+
+@keyframes ring {
+  from {
+    rotate: -5deg;
+  }
+
+  to {
+    rotate: 5deg;
+  }
+}
+
+.ring {
+  fill: none;
+  stroke: var(--kind);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.ring[data-on] {
+  opacity: 0.8;
+}
+
+/* The missed call's arc, drawn as it rings. */
+.arc {
+  fill: none;
+  stroke: var(--warm);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 300ms;
+}
+
+.arc[data-on] {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+.badge,
+.bubble,
+.keyAnswer,
+.chip,
+.gauge {
+  opacity: 0;
+  transition:
+    opacity 350ms,
+    translate 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.badge[data-on],
+.bubble[data-on],
+.chip[data-on],
+.gauge[data-on] {
+  opacity: 1;
+}
+
+.badge rect {
+  fill: color-mix(in oklab, var(--kind) 14%, transparent);
+  stroke: var(--kind);
+}
+
+.badge text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-anchor: middle;
+  fill: var(--kind-soft);
+}
+
+.bubble {
+  translate: 0 6px;
+}
+
+.bubble[data-on] {
+  translate: 0 0;
+}
+
+.bubble rect {
+  fill: var(--kind);
+}
+
+.bubble text {
+  font-size: 13px;
+  font-weight: 500;
+  text-anchor: middle;
+  fill: #06110a;
+}
+
+.keyAnswer {
+  translate: 0 6px;
+  transition-delay: 0ms;
+}
+
+.keyAnswer[data-on] {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: var(--d);
+}
+
+.keyAnswer rect {
+  fill: #0b0d0f;
+  stroke: var(--fg);
+}
+
+.keyAnswer text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-anchor: middle;
+  fill: var(--fg);
+}
+
+/* The wires: faint and dotted at rest; drawn in when live. */
+.wire {
+  fill: none;
+  stroke: var(--hair);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 4;
+}
+
+.live {
+  fill: none;
+  stroke: var(--kind);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 800ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.live[data-on] {
+  stroke-dashoffset: 0;
+}
+
+.live[data-tone="bad"] {
+  stroke: var(--bad);
+}
+
+.node circle:first-child {
+  fill: #0b0d0f;
+  stroke: var(--soft);
+  stroke-width: 1;
+  transition:
+    stroke 300ms,
+    fill 300ms;
+}
+
+.nodeDot {
+  fill: var(--mute);
+}
+
+.tick {
+  fill: none;
+  stroke: var(--mute);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 300ms;
+}
+
+.node[data-on] circle:first-child {
+  stroke: var(--kind);
+  fill: color-mix(in oklab, var(--kind) 16%, #0b0d0f);
+}
+
+.node[data-on] .tick {
+  stroke: var(--kind-soft);
+}
+
+.laptop {
+  fill: #0b0d0f;
+  stroke: var(--soft);
+  stroke-width: 1.2;
+}
+
+.laptopBase {
+  fill: #20262a;
+}
+
+.chip rect:first-child {
+  fill: none;
+  stroke: var(--kind);
+  stroke-width: 1.4;
+}
+
+.chip rect:last-child {
+  fill: var(--kind);
+}
+
+/* The urgency: a dial that swings while it listens, then settles. */
+.verdict {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-anchor: middle;
+  fill: var(--soft);
+  transition: fill 300ms;
+}
+
+.gauge[data-verdict="emergency"] .verdict {
+  fill: var(--bad);
+}
+
+.gauge[data-verdict="routine"] .verdict {
+  fill: var(--kind-soft);
+}
+
+.gaugeOk,
+.gaugeBad {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.gaugeOk {
+  stroke: color-mix(in oklab, var(--kind) 70%, transparent);
+}
+
+.gaugeBad {
+  stroke: color-mix(in oklab, var(--bad) 75%, transparent);
+}
+
+.needle {
+  stroke: var(--fg);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  rotate: 0deg;
+  transition: rotate 700ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.gauge[data-verdict="deciding"] .needle {
+  animation: weigh 1600ms ease-in-out infinite alternate;
+}
+
+.gauge[data-verdict="emergency"] .needle {
+  rotate: 58deg;
+}
+
+.gauge[data-verdict="routine"] .needle {
+  rotate: -58deg;
+}
+
+@keyframes weigh {
+  from {
+    rotate: -45deg;
+  }
+
+  to {
+    rotate: 45deg;
+  }
+}
+
+.hub {
+  fill: var(--fg);
+}
+
+/* Where it ends up: a card each, which lights as the call reaches it. */
+.card rect {
+  fill: #0b0d0f;
+  stroke: var(--hair);
+  transition:
+    stroke 300ms,
+    fill 300ms;
+}
+
+.icon {
+  fill: none;
+  stroke: var(--soft);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  transition: stroke 300ms;
+}
+
+.cardTitle {
+  font-size: 13px;
+  fill: var(--fg);
+}
+
+.cardStatus {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--kind-soft);
+  opacity: 0;
+  transition: opacity 300ms 300ms;
+}
+
+.card[data-on] rect {
+  stroke: var(--kind);
+  fill: color-mix(in oklab, var(--kind) 10%, #0b0d0f);
+}
+
+.card[data-on] .icon {
+  stroke: var(--kind-soft);
+}
+
+.card[data-on] .cardStatus {
+  opacity: 1;
+}
+
+.card[data-tone="bad"][data-on] rect {
+  stroke: var(--bad);
+  fill: color-mix(in oklab, var(--bad) 12%, #0b0d0f);
+}
+
+.card[data-tone="bad"][data-on] .icon {
+  stroke: var(--bad);
+}
+
+.card[data-tone="bad"] .cardStatus {
+  fill: var(--bad);
+}
+
+/* -------------------------------------------------- The words, the controls */
+
+.caption {
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  min-height: 3.4em;
+  margin: 0.8rem 1.2rem 0;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.captionNum {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kind);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1.2rem 1rem;
+}
+
+.play {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--hair);
+  border-radius: 50%;
+  background: none;
+  font-size: 0.6rem;
+  color: var(--soft);
+  cursor: pointer;
+  transition:
+    color 200ms,
+    border-color 200ms;
+}
+
+.play:is(:hover, :focus-visible) {
+  border-color: var(--kind);
+  color: var(--fg);
+}
+
+.dots {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dots button {
+  display: block;
+  width: 1.4rem;
+  height: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dots button::before {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: 0.15rem;
+  background: var(--hair);
+  transition: background 300ms;
+}
+
+.dots button[aria-current]::before {
+  background: var(--kind);
+}
+
+.dots button:hover::before {
+  background: var(--soft);
+}
+
+.play:focus-visible,
+.dots button:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone[data-ring],
+  .gauge[data-verdict="deciding"] .needle {
+    animation: none;
+  }
+}

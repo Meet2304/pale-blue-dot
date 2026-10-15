@@ -85,6 +85,17 @@ export const KINDS: Record<
     l: 0.86,
     c: 0.06,
   },
+  awards: {
+    label: "Awards",
+    title: "Awards",
+    body: "supernova",
+    bodyName: "supernova",
+    about: "Wins: a star that flares so bright it is seen across the sky.",
+    mark: "*",
+    hue: 135,
+    l: 0.84,
+    c: 0.15,
+  },
 };
 
 /* The order the kinds are read in: the bar's tabs, the phone's chips and
@@ -95,6 +106,7 @@ export const KIND_ORDER: Kind[] = [
   "projects",
   "research",
   "leadership",
+  "awards",
 ];
 
 /** The seven colours a body draws with: five-stop ramp, warm, white. */
