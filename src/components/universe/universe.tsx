@@ -28,6 +28,7 @@ import { FIRST } from "./chapters";
 import { DOT_TITLE, SKY_TITLE } from "./intro-timeline";
 import { lookColors, lookOf } from "./looks";
 import { WorkMedia } from "./media";
+import { AwayLink, PageLink } from "./piece-links";
 import { UniverseNav } from "./nav";
 import { Footer } from "./footer";
 import { WayMark } from "./way-mark";
@@ -51,8 +52,8 @@ const TICKS = [
   { label: "next", first: true },
 ];
 
-/* Each piece of work, with the year it belongs to and its place in it. */
-const PIECES = COLLECTIONS.flatMap((col) => col.units.map((u, i) => ({ u, col, i })));
+/* Each piece of work, with the year it belongs to. */
+const PIECES = COLLECTIONS.flatMap((col) => col.units.map((u) => ({ u, col })));
 
 /* A piece of work's own colours: the ones its body is drawn in. */
 const lookVars = (u: Unit) => {
@@ -60,11 +61,36 @@ const lookVars = (u: Unit) => {
   return { "--kind": c[2], "--kind-soft": c[3] } as CSSProperties;
 };
 
-/* Where chapter `n` starts on the page, in px: chapters can be taller than
-   the screen (chapter-map.ts), so it is measured, not multiplied out. */
-const chapterTop = (section: HTMLElement, n: number) => {
-  const el = section.querySelectorAll("[data-chapter]")[n];
-  return el ? el.getBoundingClientRect().top + window.scrollY : 0;
+/* A phone held upright, where a piece of work stacks: its body's stage,
+   then its copy, then its picture (the same query as the stylesheet). */
+const STACKED = "(max-width: 860px) and (max-aspect-ratio: 4/3)";
+/* The docked bar's height on a phone, and a little air under it. */
+const PHONE_BAR = 64;
+const AIR = 16;
+
+/**
+ * Where a menu lands for chapter `n`, in px: measured, not multiplied out,
+ * since chapters can be taller than the screen (chapter-map.ts). Its top,
+ * except for a piece of work on a phone: there it lands on the piece
+ * itself, its name, words and picture on screen together, with as much of
+ * the body's stage above them as still fits. The camera holds the body
+ * where it is, so the copy rises over the lower part of it.
+ */
+const chapterLanding = (section: HTMLElement, n: number) => {
+  const el = section.querySelectorAll<HTMLElement>("[data-chapter]")[n];
+  if (!el) return 0;
+  const top = el.getBoundingClientRect().top + window.scrollY;
+  const copy = el.querySelector('[data-part="copy"]');
+  if (!el.hasAttribute("data-piece") || !copy || !window.matchMedia(STACKED).matches)
+    return top;
+  const media = el.querySelector('[data-part="media"]');
+  const head = copy.getBoundingClientRect().top + window.scrollY;
+  const foot = (media ?? copy).getBoundingClientRect().bottom + window.scrollY;
+  /* All of it at the foot of the screen if it fits; if not, its name just
+     under the bar. */
+  const fitted = foot + AIR - window.innerHeight;
+  const named = head - PHONE_BAR - AIR;
+  return Math.max(top, Math.min(fitted, named));
 };
 
 /* The opening plays once per visit: on every fresh load, but not again when
@@ -137,7 +163,7 @@ export function Universe() {
   const goTo = useCallback((chapter: number) => {
     const el = sectionRef.current;
     if (!el) return;
-    scrollRef.current?.glideTo(() => chapterTop(el, chapter));
+    scrollRef.current?.glideTo(() => chapterLanding(el, chapter));
   }, []);
 
   /* Asked for from another page's bar (page-nav.tsx): once the opening is
@@ -211,8 +237,8 @@ export function Universe() {
             <p className={s.hint}>Scroll to visit them one by one</p>
           </Chapter>
 
-          {PIECES.map(({ u, col, i }, k) => (
-            <Piece key={u.id} u={u} col={col} i={i} index={k} />
+          {PIECES.map(({ u, col }, k) => (
+            <Piece key={u.id} u={u} col={col} index={k} />
           ))}
 
           <Chapter>
@@ -388,17 +414,7 @@ function Chapter({
  * body is on the canvas, in the same colours as the accents here, framed by
  * a reticle with its name, so the words and the body read as one.
  */
-function Piece({
-  u,
-  col,
-  i,
-  index,
-}: {
-  u: Unit;
-  col: Collection;
-  i: number;
-  index: number;
-}) {
+function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
   const kind = KINDS[u.kind];
   const aspect =
     u.media?.kind === "photo" || u.media?.kind === "splat"
@@ -418,11 +434,6 @@ function Piece({
       <p className={s.kicker}>
         {col.title}
         {col.title !== col.span && <span className={s.span}>, {col.span}</span>}
-        {col.units.length > 1 && (
-          <span className={s.count}>
-            {i + 1} of {col.units.length}
-          </span>
-        )}
       </p>
       <h2 className={s.pieceName}>{u.name}</h2>
       <p className={s.pieceKind}>
@@ -437,28 +448,29 @@ function Piece({
           <li key={k}>{k}</li>
         ))}
       </ul>
-      <p className={s.visits}>
-        <Link className={`${s.visit} ${s.more}`} href={`${routes.work}/${u.id}`}>
-          What I did <span aria-hidden>→</span>
-        </Link>
+      <div className={s.visits}>
+        <PageLink
+          className={s.visit}
+          href={`${routes.work}/${u.id}`}
+          label="What I did"
+        />
+        {/* Short words, so the three fit one row: a site is "Live site",
+            anything with its own verb says what it is ("Read the paper"). */}
         {u.link && (
-          <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
-            {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>
-          </a>
+          <AwayLink
+            className={s.visit}
+            href={u.link.href}
+            icon={u.link.verb ? "story" : "home"}
+          >
+            {u.link.verb ? `${u.link.verb} ${u.link.label}` : "Live site"}
+          </AwayLink>
         )}
         {u.repo && (
-          <a
-            className={`${s.visit} ${s.code}`}
-            href={u.repo}
-            target="_blank"
-            rel="noreferrer"
-            data-icon="github"
-          >
-            <WayMark icon="github" className={s.codeMark} />
-            See the code <span aria-hidden>↗</span>
-          </a>
+          <AwayLink className={s.visit} href={u.repo} icon="github">
+            Code
+          </AwayLink>
         )}
-      </p>
+      </div>
     </Chapter>
   );
 }

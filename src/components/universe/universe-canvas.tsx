@@ -80,9 +80,10 @@ const BEHIND: Partial<Record<string, [number, number]>> = {
    alone, so it holds its own next to the picture. */
 const BESIDE = 1.3;
 
-/* How much brighter a body is drawn on a phone, where it shares a small
-   screen with the copy. */
-const NARROW_GLOW = 1.3;
+/* How strongly a body is drawn on a phone, against a wide screen: fainter,
+   since on a small screen it sits behind the copy and the picture, and
+   should not pull the eye away from them. */
+const NARROW_GLOW = 0.55;
 
 /* Earth's own slow turn (rad/s); the most a flick sends it spinning at,
    and how quickly (s) a glide eases back to that turn. */
@@ -815,8 +816,8 @@ export function UniverseCanvas({
           )
             continue;
           const near = nearBody(i);
-          /* On a phone, where a body is small beside the copy, it is drawn
-             brighter, so it holds its own. */
+          /* On a phone, where the body shares the screen with the copy and
+             the picture, it is drawn fainter, so they lead. */
           const a =
             workA *
             (0.3 + 0.7 * smooth(near)) *

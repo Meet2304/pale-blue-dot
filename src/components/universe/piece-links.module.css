@@ -1,0 +1,182 @@
+/* A chapter's ways on (piece-links.tsx): its own page in the figures'
+   frame, then the thing itself and its code as quieter marks and words
+   beside it. All take the piece's colour from --kind. */
+
+/* ------------------------------------------------------------ Its page */
+
+.page {
+  --tick: 7px;
+  --c: linear-gradient(var(--kind), var(--kind));
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+  text-decoration: none;
+  transition: border-color 260ms;
+}
+
+/* The corners: the same four ticks as a figure's frame. */
+.page::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background:
+    var(--c) top left / var(--tick) 1px,
+    var(--c) top left / 1px var(--tick),
+    var(--c) top right / var(--tick) 1px,
+    var(--c) top right / 1px var(--tick),
+    var(--c) bottom left / var(--tick) 1px,
+    var(--c) bottom left / 1px var(--tick),
+    var(--c) bottom right / var(--tick) 1px,
+    var(--c) bottom right / 1px var(--tick);
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transition: inset 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The light that follows the pointer: the piece's colour, faint, and only
+   while pointed at. */
+.page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    5.5rem circle at var(--x, 50%) var(--y, 50%),
+    color-mix(in srgb, var(--kind) 26%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms;
+}
+
+.page:is(:hover, :focus-visible) {
+  border-color: color-mix(in srgb, var(--kind) 35%, transparent);
+  color: var(--fg);
+}
+
+.page:is(:hover, :focus-visible)::before {
+  inset: -5px;
+}
+
+.page:is(:hover, :focus-visible)::after {
+  opacity: 1;
+}
+
+.page:active {
+  translate: 0 1px;
+}
+
+/* The arrow leans on toward the page. */
+.on {
+  color: var(--kind);
+  transition: translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.page:is(:hover, :focus-visible) .on {
+  translate: 0.25em 0;
+}
+
+/* ------------------------------------------------- Somewhere else */
+
+/* As tall as the frame, so the row lines up; the padding is reach for the
+   pointer, not space you can see. */
+.away {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.15rem;
+  border-bottom: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.mark {
+  width: 1rem;
+  height: 1rem;
+  transition: color 200ms;
+}
+
+/* A line in the piece's colour draws in under the word. */
+.words {
+  padding-bottom: 0.2rem;
+  background: linear-gradient(var(--kind), var(--kind)) left bottom / 0 1px no-repeat;
+  transition: background-size 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.away:is(:hover, :focus-visible) {
+  color: var(--fg);
+}
+
+.away:is(:hover, :focus-visible) .mark {
+  color: var(--kind);
+}
+
+.away:is(:hover, :focus-visible) .words {
+  background-size: 100% 1px;
+}
+
+/* Two arrows in one cell: the first flies off up and to the right, the
+   second rises in from below and to the left to take its place. */
+.lift {
+  display: inline-grid;
+  overflow: hidden;
+  margin-left: -0.15rem;
+  color: var(--mute);
+  transition: color 200ms;
+}
+
+.away:is(:hover, :focus-visible) .lift {
+  color: var(--kind);
+}
+
+.lift span {
+  grid-area: 1 / 1;
+  transition: translate 340ms cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+.lift span + span {
+  translate: -110% 110%;
+}
+
+.away:is(:hover, :focus-visible) .lift span {
+  translate: 110% -110%;
+}
+
+.away:is(:hover, :focus-visible) .lift span + span {
+  translate: 0 0;
+  transition-delay: 90ms;
+}
+
+/* On a phone the frame draws in and the marks step aside, so all three
+   still share a row, even beside "Read the paper". */
+@media (max-width: 560px) {
+  .page {
+    gap: 0.55rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .away .mark {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page::before,
+  .on,
+  .words,
+  .lift span {
+    transition: none;
+  }
+}

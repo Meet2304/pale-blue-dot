@@ -20,7 +20,6 @@ const WAYS: {
   me?: boolean;
 }[] = [
   { label: "Home", href: routes.home, icon: "home" },
-  { label: "About", href: routes.about, icon: "about" },
   { label: "Work", href: routes.work, icon: "work" },
   { label: "Story", href: routes.story, icon: "story" },
   { label: "Contact", href: routes.contact, icon: "contact" },

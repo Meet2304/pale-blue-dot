@@ -11,7 +11,7 @@ import s from "./record-page.module.css";
 
 /**
  * A quiet reading page under the same sky as the story: a way back, one
- * column, the foot. About, the work list, the résumé and the record use it,
+ * column, the foot. The work list, the résumé and the record use it,
  * so a crawler gets real text instead of a redirect.
  */
 export function RecordPage({
