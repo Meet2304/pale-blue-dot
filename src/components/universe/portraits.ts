@@ -20,6 +20,8 @@ import { fbm3 } from "./noise";
  * - the constellation: a star chart of a figure everyone knows (the Plough),
  *   stars sized by brightness, joined by lines, over faint coordinate lines
  *   and the Milky Way;
+ * - the supernova: the map's own (bodies.ts), a remnant with its star
+ *   still burning at the centre, with a glow under it and spikes over it;
  * - the black hole: drawn to feel enormous, its disk running off the edges
  *   of the frame, the far side lensed up over the shadow, the near side
  *   crossing in front of it, and the starlight behind bent into arcs.
@@ -873,6 +875,57 @@ const blackholeOver: Light = (g, { cx, cy, R, colors, alpha }) => {
   g.restore();
 };
 
+/**
+ * The supernova's light: under its glyphs, a white-hot glow where the star
+ * was, cooling through the body's own colour, and a faint wash the size of
+ * the shell; over them, two thin spikes of light with a bloom, as a camera
+ * sees a star too bright for it. It flares a little now and then.
+ */
+const supernovaUnder: Light = (g, { cx, cy, R, colors, alpha, t, calm }) => {
+  const flare = calm ? 1 : 0.9 + 0.1 * Math.sin(t * 0.8) ** 2;
+  const core = g.createRadialGradient(cx, cy, 0, cx, cy, R * 0.55);
+  core.addColorStop(0, rgba("#ffffff", 0.75 * alpha * flare));
+  core.addColorStop(0.12, rgba(colors[4], 0.4 * alpha * flare));
+  core.addColorStop(0.45, rgba(colors[2], 0.12 * alpha));
+  core.addColorStop(1, rgba(colors[2], 0));
+  g.fillStyle = core;
+  g.fillRect(cx - R * 0.55, cy - R * 0.55, R * 1.1, R * 1.1);
+  const wash = g.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 1.25);
+  wash.addColorStop(0, rgba(colors[2], 0));
+  wash.addColorStop(0.45, rgba(colors[2], 0.1 * alpha));
+  wash.addColorStop(1, rgba(colors[2], 0));
+  g.fillStyle = wash;
+  g.fillRect(cx - R * 1.25, cy - R * 1.25, R * 2.5, R * 2.5);
+};
+
+const supernovaOver: Light = (g, { cx, cy, R, alpha, t, calm }) => {
+  const flare = calm ? 1 : 0.85 + 0.15 * Math.sin(t * 0.8) ** 2;
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  for (const [dx, dy, len] of [
+    [1, 0, 0.95],
+    [0, 1, 0.75],
+  ] as const) {
+    const L = R * len * flare;
+    const line = g.createLinearGradient(
+      cx - dx * L,
+      cy - dy * L,
+      cx + dx * L,
+      cy + dy * L,
+    );
+    line.addColorStop(0, rgba("#ffffff", 0));
+    line.addColorStop(0.5, rgba("#ffffff", 0.7 * alpha));
+    line.addColorStop(1, rgba("#ffffff", 0));
+    g.strokeStyle = line;
+    g.lineWidth = Math.max(1, R * 0.008);
+    g.beginPath();
+    g.moveTo(cx - dx * L, cy - dy * L);
+    g.lineTo(cx + dx * L, cy + dy * L);
+    g.stroke();
+  }
+  g.restore();
+};
+
 export const PORTRAITS: Record<PortraitId, Portrait> = {
   /* The star is the map's own, as it was in the first version of this
      menu: Meet preferred it to a more detailed portrait. */
@@ -904,5 +957,12 @@ export const PORTRAITS: Record<PortraitId, Portrait> = {
     under: blackholeUnder,
     over: blackholeOver,
     lens: 0.75,
+  },
+  supernova: {
+    fn: BODIES.supernova,
+    extent: EXTENT.supernova,
+    reach: [1.25, 1.25],
+    under: supernovaUnder,
+    over: supernovaOver,
   },
 };

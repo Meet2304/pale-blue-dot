@@ -19,6 +19,7 @@ import { UNITS, unitById, type Unit } from "@/content/work";
 import { routes } from "@/lib/routes";
 import { pageMetadata } from "@/lib/site";
 
+import { AwardBody } from "./award";
 import s from "./work.module.css";
 
 /* Every unit on the map has a page, and nothing else does. */
@@ -66,104 +67,118 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
           style={{ "--kind": c[2], "--kind-soft": c[3] } as CSSProperties}
         >
           <StarField />
-          <BodyPortrait id={u.id} kind={u.kind} className={s.body} />
+          <BodyPortrait id={u.id} kind={u.kind} high={!!u.story} className={s.body} />
           <header className={s.top}>
             <BackLink className={s.back} />
           </header>
 
           <WorkJsonLd unit={u} />
-          <article className={s.page}>
-            <header className={s.head}>
-              <p className={s.kicker}>
-                <span className={s.mark} aria-hidden>
-                  {kind.mark}
-                </span>{" "}
-                {kind.label}
-                <span className={s.sep} aria-hidden>
-                  ·
-                </span>
-                {u.when}
-              </p>
-              <h1 className={s.title}>{u.name}</h1>
-              {u.role && <p className={s.role}>{u.role}</p>}
-              <p className={s.lede}>{u.line}</p>
-              {/* Where to see it and where it stands, on one line: the
+          {u.story ? (
+            <AwardBody
+              u={u}
+              story={u.story}
+              colors={c}
+              pager={
+                <nav className={s.pager} aria-label="More work">
+                  {prev ? <Neighbour u={prev} dir="Previous" /> : <span />}
+                  {next && <Neighbour u={next} dir="Next" />}
+                </nav>
+              }
+            />
+          ) : (
+            <article className={s.page}>
+              <header className={s.head}>
+                <p className={s.kicker}>
+                  <span className={s.mark} aria-hidden>
+                    {kind.mark}
+                  </span>{" "}
+                  {kind.label}
+                  <span className={s.sep} aria-hidden>
+                    ·
+                  </span>
+                  {u.when}
+                </p>
+                <h1 className={s.title}>{u.name}</h1>
+                {u.role && <p className={s.role}>{u.role}</p>}
+                <p className={s.lede}>{u.line}</p>
+                {/* Where to see it and where it stands, on one line: the
                   thing itself, its code, then its status. */}
-              {(u.link || u.repo || !u.stats) && (
-                <div className={s.actions}>
-                  {u.link && (
-                    <a
-                      href={u.link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={s.visit}
-                      aria-label={`${u.link.verb ?? "Visit"} ${u.link.label}`}
-                    >
-                      {u.link.verb ? `${u.link.verb} ${u.link.label}` : u.link.label}
-                      <span className={s.arrow} aria-hidden>
-                        ↗
-                      </span>
-                    </a>
-                  )}
-                  {u.repo && (
-                    <a
-                      href={u.repo}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-icon="github"
-                      className={s.code}
-                    >
-                      <WayMark icon="github" className={s.codeMark} />
-                      Code
-                    </a>
-                  )}
-                  {!u.stats && <p className={s.status}>{u.result}</p>}
+                {(u.link || u.repo || !u.stats) && (
+                  <div className={s.actions}>
+                    {u.link && (
+                      <a
+                        href={u.link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={s.visit}
+                        aria-label={`${u.link.verb ?? "Visit"} ${u.link.label}`}
+                      >
+                        {u.link.verb ? `${u.link.verb} ${u.link.label}` : u.link.label}
+                        <span className={s.arrow} aria-hidden>
+                          ↗
+                        </span>
+                      </a>
+                    )}
+                    {u.repo && (
+                      <a
+                        href={u.repo}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-icon="github"
+                        className={s.code}
+                      >
+                        <WayMark icon="github" className={s.codeMark} />
+                        Code
+                      </a>
+                    )}
+                    {!u.stats && <p className={s.status}>{u.result}</p>}
+                  </div>
+                )}
+                <ul className={s.skills} aria-label="Skills">
+                  {u.skills.map((k) => (
+                    <li key={k}>{k}</li>
+                  ))}
+                </ul>
+              </header>
+
+              {u.stats && (
+                <Row label="Impact">
+                  <dl className={s.stats}>
+                    {u.stats.map((st) => (
+                      <div key={st.label}>
+                        <dt>{st.label}</dt>
+                        <dd>{st.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className={s.result}>{u.result}</p>
+                </Row>
+              )}
+
+              <Row label="What I did">
+                <ul className={s.did}>
+                  {u.did.map((d) => (
+                    <li key={d}>{d}</li>
+                  ))}
+                </ul>
+              </Row>
+
+              <Row label="The aim">
+                <p className={s.copy}>{u.aim}</p>
+              </Row>
+
+              {u.media && (
+                <div className={s.media}>
+                  <WorkMedia media={u.media} />
                 </div>
               )}
-              <ul className={s.skills} aria-label="Skills">
-                {u.skills.map((k) => (
-                  <li key={k}>{k}</li>
-                ))}
-              </ul>
-            </header>
 
-            {u.stats && (
-              <Row label="Impact">
-                <dl className={s.stats}>
-                  {u.stats.map((st) => (
-                    <div key={st.label}>
-                      <dt>{st.label}</dt>
-                      <dd>{st.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-                <p className={s.result}>{u.result}</p>
-              </Row>
-            )}
-
-            <Row label="What I did">
-              <ul className={s.did}>
-                {u.did.map((d) => (
-                  <li key={d}>{d}</li>
-                ))}
-              </ul>
-            </Row>
-
-            <Row label="The aim">
-              <p className={s.copy}>{u.aim}</p>
-            </Row>
-
-            {u.media && (
-              <div className={s.media}>
-                <WorkMedia media={u.media} />
-              </div>
-            )}
-
-            <nav className={s.pager} aria-label="More work">
-              {prev ? <Neighbour u={prev} dir="Previous" /> : <span />}
-              {next && <Neighbour u={next} dir="Next" />}
-            </nav>
-          </article>
+              <nav className={s.pager} aria-label="More work">
+                {prev ? <Neighbour u={prev} dir="Previous" /> : <span />}
+                {next && <Neighbour u={next} dir="Next" />}
+              </nav>
+            </article>
+          )}
         </main>
         <Footer />
       </div>

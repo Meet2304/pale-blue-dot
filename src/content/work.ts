@@ -13,7 +13,8 @@
  *     resume's skills list rather than stated beside them.
  */
 
-export type Kind = "experience" | "research" | "projects" | "leadership" | "education";
+export type Kind =
+  "experience" | "research" | "projects" | "leadership" | "education" | "awards";
 
 /**
  * A picture of the work, shown beside it on the home page: a photo, or a
@@ -133,11 +134,88 @@ export function peekOf(media: Media): Peek {
   }
 }
 
+/** A piece of work's picture in the bar's panel: its own, or its media's. */
+export function peekOfUnit(u: {
+  media?: Media;
+  peek?: { src: string; width: number; height: number };
+}): Peek | null {
+  if (u.peek) return { still: u.peek.src, aspect: u.peek.width / u.peek.height };
+  return u.media ? peekOf(u.media) : null;
+}
+
 /** The pictures that open in the lightbox: a photo or a site's screens. */
 export type FramedMedia = Extract<Media, { kind: "photo" | "site" }>;
 
 /** A number that shows the impact, and what it counts. */
 export type Stat = { value: string; label: string };
+
+/** A place on Earth: longitude, latitude, in degrees. */
+export type LonLat = [number, number];
+
+/**
+ * An award's own page (award.tsx), told in the order anyone would ask:
+ * what was won and where it was announced; how it works, shown more than
+ * told; my part in it; and the days it happened over. All of it lives here,
+ * with the award, so the page, the home page and the bar read the same
+ * facts.
+ */
+export type AwardStory = {
+  /** The page's title, and a short paragraph under it. */
+  title: string;
+  intro: string;
+  /** Each win, the latest first: who gave it, for what, when, a line on it,
+      and its announcement (its image, and the post on each platform). */
+  wins: {
+    by: string;
+    title: string;
+    event: string;
+    date: string;
+    line: string;
+    links: { platform: "linkedin" | "x"; href: string }[];
+    image: { src: string; width: number; height: number; alt: string };
+  }[];
+  /** The work that won them. */
+  project: { name: string; href: string; repo?: string };
+  /** How it works, said briefly: a line on the problem it answers, the
+      steps of a call as the page's animation tells them (call-flow.tsx),
+      and a few points to take away. */
+  how: { line: string; steps: string[]; points: string[] };
+  /** My part: my role on the team, what I built, and who with. */
+  role: { title: string; built: string[]; with: string };
+  /** The days, in order. A stop's `at` (ISO, with its offset) says when it
+      happened, or will; with a `flight`, the page draws them on a globe
+      (journey.tsx), and a stop with a place is pinned on it. */
+  days: {
+    stops: {
+      at: string;
+      when: string;
+      place: string;
+      title: string;
+      line: string;
+      ll?: LonLat;
+    }[];
+    /** The trip, airport by airport, with the hour it leaves the first and
+        reaches the last (ISO, with offsets). */
+    flight?: { stops: { code: string; ll: LonLat }[]; leaves: string; lands: string };
+  };
+  /** A picture for the end of the page, and a frame kept for one still to
+      be taken, until its date (`until`, ISO). */
+  photo?: { src: string; width: number; height: number; alt: string; caption: string };
+  soon?: { label: string; until: string };
+};
+
+/**
+ * The latest news, for the hero, the sky behind Earth and the bar: which
+ * piece it is, what to say before and after a moment (`turn`, ISO), and
+ * the day it stops being news.
+ */
+export type News = {
+  id: string;
+  before: string;
+  after: string;
+  turn: string;
+  until: string;
+};
 
 export type Unit = {
   /** Also the per-unit page's slug: `/work/${id}`. */
@@ -176,6 +254,11 @@ export type Unit = {
   /** Part of another piece of work (its id): drawn as that piece's body,
       seen again from another side, rather than as a body of its own. */
   sameAs?: string;
+  /** For an award: everything its own page tells. */
+  story?: AwardStory;
+  /** The bar's picture, where it isn't the home page's (an award shows
+      its announcement): one still, served as it is. */
+  peek?: { src: string; width: number; height: number };
 };
 
 export type Collection = {
@@ -194,8 +277,189 @@ export const COLLECTIONS: Collection[] = [
     title: "Now",
     span: "2026 to 2027",
     tick: "now",
-    note: "Graduate school, a research lab, a project with Bosch, and the tool I use every day.",
+    note: "A hackathon double, graduate school, a research lab, a project with Bosch, and the tool I use every day.",
     units: [
+      {
+        id: "hackathon-wins",
+        name: "Hack-Nation & World Bank Group Hackathon",
+        kind: "awards",
+        when: "Oct 2026",
+        role: "Grand winner, Hack-Nation · Winner, World Bank Health track",
+        impact: 3,
+        line: "Grand winner of Hack-Nation's 7th Global AI Hackathon, and winner of the World Bank Group's Small AI for Development Health track, with Vitamin Bob.",
+        brief:
+          "Vitamin Bob won the World Bank Group's Small AI for Development Health track, then Hack-Nation's 7th Global AI Hackathon outright, out of 3,000+ builders. It turns a missed call into the first step of primary care. I built its AI and backend, and I'm presenting it at the World Bank's summit in Seoul.",
+        skills: ["On-device LLMs", "Backend", "Product engineering", "AI for health"],
+        aim: "4.6 billion people still lack essential health care, and in rural areas patients arrive before their story does. Vitamin Bob turns a missed call into the first step of primary care: one computer in every district calls patients back, free and in their own language, with no app and no internet.",
+        did: [
+          "Built Bob's AI and backend: the call, the on-device model and the routing to care.",
+          "Made it safe: the AI only fills a form, and anything it can't back is asked again.",
+          "Built the phone gateway, the live dashboard and the website.",
+        ],
+        stats: [
+          { value: "1st", label: "of 3,000+ builders, Hack-Nation" },
+          { value: "1st", label: "Health track, World Bank Group" },
+          { value: "21 Oct", label: "a talk in Seoul" },
+        ],
+        result:
+          "Grand winner of Hack-Nation, winner of the World Bank's Health track, and a talk in Seoul.",
+        link: {
+          label: "the announcement",
+          href: "https://www.linkedin.com/posts/hack-nation_hacknation-globalaihackathon-buildinpublic-activity-7515871527326699520-EMsF",
+          verb: "Read",
+        },
+        repo: "https://github.com/Meet2304/vitamin-bob",
+        peek: { src: "/work/hackathon-wins/both.webp", width: 1212, height: 600 },
+        media: {
+          kind: "photo",
+          src: "/work/vitamin-bob/team.webp",
+          width: 1600,
+          height: 1200,
+          alt: "Yusril, Rizaldy, Egshiglen and Meet, smiling, in a glass atrium at Carnegie Mellon.",
+          caption: "Yusril, Rizaldy, Egshiglen and me, at Carnegie Mellon.",
+        },
+        story: {
+          title: "Two wins for Vitamin Bob",
+          intro:
+            "In October, four of us at Carnegie Mellon built Vitamin Bob in 24 hours. It won the World Bank Group's Health track, then the whole of Hack-Nation's global hackathon. Next, I'm presenting it at the World Bank's summit in Seoul.",
+          wins: [
+            {
+              by: "Hack-Nation",
+              title: "Grand winner",
+              event: "7th Global AI Hackathon",
+              date: "14 Oct 2026",
+              line: "First overall, out of 3,000+ builders and five challenges, after a live final.",
+              links: [
+                {
+                  platform: "linkedin",
+                  href: "https://www.linkedin.com/posts/hack-nation_hacknation-globalaihackathon-buildinpublic-activity-7515871527326699520-EMsF",
+                },
+                {
+                  platform: "x",
+                  href: "https://x.com/Hack_Nation_AI/status/2110767894032470385",
+                },
+              ],
+              image: {
+                src: "/work/hackathon-wins/hack-nation.webp",
+                width: 720,
+                height: 720,
+                alt: "Hack-Nation's card: Grand Winner, Overall Outstanding, Vitamin Bob, with the four of the team.",
+              },
+            },
+            {
+              by: "World Bank Group",
+              title: "Winner, Health track",
+              event: "Small AI for Development",
+              date: "6 Oct 2026",
+              line: "Small AI for basic phones and local languages, judged across 150+ countries. The prize: a talk in Seoul.",
+              links: [
+                {
+                  platform: "linkedin",
+                  href: "https://www.linkedin.com/feed/update/urn:li:ugcPost:7516077076857389056/",
+                },
+              ],
+              image: {
+                src: "/work/hackathon-wins/world-bank.webp",
+                width: 705,
+                height: 702,
+                alt: "The World Bank Group's card: Meet the Small AI for Development Hackathon Winners, Health Track, Vitamin Bob.",
+              },
+            },
+          ],
+          project: {
+            name: "Vitamin Bob",
+            href: "https://vitamin-bob.vercel.app",
+            repo: "https://github.com/Meet2304/vitamin-bob",
+          },
+          how: {
+            line: "4.6 billion people still can't get basic health care. In villages, patients travel far and wait, and the clinic hears their story only when they arrive. Vitamin Bob starts care with a phone call instead.",
+            steps: [
+              "Kevin rings once and hangs up. It costs him nothing.",
+              "The district computer finds a free phone line.",
+              "It calls Kevin back, in Hindi.",
+              "Kevin answers a few questions on his keypad.",
+              "The computer decides how urgent it is.",
+              "Emergency? The nearest clinic is alerted at once.",
+              "Not urgent? An appointment is booked instead.",
+              "Free for patients. In their language. No internet.",
+            ],
+            points: [
+              "Works on any phone, with no app and no internet.",
+              "Free for the patient, in Hindi or Gujarati.",
+              "The AI prepares the visit. A clinician makes the decision.",
+            ],
+          },
+          role: {
+            title: "AI & Backend · LLM & Product Engineer",
+            built: [
+              "Bob's AI and backend: the call, the on-device model (Gemma 4) and the routing to care.",
+              "The safety net: the AI only fills a form, and anything it can't back up is asked again.",
+              "The phone gateway, the live dashboard and the website.",
+            ],
+            with: "With Egshiglen Batjargal, Rizaldy Al Kautsar Utomo and Yusril Hana.",
+          },
+          days: {
+            stops: [
+              {
+                at: "2026-10-03T09:00:00-04:00",
+                when: "3 Oct",
+                place: "Pittsburgh",
+                title: "24 hours start",
+                line: "Four of us and one laptop.",
+                ll: [-79.94, 40.44],
+              },
+              {
+                at: "2026-10-06T12:01:00-04:00",
+                when: "6 Oct",
+                place: "Pittsburgh",
+                title: "World Bank: we won Health",
+                line: "And an invitation to speak in Seoul.",
+                ll: [-79.94, 40.44],
+              },
+              {
+                at: "2026-10-14T20:00:00-04:00",
+                when: "14 Oct",
+                place: "Pittsburgh",
+                title: "Hack-Nation: Grand winner",
+                line: "We pitched live, and took the whole hackathon.",
+                ll: [-79.94, 40.44],
+              },
+              {
+                at: "2026-10-17T17:59:00-04:00",
+                when: "17 Oct",
+                place: "Pittsburgh → Seoul",
+                title: "21 hours in the air",
+                line: "Over the top of the world.",
+              },
+              {
+                at: "2026-10-21T10:30:00+09:00",
+                when: "21 Oct, 10:30",
+                place: "Seoul",
+                title: "On stage",
+                line: "“Benefiting Billions: Scaling AI for Healthier Lives.”",
+                ll: [126.99, 37.54],
+              },
+            ],
+            flight: {
+              stops: [
+                { code: "PIT", ll: [-80.23, 40.49] },
+                { code: "ATL", ll: [-84.43, 33.64] },
+                { code: "ICN", ll: [126.45, 37.46] },
+              ],
+              leaves: "2026-10-17T17:59:00-04:00",
+              lands: "2026-10-19T04:15:00+09:00",
+            },
+          },
+          photo: {
+            src: "/work/vitamin-bob/team.webp",
+            width: 1600,
+            height: 1200,
+            alt: "Yusril, Rizaldy, Egshiglen and Meet, smiling, in a glass atrium at Carnegie Mellon.",
+            caption: "Yusril, Rizaldy, Egshiglen and me, Carnegie Mellon, October 2026",
+          },
+          soon: { label: "Seoul, 19 to 22 Oct", until: "2026-10-23T00:00:00+09:00" },
+        },
+      },
       {
         id: "carnegie-mellon",
         name: "Carnegie Mellon University",
@@ -803,6 +1067,17 @@ export const COLLECTIONS: Collection[] = [
 export const UNITS: Unit[] = COLLECTIONS.flatMap((c) => c.units);
 
 export const unitById = (id: string) => UNITS.find((u) => u.id === id);
+
+/** The latest news (see News), or null when there is none. */
+export const NEWS: News | null = {
+  id: "hackathon-wins",
+  before:
+    "Two hackathon wins: Grand winner at Hack-Nation, and the World Bank's Health track. Speaking in Seoul on 21 Oct.",
+  after:
+    "Two hackathon wins: Grand winner at Hack-Nation, and the World Bank's Health track, with a talk in Seoul.",
+  turn: "2026-10-21T12:00:00+09:00",
+  until: "2026-12-15T00:00:00-05:00",
+};
 
 /** Where Meet can be reached, used by the home page's closing chapter. */
 export const CONTACT = {
