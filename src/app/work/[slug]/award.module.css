@@ -1,0 +1,684 @@
+/* An award's page (award.tsx), set to be read: one column of short
+   paragraphs and bullets, in the work page's frame (work.module.css: true
+   black, the quiet sky, Marcellus for headings over Hanken Grotesk, Plex
+   Mono only for small labels), with a quiet rail beside it. Colour is the
+   award's own, and used sparingly. */
+
+.page {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 68rem);
+  margin: 0 auto;
+  padding: clamp(2rem, 7vh, 4.5rem) 6vw var(--space-10);
+  animation: rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+/* ----------------------------------------------------------------- The head */
+
+.head {
+  max-width: 40rem;
+  margin-left: 10rem;
+  padding-bottom: 2.5rem;
+}
+
+.title {
+  margin-top: 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 5.5vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+}
+
+.intro {
+  margin-top: 1.1rem;
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.6rem;
+  margin-top: 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 0;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.links a:is(:hover, :focus-visible) {
+  color: var(--kind);
+}
+
+/* ------------------------------------------------------- The rail, the parts */
+
+.body {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 40rem);
+  align-items: start;
+}
+
+.steps {
+  position: sticky;
+  top: 5rem;
+  padding-top: 2.2rem;
+}
+
+.steps ol {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.8rem;
+  border-bottom: 0;
+  border-left: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+  text-decoration: none;
+  transition:
+    color 200ms,
+    border-color 200ms;
+}
+
+.steps a:hover {
+  color: var(--soft);
+}
+
+.steps a[aria-current] {
+  border-left-color: var(--kind);
+  color: var(--fg);
+}
+
+.steps a:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.parts {
+  min-width: 0;
+}
+
+.part {
+  padding: 2.2rem 0 2.4rem;
+  border-top: 1px solid var(--hair);
+  scroll-margin-top: 4rem;
+}
+
+/* The journey, with a globe: past the column, to the page's right edge. */
+.part[data-wide] {
+  width: min(calc(100vw - 12vw - 10rem), 56rem);
+}
+
+/* ------------------------------------------------------------- The writing */
+
+.h2 {
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+  line-height: 1.2;
+}
+
+.p {
+  font-size: var(--text-body-l);
+  line-height: 1.65;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+.p b,
+.list b {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.note {
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--mute);
+}
+
+/* Bullets: a short dash in the award's colour. */
+.list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  position: relative;
+  padding-left: 1.2rem;
+  font-size: var(--text-body-m);
+  line-height: 1.6;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+.list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.75em;
+  width: 0.5rem;
+  height: 1px;
+  background: var(--kind);
+}
+
+/* ----------------------------------------------------------------- The wins
+
+   Two side by side, equal: each its announcement's own card, then who gave
+   it, what it is, a line, and the way to the post. */
+
+.wins {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+}
+
+.win {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.winImage {
+  display: block;
+  border-bottom: 0;
+}
+
+.win img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  margin-bottom: 0.7rem;
+  border: 1px solid var(--hair);
+  transition:
+    border-color 220ms,
+    translate 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.winImage:hover img {
+  border-color: var(--kind);
+  translate: 0 -3px;
+}
+
+.winBy {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.winTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.15;
+  color: var(--kind-soft);
+}
+
+.winEvent {
+  font-size: var(--text-body-m);
+  color: var(--fg);
+}
+
+.winLine {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--soft);
+  text-wrap: pretty;
+}
+
+/* Where it was announced: a link per platform, each with its logo. At rest
+   the logos are quiet, in the text's grey. Pointed at, the logo pops up and
+   takes its own colour (LinkedIn's blue, X's white), a ring of that colour
+   ripples out from it once, the arrow lifts off its corner, and a hairline
+   draws in under the name. Pressed, it gives a little. */
+.platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.platform {
+  --brand: var(--fg);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.platform[data-platform="linkedin"] {
+  --brand: #0a66c2;
+}
+
+.platform[data-platform="x"] {
+  --brand: #f2f4f6;
+}
+
+.platformIcon {
+  position: relative;
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--soft);
+  transition:
+    color 220ms,
+    scale 380ms cubic-bezier(0.34, 1.6, 0.64, 1),
+    rotate 380ms cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
+/* The ring: behind the logo, rippling out once when pointed at. */
+.platform::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.5rem;
+  border: 1px solid var(--brand);
+  border-radius: 50%;
+  opacity: 0;
+  scale: 0.6;
+  pointer-events: none;
+}
+
+.platform:is(:hover, :focus-visible)::before {
+  animation: ripple 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 0.8;
+    scale: 0.6;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 2.2;
+  }
+}
+
+.platformName {
+  position: relative;
+}
+
+/* The hairline under the name, drawn in from the left. */
+.platformName::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2rem;
+  height: 1px;
+  background: var(--kind);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.platformArrow {
+  display: inline-block;
+  color: var(--mute);
+  transition:
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 200ms;
+}
+
+.platform:is(:hover, :focus-visible) {
+  color: var(--fg);
+}
+
+.platform:is(:hover, :focus-visible) .platformIcon {
+  color: var(--brand);
+  scale: 1.18;
+  rotate: -8deg;
+}
+
+.platform:is(:hover, :focus-visible) .platformName::after {
+  transform: scaleX(1);
+}
+
+.platform:is(:hover, :focus-visible) .platformArrow {
+  color: var(--kind);
+  translate: 2px -2px;
+}
+
+.platform:active .platformIcon {
+  scale: 0.92;
+  rotate: 0deg;
+}
+
+.platform:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform:is(:hover, :focus-visible)::before {
+    animation: none;
+  }
+
+  .platform:is(:hover, :focus-visible) .platformIcon {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+/* ---------------------------------------------------------- The journey */
+
+.talk {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kind-soft);
+}
+
+.dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 8px var(--kind);
+}
+
+.photo {
+  max-width: 40rem;
+  margin: 2rem 0 0;
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #0b0c0e;
+}
+
+.photo figcaption {
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.pager {
+  padding-top: 1rem;
+}
+
+/* ------------------------------------------------------- The globe and days
+
+   The trip: the days on the right, read down, and the Earth on the left,
+   held on screen while they pass, turning to each (journey.tsx). */
+
+.journey {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+  margin-top: 1.4rem;
+}
+
+.globe {
+  position: sticky;
+  top: 4.5rem;
+  height: min(calc(100svh - 7rem), 36rem);
+}
+
+.globeCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.globeCanvas:active {
+  cursor: grabbing;
+}
+
+.globeHint {
+  position: absolute;
+  left: 0;
+  bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+/* Each day takes a good part of a screen, so the globe has time to turn. */
+.log {
+  margin: 0;
+  padding: 8vh 0 14vh;
+  list-style: none;
+}
+
+.stop {
+  min-height: 34svh;
+  display: flex;
+  align-items: center;
+}
+
+.stopButton {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.9rem 0 0.9rem 1.2rem;
+  border: 0;
+  border-left: 1px solid var(--hair);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.38;
+  transition:
+    opacity 300ms,
+    border-color 300ms;
+}
+
+.stop[data-active] .stopButton {
+  opacity: 1;
+  border-left-color: var(--kind);
+}
+
+.stopButton:hover {
+  opacity: 0.75;
+}
+
+.stopButton:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+.stopWhen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kind-soft);
+}
+
+.stopMark {
+  color: var(--kind);
+}
+
+.stopPlace {
+  color: var(--mute);
+}
+
+.stopPlace::before {
+  content: "· ";
+}
+
+.stopTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+  line-height: 1.15;
+  color: var(--fg);
+}
+
+.stopLine {
+  max-width: 28rem;
+  font-size: var(--text-body-m);
+  line-height: 1.6;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+.stopSoon {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.stop[data-soon] .stopTitle {
+  color: var(--soft);
+}
+
+/* -------------------------------------------------------------- Narrower */
+
+/* Without room for the rail beside the column, it becomes a row under the
+   bar, and stays there as the page is read. */
+@media (max-width: 1000px) {
+  .head {
+    margin-left: 0;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .steps {
+    top: 3.5rem;
+    z-index: 3;
+    margin: 0 -6vw;
+    padding: 0.5rem 6vw;
+    background: rgb(0 0 0 / 0.97);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .steps ol {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .steps a {
+    padding: 0.3rem 0.6rem;
+    border-left: 0;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .steps a[aria-current] {
+    border-bottom-color: var(--kind);
+  }
+
+  .part {
+    scroll-margin-top: 7rem;
+  }
+
+  .part[data-wide] {
+    width: auto;
+  }
+}
+
+@media (max-width: 860px) {
+  /* On a phone the globe stays at the top of the screen, under the rail,
+     and the days pass behind it. */
+  .journey {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .globe {
+    top: 6rem;
+    z-index: 2;
+    height: 38svh;
+    background: linear-gradient(#000 85%, transparent);
+  }
+
+  .globeHint {
+    display: none;
+  }
+
+  /* Its own layer, under the globe's, so the days pass behind it. */
+  .log {
+    position: relative;
+    z-index: 0;
+    padding: 4vh 0 24vh;
+  }
+
+  .stop {
+    min-height: 30svh;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding-inline: var(--gutter);
+  }
+
+  .steps {
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+  }
+}
+
+@media (max-width: 480px) {
+  .wins {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    animation: none;
+  }
+}

@@ -12,13 +12,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import {
-  CONTACT,
-  COLLECTIONS,
-  UNITS,
-  type Collection,
-  type Unit,
-} from "@/content/work";
+import { CONTACT, COLLECTIONS, type Collection, type Unit } from "@/content/work";
 import { routes } from "@/lib/routes";
 import { markIntroOver } from "@/lib/sound-pref";
 import {
@@ -34,21 +28,21 @@ import { FIRST } from "./chapters";
 import { DOT_TITLE, SKY_TITLE } from "./intro-timeline";
 import { lookColors, lookOf } from "./looks";
 import { WorkMedia } from "./media";
+import { AwayLink, PageLink } from "./piece-links";
 import { UniverseNav } from "./nav";
 import { Footer } from "./footer";
 import { WayMark } from "./way-mark";
+import { measureChapters } from "./chapter-map";
+import { newsAt, type NewsNow } from "./news";
 import { createSmoothScroll, type SmoothScroll } from "./smooth-scroll";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
 
-/* The story: who I am, on Earth; Earth from far enough away to be a pale
-   blue dot, where I build things; further out, my impact so far; then one
-   piece of work at a time, newest first; and all of it, in the void still
-   ahead. */
-const CHAPTERS = ["earth", "dot", "impact", ...UNITS.map((u) => u.id), "next"];
-
-/* The chapter index: each piece of work is marked by its year, which is
-   named once, at the first of the year's pieces. */
+/* The story, a chapter each: who I am, on Earth; Earth from far enough
+   away to be a pale blue dot, where I build things; further out, my impact
+   so far; then one piece of work at a time, newest first; and all of it, in
+   the void still ahead. The chapter index names them, and marks each piece
+   of work by its year, named once, at the first of the year's pieces. */
 const TICKS = [
   { label: "earth", first: true },
   { label: "dot", first: true },
@@ -59,8 +53,8 @@ const TICKS = [
   { label: "next", first: true },
 ];
 
-/* Each piece of work, with the year it belongs to and its place in it. */
-const PIECES = COLLECTIONS.flatMap((col) => col.units.map((u, i) => ({ u, col, i })));
+/* Each piece of work, with the year it belongs to. */
+const PIECES = COLLECTIONS.flatMap((col) => col.units.map((u) => ({ u, col })));
 
 /* A piece of work's own colours: the ones its body is drawn in. */
 const lookVars = (u: Unit) => {
@@ -68,9 +62,37 @@ const lookVars = (u: Unit) => {
   return { "--kind": c[2], "--kind-soft": c[3] } as CSSProperties;
 };
 
-/* A chapter's height: 100svh, which on a phone is not always the window's
-   height (the address bar comes and goes). */
-const chapterHeight = (section: HTMLElement) => section.offsetHeight / CHAPTERS.length;
+/* A phone held upright, where a piece of work stacks: its body's stage,
+   then its copy, then its picture (the same query as the stylesheet). */
+const STACKED = "(max-width: 860px) and (max-aspect-ratio: 4/3)";
+/* The docked bar's height on a phone, and a little air under it. */
+const PHONE_BAR = 64;
+const AIR = 16;
+
+/**
+ * Where a menu lands for chapter `n`, in px: measured, not multiplied out,
+ * since chapters can be taller than the screen (chapter-map.ts). Its top,
+ * except for a piece of work on a phone: there it lands on the piece
+ * itself, its name, words and picture on screen together, with as much of
+ * the body's stage above them as still fits. The camera holds the body
+ * where it is, so the copy rises over the lower part of it.
+ */
+const chapterLanding = (section: HTMLElement, n: number) => {
+  const el = section.querySelectorAll<HTMLElement>("[data-chapter]")[n];
+  if (!el) return 0;
+  const top = el.getBoundingClientRect().top + window.scrollY;
+  const copy = el.querySelector('[data-part="copy"]');
+  if (!el.hasAttribute("data-piece") || !copy || !window.matchMedia(STACKED).matches)
+    return top;
+  const media = el.querySelector('[data-part="media"]');
+  const head = copy.getBoundingClientRect().top + window.scrollY;
+  const foot = (media ?? copy).getBoundingClientRect().bottom + window.scrollY;
+  /* All of it at the foot of the screen if it fits; if not, its name just
+     under the bar. */
+  const fitted = foot + AIR - window.innerHeight;
+  const named = head - PHONE_BAR - AIR;
+  return Math.max(top, Math.min(fitted, named));
+};
 
 /* The opening plays once per visit: on every fresh load, but not again when
    someone comes back to the home page from /story or a unit's page within
@@ -113,6 +135,27 @@ export function Universe() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- has to land before the first paint; the server can't know
     setIntro("done");
   }, []);
+  /* The news: the server says the line before its turn (news.ts), and
+     the visitor's clock settles it on arrival. */
+  const [news, setNews] = useState<NewsNow | null>(() => newsAt(null));
+  const newsRef = useRef<number | null>(news?.unit ?? null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the visitor's clock, which the server can't know
+    setNews(newsAt(Date.now()));
+  }, []);
+  useEffect(() => {
+    newsRef.current = news?.unit ?? null;
+  }, [news]);
+  /* The news line comes in a beat after the hero has settled, and goes
+     when the page moves on from the hero (the bar docks), to come back in
+     the same way on the way back up. */
+  const [newsReady, setNewsReady] = useState(false);
+  useEffect(() => {
+    if (intro !== "done") return;
+    const id = window.setTimeout(() => setNewsReady(true), 450);
+    return () => window.clearTimeout(id);
+  }, [intro]);
+  const newsIn = newsReady && !docked;
   const sectionRef = useRef<HTMLElement>(null);
   /* The page's scroll, smoothed (smooth-scroll.ts). */
   const scrollRef = useRef<SmoothScroll | null>(null);
@@ -120,10 +163,15 @@ export function Universe() {
     const el = sectionRef.current;
     if (!el) return;
     const smooth = createSmoothScroll({
+      /* Each chapter's top; and, for one taller than the screen, its last
+         screen too, so the keys read a chapter to its end before moving on. */
       stops: () => {
         const top = el.getBoundingClientRect().top + window.scrollY;
-        const h = chapterHeight(el);
-        return CHAPTERS.map((_, i) => top + i * h);
+        const view = window.innerHeight;
+        const { tops, heights } = measureChapters(el);
+        return tops.flatMap((t, i) =>
+          heights[i] > view + 1 ? [top + t, top + t + heights[i] - view] : [top + t],
+        );
       },
     });
     scrollRef.current = smooth;
@@ -137,8 +185,7 @@ export function Universe() {
   const goTo = useCallback((chapter: number) => {
     const el = sectionRef.current;
     if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    scrollRef.current?.glideTo(top + chapter * chapterHeight(el));
+    scrollRef.current?.glideTo(() => chapterLanding(el, chapter));
   }, []);
 
   /* Asked for from another page's bar (page-nav.tsx): once the opening is
@@ -163,15 +210,11 @@ export function Universe() {
       {/* Outside the pinned stage, which is a layer of its own under the
           chapters' text: fixed here, the bar and its menu sit above both. */}
       <UniverseNav goTo={goTo} docked={docked} />
-      <section
-        ref={sectionRef}
-        data-universe
-        className={s.universe}
-        style={{ height: `${CHAPTERS.length * 100}svh` }}
-      >
+      <section ref={sectionRef} data-universe className={s.universe}>
         <div className={s.stage}>
           <UniverseCanvas
             arriveRef={arriveRef}
+            newsRef={newsRef}
             onPick={(i) => goTo(i + FIRST)}
             className={s.canvas}
           />
@@ -190,6 +233,26 @@ export function Universe() {
             <p className={`${s.lede} ${s.reveal}`}>
               I build AI products. MS in AI and Tech Management at Carnegie Mellon.
             </p>
+            {/* The news, said once, quietly: a line in the colour of its body,
+                which is also the new light in the sky above. */}
+            {news && (
+              <button
+                type="button"
+                className={s.news}
+                data-in={newsIn || undefined}
+                tabIndex={newsIn ? 0 : -1}
+                style={lookVars(PIECES[news.unit].u)}
+                onClick={() => goTo(news.unit + FIRST)}
+              >
+                <span className={s.newsTag}>
+                  <span aria-hidden>{KINDS[PIECES[news.unit].u.kind].mark}</span> New
+                </span>
+                <span className={s.newsLine}>{news.line}</span>
+                <span className={s.newsGo} aria-hidden>
+                  ↓
+                </span>
+              </button>
+            )}
             <p className={`${s.hint} ${s.reveal}`}>Scroll to zoom out</p>
           </Chapter>
 
@@ -211,14 +274,14 @@ export function Universe() {
             <SpokenTitle spoken={SKY_TITLE} className={s.title} />
             <p className={s.lede}>
               Each light out here is one thing I&apos;ve done: a degree, a job, a
-              project, some research, or a team I led. Keep scrolling and I&apos;ll show
-              you each one, newest first.
+              project, some research, a team I led, or an award. Keep scrolling and
+              I&apos;ll show you each one, newest first.
             </p>
             <p className={s.hint}>Scroll to visit them one by one</p>
           </Chapter>
 
-          {PIECES.map(({ u, col, i }, k) => (
-            <Piece key={u.id} u={u} col={col} i={i} index={k} />
+          {PIECES.map(({ u, col }, k) => (
+            <Piece key={u.id} u={u} col={col} index={k} />
           ))}
 
           <Chapter>
@@ -394,17 +457,7 @@ function Chapter({
  * body is on the canvas, in the same colours as the accents here, framed by
  * a reticle with its name, so the words and the body read as one.
  */
-function Piece({
-  u,
-  col,
-  i,
-  index,
-}: {
-  u: Unit;
-  col: Collection;
-  i: number;
-  index: number;
-}) {
+function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
   const kind = KINDS[u.kind];
   const aspect =
     u.media?.kind === "photo" || u.media?.kind === "splat"
@@ -424,11 +477,6 @@ function Piece({
       <p className={s.kicker}>
         {col.title}
         {col.title !== col.span && <span className={s.span}>, {col.span}</span>}
-        {col.units.length > 1 && (
-          <span className={s.count}>
-            {i + 1} of {col.units.length}
-          </span>
-        )}
       </p>
       <h2 className={s.pieceName}>{u.name}</h2>
       <p className={s.pieceKind}>
@@ -437,34 +485,48 @@ function Piece({
         </span>{" "}
         {kind.label}, {u.when}
       </p>
+      {/* An award: each win, what it was and from whom. */}
+      {u.story &&
+        u.story.wins.map((win) => (
+          <p key={win.by} className={s.honour}>
+            <span className={s.mark} aria-hidden>
+              {kind.mark}
+            </span>
+            <span>
+              <b>{win.title}</b>, {win.by}
+              <span className={s.honourWhen}> · {win.date}</span>
+            </span>
+          </p>
+        ))}
       <p className={s.pieceBrief}>{u.brief}</p>
       <ul className={s.skills} aria-label="Skills">
         {u.skills.map((k) => (
           <li key={k}>{k}</li>
         ))}
       </ul>
-      <p className={s.visits}>
-        <Link className={`${s.visit} ${s.more}`} href={`${routes.work}/${u.id}`}>
-          What I did <span aria-hidden>→</span>
-        </Link>
+      <div className={s.visits}>
+        <PageLink
+          className={s.visit}
+          href={`${routes.work}/${u.id}`}
+          label={u.story ? "The story" : "What I did"}
+        />
+        {/* Short words, so the three fit one row: a site is "Live site",
+            anything with its own verb says what it is ("Read the paper"). */}
         {u.link && (
-          <a className={s.visit} href={u.link.href} target="_blank" rel="noreferrer">
-            {u.link.verb ?? "Visit"} {u.link.label} <span aria-hidden>↗</span>
-          </a>
+          <AwayLink
+            className={s.visit}
+            href={u.link.href}
+            icon={u.link.verb ? "story" : "home"}
+          >
+            {u.link.verb ? `${u.link.verb} ${u.link.label}` : "Live site"}
+          </AwayLink>
         )}
         {u.repo && (
-          <a
-            className={`${s.visit} ${s.code}`}
-            href={u.repo}
-            target="_blank"
-            rel="noreferrer"
-            data-icon="github"
-          >
-            <WayMark icon="github" className={s.codeMark} />
-            See the code <span aria-hidden>↗</span>
-          </a>
+          <AwayLink className={s.visit} href={u.repo} icon="github">
+            Code
+          </AwayLink>
         )}
-      </p>
+      </div>
     </Chapter>
   );
 }

@@ -11,6 +11,7 @@ import {
   drawStars as drawBackStars,
   type Body,
 } from "./backdrop";
+import { chapterAt, measureChapters, noSpans } from "./chapter-map";
 import { FIRST, SKY } from "./chapters";
 import { buildCosmos, createCosmos, drawCosmos, warmCosmos } from "./cosmos";
 import { buildCosmosOffThread } from "./cosmos-off-thread";
@@ -73,11 +74,17 @@ const BEHIND: Partial<Record<string, [number, number]>> = {
   sun: [0.3, 0.8],
   constellation: [0.36, 0.75],
   nebula: [0.36, 0.8],
+  supernova: [0.36, 0.78],
 };
 
 /* A body beside a picture of its work is drawn this much larger than one
    alone, so it holds its own next to the picture. */
 const BESIDE = 1.3;
+
+/* How strongly a body is drawn on a phone, against a wide screen: fainter,
+   since on a small screen it sits behind the copy and the picture, and
+   should not pull the eye away from them. */
+const NARROW_GLOW = 0.55;
 
 /* Earth's own slow turn (rad/s); the most a flick sends it spinning at,
    and how quickly (s) a glide eases back to that turn. */
@@ -98,11 +105,15 @@ const lerp = (a: number, b: number, e: number) => a + (b - a) * e;
 
 export function UniverseCanvas({
   arriveRef,
+  newsRef,
   onPick,
   className,
 }: {
   /** When Earth began to arrive (see ARRIVE); null while the opening plays. */
   arriveRef: { current: number | null };
+  /** The piece of work that is news (news.ts), or null: a new light in the
+      hero's sky, which flies to it when clicked. */
+  newsRef: { current: number | null };
   /** A body was clicked: the index of its piece of work. */
   onPick: (unit: number) => void;
   className?: string;
@@ -162,6 +173,8 @@ export function UniverseCanvas({
     /* The scroll position the camera follows: eased towards the real one,
        so the steps of a mouse wheel become one glide. */
     let sv = -1;
+    /* Where each chapter is, for the camera (chapter-map.ts). */
+    let spans = noSpans;
 
     const stars = Array.from({ length: 900 }, () => ({
       x: rnd(),
@@ -229,6 +242,8 @@ export function UniverseCanvas({
       moved: 0,
     };
     let hovered: string | null = null;
+    /* The pointer is on the news light in the hero's sky. */
+    let newsHot = false;
     let camNow: Cam = { x: 0, y: 0, z: 1, ax: 0.5, ay: 0.5 };
 
     /**
@@ -326,7 +341,10 @@ export function UniverseCanvas({
       const fits = Math.min(bw / (2 * rx), bh / (2 * ry)) * 0.94;
       /* A star's corona reaches far past its disc: it is capped smaller,
          so it glows beside the copy rather than filling the screen. */
-      const cap = KINDS[p.kind].body === "sun" ? 0.19 : 0.25;
+      /* On a phone the body has a stage of its own above the copy (the
+         page keeps it clear), and is drawn larger in it. */
+      const sun = KINDS[p.kind].body === "sun";
+      const cap = narrow ? (sun ? 0.26 : 0.34) : sun ? 0.19 : 0.25;
       let R = Math.max(30, Math.min(fits, Math.min(w, h) * cap));
       R *= (0.8 + 0.2 * Math.min(1, look.scale)) * (recede[i] ? BESIDE : 1);
       /* Drawn larger, but never past the space left for it. */
@@ -356,6 +374,7 @@ export function UniverseCanvas({
     };
 
     const measure = () => {
+      if (section) spans = measureChapters(section);
       /* Held upright and small, the copy stacks under the canvas (the page's
          CSS uses the same test). */
       const narrow = w < 860 && w <= h * (4 / 3);
@@ -485,9 +504,8 @@ export function UniverseCanvas({
       let target = 0;
       if (section) {
         const top = section.getBoundingClientRect().top;
-        /* In chapters, each as tall as the stage (100svh, which on a phone
-           can differ from the window's height). */
-        target = Math.min(keys.length - 1, Math.max(0, -top / h));
+        /* In chapters, which can be taller than the screen (chapter-map.ts). */
+        target = Math.min(keys.length - 1, chapterAt(spans, -top, h));
       }
       /* Locked to the page's own scroll, so the sky and the words never
          drift apart. The page's scroll is smooth already: the browser
@@ -611,6 +629,104 @@ export function UniverseCanvas({
         }
         gpu?.end();
         g.globalAlpha = 1;
+      }
+
+      /* The news, as a new light in the sky behind Earth: a supernova, the
+         awards' body, flaring where nothing shone before. It belongs to the
+         close-up, like the stars around it, so it leaves as the camera
+         pulls back; out in the sky the award is drawn as its own body.
+         Pointed at, it is framed and named; clicked, the page flies to it. */
+      newsHot = false;
+      const ni = newsRef.current;
+      const newsA =
+        ni === null
+          ? 0
+          : smooth(clamp01(1 - s * 1.8)) * smooth(clamp01((arrived - 0.5) / 0.5));
+      if (ni !== null && newsA > 0.01) {
+        const pal = palettes[ni];
+        const nx0 = narrow ? w * 0.86 : w * 0.82;
+        const ny0 = narrow ? 64 + h * 0.07 : h * 0.16;
+        const hot = pointer.in && Math.hypot(pointer.x - nx0, pointer.y - ny0) < 28;
+        newsHot = hot && newsA > 0.5;
+        const fl = (calm ? 1 : 0.86 + 0.14 * Math.sin(t * 0.9) ** 2) * (hot ? 1.2 : 1);
+        const a = newsA;
+        const gr = 34 * fl;
+        const glow = g.createRadialGradient(nx0, ny0, 0, nx0, ny0, gr);
+        glow.addColorStop(0, hexA("#ffffff", 0.9 * a));
+        glow.addColorStop(0.12, hexA(pal[3], 0.5 * a));
+        glow.addColorStop(0.45, hexA(pal[2], 0.14 * a));
+        glow.addColorStop(1, hexA(pal[2], 0));
+        g.fillStyle = glow;
+        g.fillRect(nx0 - gr, ny0 - gr, gr * 2, gr * 2);
+        g.save();
+        g.globalCompositeOperation = "lighter";
+        g.lineWidth = 1;
+        for (const [dx, dy, len] of [
+          [1, 0, 26],
+          [0, 1, 18],
+        ] as const) {
+          const L = len * fl;
+          const line = g.createLinearGradient(
+            nx0 - dx * L,
+            ny0 - dy * L,
+            nx0 + dx * L,
+            ny0 + dy * L,
+          );
+          line.addColorStop(0, hexA("#ffffff", 0));
+          line.addColorStop(0.5, hexA("#ffffff", 0.85 * a));
+          line.addColorStop(1, hexA("#ffffff", 0));
+          g.strokeStyle = line;
+          g.beginPath();
+          g.moveTo(nx0 - dx * L, ny0 - dy * L);
+          g.lineTo(nx0 + dx * L, ny0 + dy * L);
+          g.stroke();
+        }
+        g.restore();
+        /* Its shell: a ragged ring of light round the star, in glyphs. */
+        const font = `${narrow ? 9 : 10}px ${mono}`;
+        const gpu = glyphs();
+        if (gpu) gpu.begin(g, font);
+        else {
+          g.font = font;
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+        }
+        for (let q = 0; q < 22; q++) {
+          const ang = (q / 22) * Math.PI * 2;
+          const rr = (12 + 3 * Math.sin(q * 2.7) + 2 * Math.cos(q * 1.3)) * fl;
+          const lit =
+            0.45 + 0.55 * (0.5 + 0.5 * Math.sin(q * 1.9 + (calm ? 0 : t * 0.6)));
+          const ch = lit > 0.8 ? "+" : "·";
+          const col = q % 5 === 0 ? pal[5] : pal[3];
+          const x = nx0 + Math.cos(ang) * rr;
+          const y = ny0 + Math.sin(ang) * rr * 0.92;
+          if (gpu) {
+            gpu.color(col, lit * a);
+            gpu.add(ch, x, y);
+          } else {
+            g.fillStyle = col;
+            g.globalAlpha = Math.min(1, lit * a);
+            g.fillText(ch, x, y);
+          }
+        }
+        gpu?.end();
+        g.globalAlpha = 1;
+        g.font = `10px ${mono}`;
+        g.textAlign = "center";
+        g.textBaseline = "top";
+        g.fillStyle = hexA(pal[3], 0.85 * a);
+        g.fillText(hot ? `* ${placed[ni].name}` : "* new", nx0, ny0 + 30);
+        if (hot) {
+          const rr = 24;
+          g.strokeStyle = hexA(pal[3], 0.8 * a);
+          g.beginPath();
+          for (let q = 0; q < 4; q++) {
+            const ang = (q * Math.PI) / 2 + Math.PI / 4;
+            g.moveTo(nx0 + Math.cos(ang) * rr, ny0 + Math.sin(ang) * rr);
+            g.lineTo(nx0 + Math.cos(ang) * (rr + 8), ny0 + Math.sin(ang) * (rr + 8));
+          }
+          g.stroke();
+        }
       }
 
       /* The shells of stars passing on the way out, and on the way back out
@@ -805,7 +921,13 @@ export function UniverseCanvas({
           )
             continue;
           const near = nearBody(i);
-          const a = workA * (0.3 + 0.7 * smooth(near)) * (recede[i] ? 0.94 : 1);
+          /* On a phone, where the body shares the screen with the copy and
+             the picture, it is drawn fainter, so they lead. */
+          const a =
+            workA *
+            (0.3 + 0.7 * smooth(near)) *
+            (recede[i] ? 0.94 : 1) *
+            (narrow ? NARROW_GLOW : 1);
           /* At a distance, a body is only a point of light; it resolves into
              its full form as the camera closes in. */
           const bodyA = narrow
@@ -1117,7 +1239,7 @@ export function UniverseCanvas({
          The chapter would otherwise fade its copy as it leaves the screen;
          while the hole pulls, the copy stays lit until it is swallowed. */
       /* Only on a change: a style written every frame dirties the page. */
-      const cursor = hovered ? "pointer" : "";
+      const cursor = hovered || newsHot ? "pointer" : "";
       if (cursor !== shownCursor) canvas.style.cursor = shownCursor = cursor;
     };
 
@@ -1134,7 +1256,7 @@ export function UniverseCanvas({
       remeasure = requestAnimationFrame(measure);
     });
     section
-      ?.querySelectorAll("[data-piece] [data-part]")
+      ?.querySelectorAll("[data-chapter], [data-piece] [data-part]")
       .forEach((el) => mo.observe(el));
     const io = new IntersectionObserver((entries) => {
       /* Several changes can arrive at once: the last is the current one. */
@@ -1185,7 +1307,12 @@ export function UniverseCanvas({
       pointer.down = false;
     };
     const onClick = () => {
-      if (pointer.moved > 6 || !hovered) return;
+      if (pointer.moved > 6) return;
+      if (newsHot && newsRef.current !== null) {
+        pickRef.current(newsRef.current);
+        return;
+      }
+      if (!hovered) return;
       const i = placed.findIndex((q) => q.id === hovered);
       if (i >= 0) pickRef.current(i);
     };
@@ -1214,7 +1341,7 @@ export function UniverseCanvas({
       canvas.removeEventListener("click", onClick);
       document.removeEventListener("pointerleave", onLeave);
     };
-  }, [arriveRef]);
+  }, [arriveRef, newsRef]);
 
   return (
     <canvas

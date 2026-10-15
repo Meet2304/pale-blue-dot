@@ -1,14 +1,15 @@
 import Link from "next/link";
 
 import { plexVariables } from "@/app/fonts";
+import { SpaceFact } from "@/components/site/space-fact";
 import { Footer } from "@/components/universe/footer";
 import { PageNav } from "@/components/universe/page-nav";
 import { routes } from "@/lib/routes";
 
 import s from "./not-found.module.css";
 
-/* A page that is not here: said plainly, in the Terminal system, with the
-   way home. */
+/* A page that is not here: said plainly, in the Terminal system, with
+   something true about space to take away, and the way home. */
 export default function NotFound() {
   return (
     <div className={plexVariables}>
@@ -17,6 +18,10 @@ export default function NotFound() {
         <p className={s.kicker}>404</p>
         <h1 className={s.title}>Lost in space.</h1>
         <p className={s.lede}>There is nothing at this address.</p>
+        <div className={s.fact}>
+          <p className={s.factLabel}>While you&apos;re out here</p>
+          <SpaceFact className={s.factText} />
+        </div>
         <Link href={routes.home} className={s.home}>
           Back to Earth
         </Link>

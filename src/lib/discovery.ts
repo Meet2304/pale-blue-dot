@@ -8,6 +8,7 @@ const KIND_LABEL: Record<Kind, string> = {
   projects: "Project",
   leadership: "Leadership",
   education: "Education",
+  awards: "Award",
 };
 
 const link = (title: string, path: string, note?: string) => {
@@ -31,7 +32,6 @@ export function llmsTxt(): string {
     "## Site",
     "",
     link("Home", "/", "The work, as one universe around the pale blue dot."),
-    link("About", "/about", "Who Meet Bhatt is, in short."),
     link("Work", "/work", "Every piece, newest first, each with its own page."),
     link("Story", "/story", "Why the site is a pale blue dot, in his own words."),
     link("Resume", "/resume", "The résumé as a page, with a link to the PDF."),

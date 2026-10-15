@@ -136,6 +136,16 @@ const LOOKS: Record<string, Partial<Look>> = {
   "prompt-classifier": { hue: 205, l: 0.82, c: 0.1, figure: "shield", scale: 0.85 },
   "health-performance-lab": { hue: 160, l: 0.82, c: 0.1, figure: "plough", scale: 0.8 },
 
+  /* Awards: supernovae. */
+  "hackathon-wins": {
+    hue: 140,
+    l: 0.84,
+    c: 0.15,
+    warm: "#ffd08a",
+    scale: 1,
+    size: 1.1,
+  },
+
   /* Leadership: nebulae. */
   "mind-ripple": { hue: 345, l: 0.76, c: 0.14, scale: 1 },
   "interact-club": { hue: 195, l: 0.8, c: 0.11, scale: 0.85, flip: true },
@@ -182,6 +192,8 @@ export function reachOf(look: Look, body: BodyId): [number, number] {
           : [1.55, 1.0];
     case "nebula":
       return [1.6, 1.3];
+    case "supernova":
+      return [1.3, 1.3];
     default:
       return [1.1, 1.1];
   }

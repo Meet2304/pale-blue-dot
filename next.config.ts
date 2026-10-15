@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       { source: "/nav-lab", destination: "/", permanent: true },
       { source: "/coming-soon", destination: "/", permanent: true },
       { source: "/home", destination: "/", permanent: true },
+      { source: "/about", destination: "/", permanent: true },
       { source: "/index.html", destination: "/", permanent: true },
       { source: "/cv", destination: "/resume", permanent: true },
       { source: "/cv.pdf", destination: "/meet-bhatt-resume.pdf", permanent: true },
