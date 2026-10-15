@@ -15,7 +15,7 @@ import { fbm3 } from "./noise";
  */
 
 export type BodyId =
-  "earth" | "planet" | "sun" | "nebula" | "blackhole" | "constellation";
+  "earth" | "planet" | "sun" | "nebula" | "blackhole" | "constellation" | "supernova";
 
 export type Cell = { c: string; k: number; a: number };
 
@@ -486,6 +486,101 @@ const constellation: BodyFn = (nx, ny, id, f, o) => {
   return false;
 };
 
+/* -------------------------------------------------------------- Supernova */
+
+/**
+ * For awards: a star that has flared out, seen as it is a little after.
+ * A white point where the star was, with diffraction spikes; a soft glow
+ * round it; ejecta streaming out from it in radial fingers, knotted at
+ * their tips; a ragged shell where the blast meets the gas around it,
+ * brightest at its rim, as a thin shell seen edge on is, and threaded with
+ * warm filaments; and beyond it, faint, the outer shock. Under the scanner
+ * it shows its shells of matter, one for each speed they left at.
+ */
+const supernova: BodyFn = (nx, ny, id, f, o) => {
+  const r = Math.hypot(nx, ny);
+  if (r > 1.45) return false;
+  const tt = f.calm ? 0 : f.t;
+
+  /* The star, and its spikes: across and down, a cell wide. */
+  const ax = Math.abs(nx) / f.px;
+  const ay = Math.abs(ny) / f.py;
+  if (ax < 0.6 && ay < 0.6) return set(o, "*", 6, 1);
+  const spike = 0.7;
+  if (ay < 0.5 && Math.abs(nx) < spike) {
+    const k = 1 - Math.abs(nx) / spike;
+    return set(o, "-", k > 0.55 ? 6 : 4, 0.3 + 0.7 * k);
+  }
+  if (ax < 0.5 && Math.abs(ny) < spike * 0.8) {
+    const k = 1 - Math.abs(ny) / (spike * 0.8);
+    return set(o, "|", k > 0.55 ? 6 : 4, 0.3 + 0.7 * k);
+  }
+
+  const ang = Math.atan2(ny, nx);
+  const ux = Math.cos(ang);
+  const uy = Math.sin(ang);
+  /* The shell's radius wanders with direction, so it is never a circle. */
+  const shell = 0.86 + (fbm3(ux * 1.6 + f.seed * 9, uy * 1.6, 3.3, 3) - 0.5) * 0.3;
+  const d = r - shell;
+
+  if (inScan(nx, ny, f)) {
+    const q = r * 9;
+    if (Math.abs(q - Math.round(q)) < 0.09)
+      return set(o, strokeAt(ang + Math.PI / 2), 2, 0.9);
+  }
+
+  /* The shell: brightest at its rim, in strokes along it, with warm knots
+     where the filaments cross. */
+  if (Math.abs(d) < 0.14) {
+    const fil = fbm3(ux * 5 + f.seed * 3, uy * 5, r * 4 + tt * 0.04, 3);
+    /* Brightest just inside the edge, fading inward faster than outward. */
+    const rim = 1 - Math.abs(d + 0.02) / (d > 0 ? 0.1 : 0.14);
+    const b = Math.max(0, rim) * (0.4 + fil * 0.95);
+    if (b > 0.26 && hash(id, 51) < 0.6 + b * 0.5) {
+      if (fil > 0.66 && b > 0.62) {
+        const tw = f.calm ? 1 : 0.7 + 0.3 * Math.sin(tt * 1.3 + id);
+        return set(o, b > 0.85 ? "*" : "+", 5, 0.75 + 0.25 * tw);
+      }
+      if (b > 0.78) return set(o, "*", 4, 0.95);
+      if (b > 0.58) return set(o, strokeAt(ang + Math.PI / 2), 3, 0.85);
+      return set(o, b > 0.44 ? ":" : "·", 2, 0.7);
+    }
+    return false;
+  }
+
+  /* The ejecta: fingers of matter flying out, each ending in a knot. */
+  if (d < 0 && r > 0.14) {
+    /* Many thin fingers, each bending a little as it goes, of uneven
+       length: high-frequency noise round the circle, drifting with r. */
+    const finger = fbm3(ux * 11 + f.seed * 5, uy * 11, r * 1.6, 2);
+    if (finger > 0.53) {
+      const reach = shell * (0.4 + (finger - 0.53) * 1.6);
+      if (r < reach) {
+        const b = ((finger - 0.53) / 0.47) * (0.45 + 0.55 * (r / reach));
+        if (hash(id, 52) < 0.4 + b) {
+          if (reach - r < 0.06) return set(o, b > 0.35 ? "+" : ":", 5, 0.65 + b * 0.35);
+          return set(o, strokeAt(ang), b > 0.45 ? 3 : 2, 0.45 + b * 0.5);
+        }
+      }
+    }
+    /* Between the fingers, the faint glowing gas the star left behind. */
+    const gas = fbm3(nx * 3.2 + f.seed * 2, ny * 3.2, 0.5 + tt * 0.02, 3);
+    if (gas > 0.5 && hash(id, 55) < (gas - 0.5) * 2.4 * (1 - 0.6 * (r / shell))) {
+      return set(o, gas > 0.66 ? ":" : "·", gas > 0.66 ? 3 : 2, 0.55);
+    }
+    /* The glow round where the star was. */
+    const glow = Math.exp(-r * 5.5);
+    if (hash(id, 53) < glow * 0.9) {
+      return set(o, glow > 0.35 ? "+" : "·", glow > 0.35 ? 4 : 3, 0.5 + glow * 0.5);
+    }
+    return false;
+  }
+
+  /* The outer shock: a faint, broken ring past the shell. */
+  if (d > 0.2 && d < 0.32 && hash(id, 54) < 0.32) return set(o, "·", 1, 0.6);
+  return false;
+};
+
 export const BODIES: Record<BodyId, BodyFn> = {
   earth,
   planet,
@@ -493,6 +588,7 @@ export const BODIES: Record<BodyId, BodyFn> = {
   nebula,
   blackhole,
   constellation,
+  supernova,
 };
 
 /** How far each body reaches, in body units. */
@@ -503,4 +599,5 @@ export const EXTENT: Record<BodyId, number> = {
   nebula: 1.45,
   blackhole: 2.1,
   constellation: 2.1,
+  supernova: 1.45,
 };

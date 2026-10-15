@@ -33,6 +33,7 @@ import { UniverseNav } from "./nav";
 import { Footer } from "./footer";
 import { WayMark } from "./way-mark";
 import { measureChapters } from "./chapter-map";
+import { newsAt, type NewsNow } from "./news";
 import { createSmoothScroll, type SmoothScroll } from "./smooth-scroll";
 import { UniverseCanvas } from "./universe-canvas";
 import s from "./universe.module.css";
@@ -134,6 +135,27 @@ export function Universe() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- has to land before the first paint; the server can't know
     setIntro("done");
   }, []);
+  /* The news: the server says the line before its turn (news.ts), and
+     the visitor's clock settles it on arrival. */
+  const [news, setNews] = useState<NewsNow | null>(() => newsAt(null));
+  const newsRef = useRef<number | null>(news?.unit ?? null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the visitor's clock, which the server can't know
+    setNews(newsAt(Date.now()));
+  }, []);
+  useEffect(() => {
+    newsRef.current = news?.unit ?? null;
+  }, [news]);
+  /* The news line comes in a beat after the hero has settled, and goes
+     when the page moves on from the hero (the bar docks), to come back in
+     the same way on the way back up. */
+  const [newsReady, setNewsReady] = useState(false);
+  useEffect(() => {
+    if (intro !== "done") return;
+    const id = window.setTimeout(() => setNewsReady(true), 450);
+    return () => window.clearTimeout(id);
+  }, [intro]);
+  const newsIn = newsReady && !docked;
   const sectionRef = useRef<HTMLElement>(null);
   /* The page's scroll, smoothed (smooth-scroll.ts). */
   const scrollRef = useRef<SmoothScroll | null>(null);
@@ -192,6 +214,7 @@ export function Universe() {
         <div className={s.stage}>
           <UniverseCanvas
             arriveRef={arriveRef}
+            newsRef={newsRef}
             onPick={(i) => goTo(i + FIRST)}
             className={s.canvas}
           />
@@ -210,6 +233,26 @@ export function Universe() {
             <p className={`${s.lede} ${s.reveal}`}>
               I build AI products. MS in AI and Tech Management at Carnegie Mellon.
             </p>
+            {/* The news, said once, quietly: a line in the colour of its body,
+                which is also the new light in the sky above. */}
+            {news && (
+              <button
+                type="button"
+                className={s.news}
+                data-in={newsIn || undefined}
+                tabIndex={newsIn ? 0 : -1}
+                style={lookVars(PIECES[news.unit].u)}
+                onClick={() => goTo(news.unit + FIRST)}
+              >
+                <span className={s.newsTag}>
+                  <span aria-hidden>{KINDS[PIECES[news.unit].u.kind].mark}</span> New
+                </span>
+                <span className={s.newsLine}>{news.line}</span>
+                <span className={s.newsGo} aria-hidden>
+                  ↓
+                </span>
+              </button>
+            )}
             <p className={`${s.hint} ${s.reveal}`}>Scroll to zoom out</p>
           </Chapter>
 
@@ -231,8 +274,8 @@ export function Universe() {
             <SpokenTitle spoken={SKY_TITLE} className={s.title} />
             <p className={s.lede}>
               Each light out here is one thing I&apos;ve done: a degree, a job, a
-              project, some research, or a team I led. Keep scrolling and I&apos;ll show
-              you each one, newest first.
+              project, some research, a team I led, or an award. Keep scrolling and
+              I&apos;ll show you each one, newest first.
             </p>
             <p className={s.hint}>Scroll to visit them one by one</p>
           </Chapter>
@@ -442,6 +485,19 @@ function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
         </span>{" "}
         {kind.label}, {u.when}
       </p>
+      {/* An award: each win, what it was and from whom. */}
+      {u.story &&
+        u.story.wins.map((win) => (
+          <p key={win.by} className={s.honour}>
+            <span className={s.mark} aria-hidden>
+              {kind.mark}
+            </span>
+            <span>
+              <b>{win.title}</b>, {win.by}
+              <span className={s.honourWhen}> · {win.date}</span>
+            </span>
+          </p>
+        ))}
       <p className={s.pieceBrief}>{u.brief}</p>
       <ul className={s.skills} aria-label="Skills">
         {u.skills.map((k) => (
@@ -452,7 +508,7 @@ function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
         <PageLink
           className={s.visit}
           href={`${routes.work}/${u.id}`}
-          label="What I did"
+          label={u.story ? "The story" : "What I did"}
         />
         {/* Short words, so the three fit one row: a site is "Live site",
             anything with its own verb says what it is ("Read the paper"). */}

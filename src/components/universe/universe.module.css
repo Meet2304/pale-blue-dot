@@ -329,6 +329,22 @@
   border-bottom-color: var(--kind);
 }
 
+/* The news's kind: a small light beside its name, while it is news. */
+.tab {
+  position: relative;
+}
+
+.tabNew {
+  position: absolute;
+  top: 0.55rem;
+  right: -0.35rem;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 6px var(--kind);
+}
+
 .phoneTab {
   display: none;
 }
@@ -1048,6 +1064,150 @@
   color: var(--mute);
 }
 
+/* The news, in the hero: one line under the lede, after a hairline, in the
+   colour of the new light above Earth. It arrives a beat after the hero has
+   settled (`data-in`, universe.tsx): the hairline draws in from the left,
+   "New" flares as the light in the sky does, the words are wiped in after
+   it, and the arrow drops into place. It leaves the same way, quicker and
+   all at once, when the page moves on from the hero, and comes back on the
+   way up. Pointed at, it brightens and its arrow dips toward where it
+   leads, further down the page. */
+.news {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  max-width: 30rem;
+  margin-top: 1.5rem;
+  padding: 0.8rem 0 0;
+  border: 0;
+  background: none;
+  color: var(--soft);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: none;
+  transition: color 200ms;
+}
+
+.news[data-in] {
+  pointer-events: auto;
+}
+
+/* The hairline above it, drawn from the left. */
+.news::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--kind) 70%, transparent),
+    var(--hair) 40%
+  );
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.news[data-in]::before {
+  transform: scaleX(1);
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.newsTag {
+  flex: none;
+  color: var(--kind);
+  text-shadow: 0 0 0.8em color-mix(in oklab, var(--kind) 60%, transparent);
+  opacity: 0;
+  transition: opacity 200ms;
+}
+
+.news[data-in] .newsTag {
+  opacity: 1;
+  transition: opacity 300ms 200ms;
+  animation: newsFlare 1200ms 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* "New" flares once as it arrives, the way a supernova does. */
+@keyframes newsFlare {
+  0% {
+    text-shadow: 0 0 0 transparent;
+  }
+
+  30% {
+    color: #fff;
+    text-shadow:
+      0 0 0.6em var(--kind),
+      0 0 1.6em var(--kind);
+  }
+
+  100% {
+    text-shadow: 0 0 0.8em color-mix(in oklab, var(--kind) 60%, transparent);
+  }
+}
+
+/* The words, wiped in from the left after "New". */
+.newsLine {
+  flex: 1 1 16rem;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 240ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.news[data-in] .newsLine {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 900ms 380ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.newsGo {
+  color: var(--kind-soft);
+  opacity: 0;
+  translate: 0 -6px;
+  transition:
+    opacity 160ms,
+    translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.news[data-in] .newsGo {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 300ms 1150ms,
+    translate 500ms 1150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.news:is(:hover, :focus-visible) {
+  color: var(--fg);
+}
+
+.news[data-in]:is(:hover, :focus-visible) .newsGo {
+  translate: 0 3px;
+  transition: translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.news:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .news::before,
+  .newsTag,
+  .newsLine,
+  .newsGo,
+  .news[data-in]::before,
+  .news[data-in] .newsTag,
+  .news[data-in] .newsLine,
+  .news[data-in] .newsGo {
+    transition: opacity 200ms;
+    animation: none;
+  }
+}
+
 /* --------------------------------------------------------- A piece of work
 
    One piece of work per screen, the copy in the left column and its body on
@@ -1092,6 +1252,32 @@
   line-height: 1.6;
   color: var(--fg);
   text-wrap: pretty;
+}
+
+/* An award's title, under its name: what was won, and against how many. */
+.honour {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+  margin-top: 0.8rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.honour b {
+  font-weight: 500;
+  color: var(--kind-soft);
+}
+
+.honour + .honour {
+  margin-top: 0.35rem;
+}
+
+.honourWhen {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
 }
 
 /* What it took, for a recruiter scanning: quiet tags under the brief. */

@@ -8,6 +8,7 @@ const KIND_LABEL: Record<Kind, string> = {
   projects: "Project",
   leadership: "Leadership",
   education: "Education",
+  awards: "Award",
 };
 
 const link = (title: string, path: string, note?: string) => {
