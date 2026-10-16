@@ -82,6 +82,26 @@ export function SplatMedia({ media }: { media: Splat }) {
 export function FigureMedia({ media }: { media: Figure }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState<number | null>(null);
+  /* Near: within two screens. The frame is lazy until then, and from then
+     on it loads: left to the browser, a phone's lazy loading started it
+     only as it came on screen, so the figure arrived late and still. */
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setNear(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200% 0px 200% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   /* Watch the figure's body: its own height, not the document's, which is
      never less than the frame it sits in. The frame may have loaded before
@@ -117,7 +137,7 @@ export function FigureMedia({ media }: { media: Figure }) {
         ref={frame}
         src={media.src}
         title={media.title}
-        loading="lazy"
+        loading={near ? "eager" : "lazy"}
         className={s.figureFrame}
         style={height ? { height } : undefined}
       />
