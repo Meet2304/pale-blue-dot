@@ -1,14 +1,15 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Corporate Startup Lab, Bosch Mobility</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <script>if(location.search.includes("bare"))document.documentElement.classList.add("bare");(() => {
   const STEP = 1000 / 30;
-  let next = 0, quietUntil = 0;
+  let next = 0, quietUntil = 0, scrolled = false;
   try {
     if (parent !== window)
-      parent.addEventListener("scroll", () => { quietUntil = performance.now() + 180; }, { passive: true });
+      parent.addEventListener("scroll", () => { scrolled = true; }, { passive: true });
   } catch (e) {}
   window.paced = (cb) => requestAnimationFrame(function go(t) {
+    if (scrolled) { scrolled = false; quietUntil = t + 180; }
     if (t < quietUntil || t < next) { requestAnimationFrame(go); return; }
     next = Math.max(next + STEP, t - STEP / 2);
     cb(t);
@@ -2191,10 +2192,13 @@ const send = (i) => {
   if (still.matches) { s.at = s.to = i; s.angle = STATIONS[i].angle; s.phase = "push"; s.ext = 1; s.seen[i] = true; step(0, true); draw(); }
   run();
 };
-stage.addEventListener("pointerover", (event) => {
+const point = (event) => {
   const el = event.target.closest("[data-station]");
   if (el) send(+el.dataset.station);
-});
+};
+/* A finger passing over is the page scrolling, not pointing: a tap picks. */
+stage.addEventListener("pointerover", (event) => { if (event.pointerType !== "touch") point(event); });
+stage.addEventListener("click", point);
 stage.addEventListener("keydown", (event) => {
   let to = null;
   if (event.key === "ArrowRight" || event.key === "ArrowDown") to = (s.to + 1) % 4;

@@ -1,14 +1,15 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Interact Club of Baroda Sayajinagari</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <script>if(location.search.includes("bare"))document.documentElement.classList.add("bare");(() => {
   const STEP = 1000 / 30;
-  let next = 0, quietUntil = 0;
+  let next = 0, quietUntil = 0, scrolled = false;
   try {
     if (parent !== window)
-      parent.addEventListener("scroll", () => { quietUntil = performance.now() + 180; }, { passive: true });
+      parent.addEventListener("scroll", () => { scrolled = true; }, { passive: true });
   } catch (e) {}
   window.paced = (cb) => requestAnimationFrame(function go(t) {
+    if (scrolled) { scrolled = false; quietUntil = t + 180; }
     if (t < quietUntil || t < next) { requestAnimationFrame(go); return; }
     next = Math.max(next + STEP, t - STEP / 2);
     cb(t);
@@ -902,6 +903,19 @@ const ISO_CSS = `
 const BUILDINGS = [{"name":"home","at":8},{"name":"school","at":20},{"name":"hall","at":32}];
 const CYCLE = 13.5, START = 0.6, STEP = 0.22;
 const stage = document.querySelector(".iso-stage");
+
+let finger = null;
+const steers = (event) => {
+  if (event.pointerType !== "touch") return true;
+  if (finger && !finger.on) {
+    const dx = Math.abs(event.clientX - finger.x), dy = Math.abs(event.clientY - finger.y);
+    finger.on = dx > 8 && dx > dy * 1.5;
+  }
+  return Boolean(finger && finger.on);
+};
+stage.addEventListener("pointerdown", (event) => { if (event.pointerType === "touch") finger = { x: event.clientX, y: event.clientY, on: false }; });
+for (const type of ["pointerup", "pointercancel"]) stage.addEventListener(type, () => { finger = null; });
+
 const svg = stage.querySelector("svg");
 const switches = [...svg.querySelectorAll("[data-sw]")];
 const wins = [...svg.querySelectorAll("[data-win]")];
@@ -946,6 +960,7 @@ const steer = (to) => {
   run();
 };
 stage.addEventListener("pointermove", (event) => {
+  if (!steers(event)) return;
   const box = svg.getBoundingClientRect();
   const share = Math.max(0, Math.min(1, ((event.clientX - box.left) / box.width - 0.1) / 0.8));
   steer(Math.floor(target / CYCLE) * CYCLE + START + share * (32 * STEP + 0.4));
