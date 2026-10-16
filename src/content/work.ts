@@ -4,11 +4,13 @@
  * `/work/[slug]` all read from here, so a fact is written once.
  *
  * Written for a recruiter with a minute to spare: what Meet did, what it
- * took, and what came of it. Facts come from the resume (October 2026) and
- * GitHub, and nothing here goes beyond them. Still to settle with Meet:
+ * took, and what came of it. Facts come from the resume (October 2026,
+ * v0.2), the one before it (Icarus, Astar, Talaria's hardware, Serin's
+ * infrastructure) and GitHub, and nothing here goes beyond them. Still to
+ * settle with Meet:
  *   - every `impact` score (1 to 3), and what "impact" should mean;
- *   - the missing numbers (Phoenix accuracy, Linea users, Icarus results,
- *     Serin's interviews, Astar's forecast accuracy);
+ *   - the missing numbers (Linea users, Icarus results, Astar's forecast
+ *     accuracy);
  *   - the skills named for Serin and Carnegie Mellon, inferred from the
  *     resume's skills list rather than stated beside them.
  */
@@ -289,12 +291,19 @@ export const COLLECTIONS: Collection[] = [
         line: "Grand winner of Hack-Nation's 7th Global AI Hackathon, and winner of the World Bank Group's Small AI for Development Health track, with Vitamin Bob.",
         brief:
           "Vitamin Bob won the World Bank Group's Small AI for Development Health track, then Hack-Nation's 7th Global AI Hackathon outright, out of 3,000+ builders. It turns a missed call into the first step of primary care. I built its AI and backend, and I'm presenting it at the World Bank's summit in Seoul.",
-        skills: ["On-device LLMs", "Backend", "Product engineering", "AI for health"],
+        skills: [
+          "On-device LLMs (Gemma 4, llama.cpp)",
+          "FastAPI",
+          "Backend",
+          "Product engineering",
+          "AI for health",
+        ],
         aim: "4.6 billion people still lack essential health care, and in rural areas patients arrive before their story does. Vitamin Bob turns a missed call into the first step of primary care: one computer in every district calls patients back, free and in their own language, with no app and no internet.",
         did: [
-          "Built Bob's AI and backend: the call, the on-device model and the routing to care.",
+          "Built Bob's AI and backend in FastAPI: the missed-call callback, the on-device model (Gemma 4 E2B on llama.cpp) that structures Hindi and Gujarati speech, and the rule-based routing to emergency services, clinics or appointments.",
           "Made it safe: the AI only fills a form, and anything it can't back is asked again.",
-          "Built the phone gateway, the live dashboard and the website.",
+          "Ran grammar-constrained inference in 5 to 7 seconds on a 4 GB laptop GPU. Across 64 tests it missed no urgent case, with half the uncertainty of a keyword baseline.",
+          "Built the keypad fallback, SMS, encrypted sync, the phone gateway, the clinician dashboard and the website.",
         ],
         stats: [
           { value: "1st", label: "of 3,000+ builders, Hack-Nation" },
@@ -392,9 +401,9 @@ export const COLLECTIONS: Collection[] = [
           role: {
             title: "AI & Backend · LLM & Product Engineer",
             built: [
-              "Bob's AI and backend: the call, the on-device model (Gemma 4) and the routing to care.",
+              "Bob's AI and backend, in FastAPI: the call, the on-device model (Gemma 4 on llama.cpp) and the routing to care.",
               "The safety net: the AI only fills a form, and anything it can't back up is asked again.",
-              "The phone gateway, the live dashboard and the website.",
+              "The keypad fallback, SMS, encrypted sync, the phone gateway, the clinician dashboard and the website.",
             ],
             with: "With Egshiglen Batjargal, Rizaldy Al Kautsar Utomo and Yusril Hana.",
           },
@@ -496,17 +505,24 @@ export const COLLECTIONS: Collection[] = [
         name: "Corporate Startup Lab, Bosch Mobility",
         kind: "experience",
         when: "Aug 2026 to Dec 2026",
+        role: "Co-lead, Human Augmentation segment",
         impact: 2,
-        line: "New markets for Bosch Mobility's low-voltage actuators.",
+        line: "Bosch Mobility's low-voltage actuators, in occupational exoskeletons.",
         brief:
-          "Finding where Bosch Mobility can grow its range of low-voltage actuators, through market research, customer discovery and strategic-fit analysis, in a team of six.",
-        skills: ["Market research", "Customer discovery", "Strategic-fit analysis"],
-        aim: "Bosch Mobility wants to grow its range of low-voltage actuators. Our team's job is to find out where they could go next, and which of those options really fit Bosch.",
-        did: [
-          "Researching the markets where Bosch's low-voltage actuators could grow.",
-          "Interviewing potential customers to test which needs are real.",
-          "Weighing each opportunity on its strategic fit with Bosch Mobility, in a team of six.",
+          "Co-leading the Human Augmentation segment of a six-person team, testing whether Bosch's low-voltage actuators could enter the occupational exoskeleton market without major re-engineering, through right-to-fit analyses of prospective customers and a map of Bosch's seven actuator product lines.",
+        skills: [
+          "Market research",
+          "Competitive analysis",
+          "Strategic-fit assessment",
+          "Customer discovery",
         ],
+        aim: "Bosch Mobility wants to grow its range of low-voltage actuators. My segment's question: could they power occupational exoskeletons without major re-engineering?",
+        did: [
+          "Co-leading the Human Augmentation segment, in a team of six.",
+          "Running right-to-fit analyses of prospective customers against product and regulatory requirements.",
+          "Mapped Bosch's seven actuator product lines from primary-source data.",
+        ],
+        stats: [{ value: "7", label: "actuator product lines mapped" }],
         result: "In progress, through December 2026.",
         media: {
           kind: "figure",
@@ -573,17 +589,17 @@ export const COLLECTIONS: Collection[] = [
         impact: 2,
         line: "Who benefits from mindfulness training, and why.",
         brief:
-          "Predicting who responds to mindfulness training, by applying interpretable, cross-validated models to longitudinal study data, and extending them to daily-life data to find the patterns linked to benefit.",
+          "Predicting who benefits from mindfulness training, by applying machine learning to longitudinal data, and extending interpretable, cross-validated prediction from before-and-after designs to daily-life measurements to find the patterns linked to benefit.",
         skills: [
+          "Intensive longitudinal analysis",
+          "Treatment-response prediction",
           "Interpretable machine learning",
           "Cross-validation",
-          "Longitudinal data",
-          "Research",
         ],
         aim: "Mindfulness training helps some people far more than others. The lab wants to know who, and which ways of practising make the difference.",
         did: [
-          "Applying interpretable, cross-validated models to longitudinal data to predict who responds to mindfulness treatment.",
-          "Extending the before-and-after models to data from daily life, to find the participant and practice patterns linked to benefit.",
+          "Applying machine learning to longitudinal data to predict individual outcomes of mindfulness-based interventions.",
+          "Extending interpretable, cross-validated prediction from before-and-after designs to daily-life measurements, to find the participant and practice patterns linked to benefit.",
           "Advised by Prof. Kirk Warren Brown and Prof. J. David Creswell.",
         ],
         result: "In progress, through December 2026.",
@@ -611,19 +627,25 @@ export const COLLECTIONS: Collection[] = [
         impact: 3,
         line: "Catch the earliest cell changes in cervical cancer, and show why the model decided.",
         brief:
-          "Built a cervical-cancer cell classifier a doctor can check, by cleaning up microscope images from SipakMed and Herlev and training convolutional neural networks that highlight the parts of each image behind their answer. It runs live in the browser; the paper is being written.",
+          "Classified cervical cells into five types with 96.3% accuracy and a 0.996 ROC-AUC, by benchmarking four image-enhancement pipelines on 4,049 SipakMed images and fine-tuning three CNN architectures, with Grad-CAM to show the regions behind each prediction. It runs live in the browser; the paper is being written.",
         skills: [
+          "Image processing",
           "Convolutional neural networks",
-          "Explainable AI",
+          "Grad-CAM",
           "Medical imaging",
           "Python",
         ],
         aim: "Cervical cancer can be caught early from images of cells, but a model a doctor can't question is hard to trust. Phoenix sorts each cell into one of five types, and shows which parts of the image it based that on.",
         did: [
-          "Enhanced contrast and reduced noise in the SipakMed and Herlev cell images, keeping the features a diagnosis depends on.",
-          "Trained convolutional neural networks to sort cells into five types.",
-          "Used visual explanations to highlight the regions driving each prediction, so a doctor can check the model's reasoning.",
+          "Benchmarked four image-enhancement pipelines on 4,049 SipakMed images across five classes, by PSNR, SSIM, edge preservation and contrast. NLM+CLAHE scored highest, preserving edges at 0.60 against 0.37 for NLM alone.",
+          "Fine-tuned and compared three CNN architectures on a 3,239 / 405 / 405 split. ConvNeXtV2 reached 96.3% accuracy, a 0.963 macro-F1 and a 0.996 ROC-AUC.",
+          "Found the weakest classes, Koilocytotic and Metaplastic (F1 ≈ 0.93), and used Grad-CAM to inspect the regions driving each prediction, so a doctor can check the model's reasoning.",
           "Put the model in the browser, at phoenix.meetbhatt.com.",
+        ],
+        stats: [
+          { value: "96.3%", label: "accuracy, ConvNeXtV2" },
+          { value: "0.996", label: "ROC-AUC" },
+          { value: "4,049", label: "cell images" },
         ],
         result: "Manuscript in preparation. Runs live in the browser.",
         link: { label: "phoenix.meetbhatt.com", href: "https://phoenix.meetbhatt.com" },
@@ -664,13 +686,20 @@ export const COLLECTIONS: Collection[] = [
         impact: 2.3,
         line: "Stop harmful prompts before they reach a language model, and say why.",
         brief:
-          "Caught malicious prompts before they reach a language model with 98.84% precision and 90.79% accuracy, by modelling the transitions in a prompt's text as a Markov chain and explaining which patterns made it risky. Published in Procedia Computer Science, 2026.",
-        skills: ["Probabilistic modelling", "Markov chains", "AI safety", "Python"],
+          "Caught malicious prompts before they reach a language model with 98.84% precision and 90.79% accuracy, by training an interpretable Markov-chain classifier on 39,234 balanced prompts, whose likelihood-ratio scores show the word sequences behind each flag. Published in Procedia Computer Science, 2026.",
+        skills: [
+          "Markov chains",
+          "NLP",
+          "Interpretable classification",
+          "AI safety",
+          "Python",
+        ],
         aim: "Chatbots can be tricked by prompts written to make them misbehave. This research catches those prompts before they get through, and says why each one was flagged.",
         did: [
-          "Developed a probabilistic detector that scores a prompt by the transitions between its text sequences, modelled as a Markov chain.",
-          "Added an explanation module that highlights the high-risk patterns behind each flag.",
-          "Reached 90.79% accuracy, 98.84% precision, 82.54% recall and an 89.96% F1 score on a malicious-prompt benchmark.",
+          "Built an interpretable Markov-chain classifier, trained on 39,234 balanced prompts.",
+          "Scored each prompt by likelihood ratio, surfacing the word sequences behind each flag.",
+          "Reached 90.79% accuracy, 98.84% precision, 82.54% recall and an 89.96% F1 score.",
+          "Kept the simpler model, after a higher-order ensemble reached only 89.3% accuracy.",
           "Published the paper in Procedia Computer Science (2026).",
         ],
         stats: [
@@ -700,27 +729,28 @@ export const COLLECTIONS: Collection[] = [
         impact: 2.4,
         line: "A shoe that tracks heart rate and gait, and forecasts both.",
         brief:
-          "Built a smart shoe that forecasts 15 heart and gait signals 50 steps ahead with an R² of 0.97, by streaming its sensors to a cloud pipeline and training a recurrent neural network on 50,000+ sequences.",
+          "Turned 143K sensor records from 32 participants into live forecasts of heart and gait, by cleaning and standardizing 15 features, training an LSTM next-step predictor, and shrinking it to a 0.19 MB TensorFlow Lite model within 1% of the full one, served through Vertex AI.",
         skills: [
-          "Embedded systems (ESP32)",
+          "pandas",
+          "LSTM",
+          "TensorFlow Lite",
+          "Vertex AI",
           "Sensor integration",
-          "Recurrent neural networks",
-          "Time-series forecasting",
-          "Firebase",
         ],
         aim: "Heart and gait data usually means a visit to a clinic. Talaria puts the sensors in a shoe, so they can be watched all day, and forecasts where they are heading.",
         did: [
           "Built a wearable on an ESP32 that streams heart rate, blood oxygen and motion-based gait data in real time.",
-          "Sent every reading to a cloud pipeline for continuous monitoring, with live charts on the web.",
-          "Trained a recurrent neural network on 50,000+ sequences to forecast 15 features 50 steps ahead, with an R² of 0.97 and a mean absolute error of 0.103.",
+          "Cleaned and merged 143K sensor records from 32 participants, resolving type errors, imputing missing values and standardizing 15 physiological and motion features.",
+          "Built 50-timestep sequences, and trained an LSTM to predict the next step.",
+          "Converted it to TensorFlow Lite, at 0.19 MB and within 1% of the full Keras model, and served its predictions through Vertex AI to a live dashboard.",
         ],
         stats: [
-          { value: "0.97", label: "R², forecasting 15 signals" },
-          { value: "50", label: "steps ahead" },
-          { value: "50,000+", label: "training sequences" },
+          { value: "143K", label: "sensor records" },
+          { value: "32", label: "participants" },
+          { value: "0.19 MB", label: "model, within 1% of the full one" },
         ],
         result:
-          "A working wearable, streaming live, with forecasts that closely follow the real signals.",
+          "A working wearable, with live forecasts from a 0.19 MB model on a dashboard.",
         link: { label: "talaria.meetbhatt.com", href: "https://talaria.meetbhatt.com" },
         repo: "https://github.com/Meet2304/Project-Talaria",
         media: {
@@ -770,23 +800,24 @@ export const COLLECTIONS: Collection[] = [
         impact: 3,
         line: "From annotating data to leading product development, in under two years.",
         brief:
-          "Drove a 222% increase in project revenue in two months, by directing a summer intern team on fine-tuning models with human feedback and building internal performance tracking. Rose from RLHF contributor to leading product development, including Serin.",
+          "Helped drive a 222% revenue increase in two months, by evaluating LLM outputs and leading 10-person RLHF workflows with throughput and label-quality tracking and review rubrics. Rose from RLHF contributor to leading product development, including Serin.",
         skills: [
-          "RLHF",
-          "Model fine-tuning",
-          "Model evaluation",
+          "RLHF operations analytics",
+          "LLM evaluation",
+          "Quality assurance",
+          "Multimodal scoring",
           "Team leadership",
-          "Product development",
         ],
         aim: "Blink Analytics builds AI and data products for other companies, including training language models with human feedback (RLHF). I joined to label data and grade model answers, and stayed to lead.",
         did: [
-          "Annotated data and evaluated model outputs for human-feedback training.",
+          "Annotated data and evaluated LLM outputs for human-feedback training.",
           "Promoted to RLHF team lead, then to lead product development intern.",
-          "Directed a summer intern team on fine-tuning models with human feedback, with internal systems to track performance, driving a 222% increase in project revenue in two months.",
-          "Led development of Serin, an AI interview and hiring platform.",
+          "Led 10-person RLHF workflows, building throughput and label-quality tracking and review rubrics. The insights helped drive a 222% revenue increase in two months.",
+          "Led development of Serin, an AI interview and hiring platform, and designed how it scores candidates.",
         ],
         stats: [
-          { value: "222%", label: "more project revenue, in two months" },
+          { value: "222%", label: "more revenue, in two months" },
+          { value: "10", label: "people in the RLHF workflows I led" },
           { value: "3", label: "roles, in under two years" },
         ],
         result: "Went on to lead development of Serin, Blink's AI hiring platform.",
@@ -828,20 +859,24 @@ export const COLLECTIONS: Collection[] = [
         impact: 3,
         line: "An AI interview platform: live voice interviews, scored against the role, checked for cheating.",
         brief:
-          "Led development of Serin, an AI platform that interviews job candidates by live voice and scores them against the role, by designing its real-time communication, language-model and cloud infrastructure, and the framework that evaluates each candidate.",
+          "Ranked candidates across 500+ live voice interviews, by designing Serin's evaluation framework, which combines multimodal signals into three scoring indices, and leading development of its real-time communication, language-model and cloud infrastructure.",
         skills: [
+          "Multimodal scoring",
           "Language-model agents",
           "Real-time voice (LiveKit)",
           "Google Cloud",
           "Kubernetes",
-          "System design",
         ],
         aim: "Hiring teams can't interview every applicant. Serin can: an AI interviewer talks with each candidate, scores the answers against the job, checks for cheating, and sums up who to hire.",
         did: [
+          "Designed the candidate evaluation framework, combining multimodal signals into three scoring indices that ranked candidates across 500+ interviews.",
           "Designed the real-time communication that carries each live voice interview.",
           "Designed the language-model and cloud infrastructure behind the interviewer.",
-          "Built the framework that scores every candidate against the role.",
           "Led the team that built it.",
+        ],
+        stats: [
+          { value: "500+", label: "interviews scored" },
+          { value: "3", label: "scoring indices" },
         ],
         result: "In private beta at serin-ai.com.",
         link: { label: "serin-ai.com", href: "https://serin-ai.com" },
