@@ -34,7 +34,36 @@ export async function generateMetadata({
 }: PageProps<"/work/[slug]">): Promise<Metadata> {
   const u = unitById((await params).slug);
   if (!u) return {};
-  return pageMetadata(`/work/${u.id}`, { title: u.name, description: u.brief });
+  const metadata = pageMetadata(`/work/${u.id}`, {
+    title: u.name,
+    description: u.brief,
+  });
+  // Explicit images replace the inherited landing card for both protocols.
+  // Relative URLs follow metadataBase, so preview deployments serve their
+  // own assets while canonical page URLs still point to production.
+  const image = {
+    url: `/og/work/${u.id}.jpg`,
+    width: 1200,
+    height: 630,
+    type: "image/jpeg",
+    alt: `${u.name} — Meet Bhatt. ${u.line}`,
+  };
+  return {
+    ...metadata,
+    openGraph: {
+      ...metadata.openGraph,
+      type: "website",
+      siteName: "Meet Bhatt",
+      locale: "en_US",
+      images: [image],
+    },
+    twitter: {
+      ...metadata.twitter,
+      card: "summary_large_image",
+      creator: "@Meet2304",
+      images: [image],
+    },
+  };
 }
 
 /**
