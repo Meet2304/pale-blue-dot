@@ -68,7 +68,7 @@ const copy = {
   "bosch-mobility": [
     "Bosch Mobility",
     "Corporate Startup Lab",
-    "Market research · Customer discovery",
+    "Actuators for occupational exoskeletons",
   ],
   linea: [
     "Linea",
@@ -83,7 +83,7 @@ const copy = {
   phoenix: [
     "Project Phoenix",
     "Explainable AI for cervical cell classification",
-    "Medical imaging · Manuscript in preparation",
+    "96.3% accuracy · Manuscript in preparation",
   ],
   "prompt-classifier": [
     "Malicious Prompt\nClassifier",
@@ -93,12 +93,12 @@ const copy = {
   talaria: [
     "Project Talaria",
     "Forecasting heart rate & gait",
-    "15 signals · 50 steps ahead · R² 0.97",
+    "143K records · 32 participants · LSTM",
   ],
   "blink-analytics": [
     "Blink Analytics",
     "From RLHF contributor to product lead",
-    "222% project revenue growth in two months",
+    "222% revenue growth in two months",
   ],
   serin: [
     "Serin",
