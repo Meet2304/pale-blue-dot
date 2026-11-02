@@ -27,7 +27,9 @@ const ZOOM = 420;
  * opens on the screen that was showing, and can be stepped through (the
  * arrows, or the left and right keys) or tried live, at a size where it
  * can actually be used: laid out as on a laptop and scaled to fit on a
- * wide screen, or at the phone's own width on a phone.
+ * wide screen, or at the phone's own width on a phone. An album opens on
+ * the photo that was showing, and steps through the rest the same way,
+ * each in its own shape.
  *
  * While it is open the page beneath does not scroll, the keys belong to it,
  * and focus stays in it; closing hands focus back to what opened it.
@@ -41,7 +43,7 @@ export function Lightbox({
   onClose,
 }: {
   media: FramedMedia;
-  /** For a website, the screen to open on. */
+  /** For a website or an album, the screen or photo to open on. */
   start: number;
   /** Where the picture was on the page, to grow out of and back into. */
   from: DOMRect | null;
@@ -63,7 +65,11 @@ export function Lightbox({
   const [narrow] = useState(() => window.matchMedia("(max-width: 860px)").matches);
   const site = media.kind === "site" ? media : null;
   const photo = media.kind === "photo" ? media : null;
-  const count = site ? site.screens.length : 1;
+  const album = media.kind === "album" ? media : null;
+  const count = site ? site.screens.length : album ? album.photos.length : 1;
+  /* What the arrows step through: a site's screens (unless it's live), or
+     an album's photos. */
+  const steps = (site && !live) || (album && count > 1);
   const calm = useRef(false);
 
   /* Grow out of the picture on the page: start drawn over it, then let go. */
@@ -107,10 +113,10 @@ export function Lightbox({
       if (e.key === "Escape") {
         e.preventDefault();
         close();
-      } else if (site && !live && e.key === "ArrowRight") {
+      } else if (steps && e.key === "ArrowRight") {
         e.preventDefault();
         setAt((i) => (i + 1) % count);
-      } else if (site && !live && e.key === "ArrowLeft") {
+      } else if (steps && e.key === "ArrowLeft") {
         e.preventDefault();
         setAt((i) => (i - 1 + count) % count);
       } else if (keys.includes(e.key) || (e.key === " " && !onButton)) {
@@ -145,7 +151,7 @@ export function Lightbox({
       window.removeEventListener("touchmove", stop);
       window.removeEventListener("keydown", onKey, true);
     };
-  }, [close, site, live, count]);
+  }, [close, steps, count]);
 
   /* A live site on a wide screen is laid out at laptop size and scaled. */
   useEffect(() => {
@@ -156,12 +162,13 @@ export function Lightbox({
     return () => ro.disconnect();
   }, [live]);
 
-  const label = site?.label ?? photo?.alt ?? "";
+  const shot = album ? album.photos[at] : photo;
+  const label = site?.label ?? shot?.alt ?? "";
   const caption = site
     ? live
       ? "Live. Scroll and click inside the frame."
       : site.screens[at].alt
-    : (photo?.caption ?? photo?.alt);
+    : (shot?.caption ?? shot?.alt);
 
   return createPortal(
     <div
@@ -170,7 +177,7 @@ export function Lightbox({
       data-closing={closing}
       role="dialog"
       aria-modal="true"
-      aria-label={site ? `${site.label}, enlarged` : photo?.alt}
+      aria-label={site ? `${site.label}, enlarged` : shot?.alt}
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
       }}
@@ -180,17 +187,18 @@ export function Lightbox({
       </button>
 
       <div ref={stageRef} className={s.lbStage}>
-        {media.kind === "photo" ? (
+        {shot ? (
           <Picture
-            src={media.src}
-            alt={media.alt}
-            width={media.width}
-            height={media.height}
+            key={shot.src}
+            src={shot.src}
+            alt={shot.alt}
+            width={shot.width}
+            height={shot.height}
             sizes="92vw"
             load
-            className={s.lbPhoto}
+            className={`${s.lbPhoto} ${album && at !== start ? s.lbSwap : ""}`}
           />
-        ) : (
+        ) : site ? (
           <div className={s.lbSite}>
             <div className={s.chrome}>
               <span className={s.dots} aria-hidden>
@@ -200,18 +208,18 @@ export function Lightbox({
               </span>
               <a
                 className={s.address}
-                href={media.href}
+                href={site.href}
                 target="_blank"
                 rel="noreferrer"
-                title={`Open ${media.label} in a new tab`}
+                title={`Open ${site.label} in a new tab`}
               >
-                {media.label} <span aria-hidden>↗</span>
+                {site.label} <span aria-hidden>↗</span>
               </a>
-              {media.embed === false ? (
+              {site.embed === false ? (
                 /* This site refuses to be shown inside another page. */
                 <a
                   className={s.close}
-                  href={media.href}
+                  href={site.href}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -236,8 +244,8 @@ export function Lightbox({
               {live ? (
                 <iframe
                   className={s.live}
-                  src={media.href}
-                  title={`${media.label}, live`}
+                  src={site.href}
+                  title={`${site.label}, live`}
                   {...(narrow
                     ? { width: "100%", height: "100%", style: { position: "static" } }
                     : {
@@ -248,7 +256,7 @@ export function Lightbox({
                 />
               ) : (
                 <span className={s.strip} style={{ translate: `0 ${-at * 100}%` }}>
-                  {media.screens.map((sc, i) => (
+                  {site.screens.map((sc, i) => (
                     <Picture
                       key={i}
                       src={sc.src}
@@ -264,28 +272,28 @@ export function Lightbox({
               )}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className={s.lbFoot}>
-        {site && !live && (
+        {steps && (
           <span className={s.lbSteps}>
             <button
               type="button"
               onClick={() => setAt((i) => (i - 1 + count) % count)}
-              aria-label="Previous screen"
+              aria-label={album ? "Previous photo" : "Previous screen"}
             >
               ←
             </button>
             <span className={s.pips} aria-hidden>
-              {site.screens.map((_, i) => (
+              {Array.from({ length: count }, (_, i) => (
                 <i key={i} data-on={i === at} />
               ))}
             </span>
             <button
               type="button"
               onClick={() => setAt((i) => (i + 1) % count)}
-              aria-label="Next screen"
+              aria-label={album ? "Next photo" : "Next screen"}
             >
               →
             </button>

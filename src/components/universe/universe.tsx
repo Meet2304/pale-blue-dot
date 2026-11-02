@@ -462,9 +462,11 @@ function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
   const aspect =
     u.media?.kind === "photo" || u.media?.kind === "splat"
       ? u.media.width / u.media.height
-      : u.media?.kind === "figure"
-        ? 1.2
-        : 16 / 10;
+      : u.media?.kind === "album"
+        ? u.media.photos[0].width / u.media.photos[0].height
+        : u.media?.kind === "figure"
+          ? 1.2
+          : 16 / 10;
   return (
     <Chapter
       className={`${s.piece} ${u.media ? s.withMedia : ""} ${
@@ -485,7 +487,8 @@ function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
         </span>{" "}
         {kind.label}, {u.when}
       </p>
-      {/* An award: each win, what it was and from whom. */}
+      {/* An award: each win, what it was and from whom, then the stage it
+          led to. */}
       {u.story &&
         u.story.wins.map((win) => (
           <p key={win.by} className={s.honour}>
@@ -498,6 +501,15 @@ function Piece({ u, col, index }: { u: Unit; col: Collection; index: number }) {
             </span>
           </p>
         ))}
+      {u.story?.stage && (
+        <p className={s.honour} data-stage>
+          <span className={s.stageDot} aria-hidden />
+          <span>
+            <b>{u.story.stage.title}</b>, {u.story.stage.event}, {u.story.stage.where}
+            <span className={s.honourWhen}> · {u.story.stage.date}</span>
+          </span>
+        </p>
+      )}
       <p className={s.pieceBrief}>{u.brief}</p>
       <ul className={s.skills} aria-label="Skills">
         {u.skills.map((k) => (

@@ -87,7 +87,44 @@ export type Media =
       src: string;
       title: string;
       caption?: string;
+    }
+  | {
+      /**
+       * A few photographs, as a small stack of prints: the top one shown,
+       * the others peeking out under it, fanned out when pointed at, and
+       * shuffled one to the back every few seconds while on screen.
+       */
+      kind: "album";
+      photos: Snapshot[];
     };
+
+/**
+ * A photograph from a trip, in `public`, in the two sizes every picture has
+ * (picture.tsx). The people in it can be placed: the centre of each face,
+ * as fractions of the frame (x across, y down), and its radius as a
+ * fraction of the width, so that a name pointed at is framed in it, as the
+ * sky frames a body. `who` is a person's id (AwardStory's `people`), or
+ * "me".
+ */
+export type Snapshot = {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption?: string;
+  faces?: { who: string; x: number; y: number; r: number }[];
+};
+
+/** Someone met along the way: who they are, and where to find them. */
+export type Person = {
+  id: string;
+  name: string;
+  /** What they do there, or what they won, where it's known. */
+  role?: string;
+  linkedin?: string;
+  /** The list they're named in on the page. */
+  group: "team" | "winners" | "summit";
+};
 
 /** What a piece of work shows in the bar's panel when pointed at. */
 export type Peek = {
@@ -133,6 +170,11 @@ export function peekOf(media: Media): Peek {
         clip: media.src.replace(/\.html$/, ".mp4"),
         aspect: 640 / 430,
       };
+    case "album":
+      return {
+        still: sm(media.photos[0].src),
+        aspect: media.photos[0].width / media.photos[0].height,
+      };
   }
 }
 
@@ -145,8 +187,9 @@ export function peekOfUnit(u: {
   return u.media ? peekOf(u.media) : null;
 }
 
-/** The pictures that open in the lightbox: a photo or a site's screens. */
-export type FramedMedia = Extract<Media, { kind: "photo" | "site" }>;
+/** The pictures that open in the lightbox: a photo, a site's screens, or an
+    album's photos. */
+export type FramedMedia = Extract<Media, { kind: "photo" | "site" | "album" }>;
 
 /** A number that shows the impact, and what it counts. */
 export type Stat = { value: string; label: string };
@@ -165,6 +208,10 @@ export type AwardStory = {
   /** The page's title, and a short paragraph under it. */
   title: string;
   intro: string;
+  /** The picture under the head: the achievement, in one photograph. */
+  hero?: Snapshot;
+  /** The talk it led to, named with the wins on the home page. */
+  stage?: { title: string; event: string; where: string; date: string };
   /** Each win, the latest first: who gave it, for what, when, a line on it,
       and its announcement (its image, and the post on each platform). */
   wins: {
@@ -184,26 +231,37 @@ export type AwardStory = {
   how: { line: string; steps: string[]; points: string[] };
   /** My part: my role on the team, what I built, and who with. */
   role: { title: string; built: string[]; with: string };
-  /** The days, in order. A stop's `at` (ISO, with its offset) says when it
-      happened, or will; with a `flight`, the page draws them on a globe
-      (journey.tsx), and a stop with a place is pinned on it. */
+  /** The people met along the way, named on the days and listed at the
+      end of the page, each linked to their LinkedIn where they have one. */
+  people?: Person[];
+  /** The days, in order, under a line that sums them up. A stop's `at`
+      (ISO, with its offset) says when it happened, or will, where that is
+      known, and `when` how to say it; with a `flight`, the page draws them
+      on a globe (journey.tsx), and a stop with a place is pinned on it. */
   days: {
+    line?: string;
     stops: {
-      at: string;
+      at?: string;
       when: string;
       place: string;
       title: string;
       line: string;
       ll?: LonLat;
+      /** In the air: how far along the flight, 0 to 1, by distance. */
+      along?: number;
+      /** The northern lights, on the globe, while this day is read. */
+      aurora?: boolean;
+      /** Its photographs, and how many go in each row (all in one, if
+          not said). */
+      photos?: Snapshot[];
+      rows?: number[];
+      /** Who was there (ids in `people`), named under it. */
+      with?: string[];
     }[];
     /** The trip, airport by airport, with the hour it leaves the first and
         reaches the last (ISO, with offsets). */
     flight?: { stops: { code: string; ll: LonLat }[]; leaves: string; lands: string };
   };
-  /** A picture for the end of the page, and a frame kept for one still to
-      be taken, until its date (`until`, ISO). */
-  photo?: { src: string; width: number; height: number; alt: string; caption: string };
-  soon?: { label: string; until: string };
 };
 
 /**
@@ -273,6 +331,175 @@ export type Collection = {
   units: Unit[];
 };
 
+/* The trip to Seoul for the World Bank's summit, 17 to 24 October 2026:
+   its photographs, in `public/work/hackathon-wins/seoul/` (their EXIF, and
+   its GPS, stripped), and the people in them, placed by face. The award's
+   page and the home page both read them from here. */
+const DIR = "/work/hackathon-wins/seoul";
+const SEOUL = {
+  team: {
+    src: "/work/vitamin-bob/team.webp",
+    width: 1600,
+    height: 1200,
+    alt: "Yusril, Rizaldy, Egshiglen and Meet, smiling, in a glass atrium at Carnegie Mellon.",
+    caption: "Yusril, Rizaldy, Egshiglen and me, at Carnegie Mellon.",
+    faces: [
+      { who: "yusril", x: 0.163, y: 0.25, r: 0.06 },
+      { who: "rizaldy", x: 0.4, y: 0.267, r: 0.055 },
+      { who: "egshiglen", x: 0.621, y: 0.258, r: 0.055 },
+      { who: "me", x: 0.819, y: 0.225, r: 0.055 },
+    ],
+  },
+  sunset: {
+    src: `${DIR}/sunset-wing.webp`,
+    width: 1400,
+    height: 1400,
+    alt: "A wingtip in silhouette against a band of orange sunset, the lights of towns on the ground below.",
+    caption: "Leaving, at sunset.",
+  },
+  aurora: {
+    src: `${DIR}/aurora.webp`,
+    width: 900,
+    height: 1600,
+    alt: "Through the plane's window at night, green northern lights along the horizon, past the red-lit wingtip.",
+    caption: "The northern lights, out of the window.",
+  },
+  wall: {
+    src: `${DIR}/summit-wall.webp`,
+    width: 1600,
+    height: 900,
+    alt: "Meet in a blue suit in front of the summit's wall: Global AI & Digital Summit, October 19 to 22, 2026, Seoul, Korea, beside rings of coloured lines.",
+    caption: "Global AI & Digital Summit, Seoul, 19 to 22 October.",
+    faces: [{ who: "me", x: 0.433, y: 0.51, r: 0.03 }],
+  },
+  anna: {
+    src: `${DIR}/anna-bjerde.webp`,
+    width: 1200,
+    height: 1600,
+    alt: "Seven people in a row in a wood-panelled room: the winners of the three tracks with Anna Bjerde, in a white suit, at the centre.",
+    caption: "The winners of all three tracks, with Anna Bjerde.",
+    faces: [
+      { who: "yusril", x: 0.113, y: 0.463, r: 0.03 },
+      { who: "rizaldy", x: 0.275, y: 0.469, r: 0.03 },
+      { who: "olivia", x: 0.393, y: 0.481, r: 0.028 },
+      { who: "anna", x: 0.493, y: 0.479, r: 0.028 },
+      { who: "egshiglen", x: 0.592, y: 0.456, r: 0.03 },
+      { who: "tae-yoon", x: 0.708, y: 0.438, r: 0.03 },
+      { who: "me", x: 0.87, y: 0.438, r: 0.03 },
+    ],
+  },
+  matt: {
+    src: `${DIR}/matt-hayley.webp`,
+    width: 1200,
+    height: 1600,
+    alt: "A selfie outside the hotel's Grand Salon on an autumn day: Hayley in front, holding the camera, with Meet, Egshiglen, Matt, Yusril and Rizaldy behind her.",
+    caption: "Hayley's selfie, with Matt and the four of us.",
+    faces: [
+      { who: "me", x: 0.058, y: 0.194, r: 0.06 },
+      { who: "egshiglen", x: 0.287, y: 0.231, r: 0.055 },
+      { who: "matt", x: 0.483, y: 0.256, r: 0.055 },
+      { who: "yusril", x: 0.63, y: 0.244, r: 0.055 },
+      { who: "rizaldy", x: 0.833, y: 0.294, r: 0.055 },
+      { who: "hayley", x: 0.575, y: 0.5, r: 0.12 },
+    ],
+  },
+  breakfast: {
+    src: `${DIR}/breakfast.webp`,
+    width: 1200,
+    height: 1600,
+    alt: "A selfie round a long breakfast table, plates of fruit and iced coffees, everyone leaning in and smiling, two of them making peace signs.",
+    caption: "Breakfast, round one table.",
+    faces: [{ who: "me", x: 0.717, y: 0.38, r: 0.04 }],
+  },
+  winners: {
+    src: `${DIR}/track-winners.webp`,
+    width: 1600,
+    height: 1280,
+    alt: "Seven people with summit lanyards in front of the summit's big screen, Global AI & Digital Summit, Seoul, Korea: the winners of the Health, Agriculture and Tourism tracks, with Hayley.",
+    caption: "All three tracks: Health, Agriculture and Tourism, with Hayley.",
+    faces: [
+      { who: "rizaldy", x: 0.103, y: 0.336, r: 0.03 },
+      { who: "yusril", x: 0.222, y: 0.328, r: 0.03 },
+      { who: "olivia", x: 0.328, y: 0.383, r: 0.028 },
+      { who: "hayley", x: 0.459, y: 0.344, r: 0.03 },
+      { who: "egshiglen", x: 0.591, y: 0.333, r: 0.03 },
+      { who: "me", x: 0.715, y: 0.325, r: 0.03 },
+      { who: "tae-yoon", x: 0.804, y: 0.32, r: 0.03 },
+    ],
+  },
+  mirror: {
+    src: `${DIR}/team-mirror.webp`,
+    width: 900,
+    height: 1600,
+    alt: "A mirror selfie in a warm wooden room: Meet holding the phone, Egshiglen beside him, Yusril and Rizaldy in front, all with summit lanyards.",
+    caption: "The four of us, lanyards on.",
+    faces: [
+      { who: "me", x: 0.284, y: 0.375, r: 0.09 },
+      { who: "egshiglen", x: 0.567, y: 0.375, r: 0.09 },
+      { who: "yusril", x: 0.189, y: 0.656, r: 0.12 },
+      { who: "rizaldy", x: 0.844, y: 0.7, r: 0.12 },
+    ],
+  },
+  skyline: {
+    src: `${DIR}/city-skyline.webp`,
+    width: 1086,
+    height: 632,
+    alt: "Seoul at sunset from up on a hill: trees, rooftops and a pool below, the city running out to the mountains, Lotte World Tower on the horizon.",
+    caption: "The skyline at sunset.",
+  },
+  traffic: {
+    src: `${DIR}/city-traffic.webp`,
+    width: 528,
+    height: 638,
+    alt: "A Seoul street at rush hour, cars and a green bus under amber lights, a rocky mountain behind.",
+    caption: "Mountains behind the traffic.",
+  },
+  night: {
+    src: `${DIR}/city-night.webp`,
+    width: 528,
+    height: 638,
+    alt: "A wide, quiet street at night, lined with trees under the streetlights.",
+    caption: "A tree-lined street, late.",
+  },
+  lights: {
+    src: `${DIR}/city-lights.webp`,
+    width: 528,
+    height: 634,
+    alt: "A narrow lane of small shops at night under strings of round lights.",
+    caption: "A lane under string lights.",
+  },
+  hanok: {
+    src: `${DIR}/city-hanok.webp`,
+    width: 528,
+    height: 634,
+    alt: "A sunlit lane climbing between a stone wall and a hanok's tiled roof, under a deep blue sky.",
+    caption: "Hanok walls in the morning sun.",
+  },
+  hall: {
+    src: `${DIR}/hall.webp`,
+    width: 1024,
+    height: 768,
+    alt: "The summit's hall from the audience: Meet presenting on stage, under the session's title, and on the two big screens either side.",
+    caption: "On stage at the Global AI & Digital Summit, 21 October.",
+  },
+  stage: {
+    src: `${DIR}/stage.webp`,
+    width: 720,
+    height: 1280,
+    alt: "Meet on stage with a microphone, beside the slide “One computer in every district”, with two of the team on stage to his right.",
+    caption: "“One computer in every district.”",
+    faces: [{ who: "me", x: 0.826, y: 0.648, r: 0.035 }],
+  },
+  podium: {
+    src: `${DIR}/podium.webp`,
+    width: 898,
+    height: 1600,
+    alt: "Meet smiling at the podium, which reads Global AI & Digital Summit, October 19 to 22, 2026, Grand Hyatt Seoul, in front of a wall of glowing rings.",
+    caption: "At the podium.",
+    faces: [{ who: "me", x: 0.559, y: 0.453, r: 0.055 }],
+  },
+} satisfies Record<string, Snapshot>;
+
 export const COLLECTIONS: Collection[] = [
   {
     id: "now",
@@ -290,7 +517,7 @@ export const COLLECTIONS: Collection[] = [
         impact: 3,
         line: "Grand winner of Hack-Nation's 7th Global AI Hackathon, and winner of the World Bank Group's Small AI for Development Health track, with Vitamin Bob.",
         brief:
-          "Vitamin Bob won the World Bank Group's Small AI for Development Health track, then Hack-Nation's 7th Global AI Hackathon outright, out of 3,000+ builders. It turns a missed call into the first step of primary care. I built its AI and backend, and I'm presenting it at the World Bank's summit in Seoul.",
+          "Vitamin Bob won the World Bank Group's Small AI for Development Health track, then Hack-Nation's 7th Global AI Hackathon outright, out of 3,000+ builders. It turns a missed call into the first step of primary care. I built its AI and backend, and presented it on stage at the World Bank's Global AI & Digital Summit in Seoul.",
         skills: [
           "On-device LLMs (Gemma 4, llama.cpp)",
           "FastAPI",
@@ -304,14 +531,15 @@ export const COLLECTIONS: Collection[] = [
           "Made it safe: the AI only fills a form, and anything it can't back is asked again.",
           "Ran grammar-constrained inference in 5 to 7 seconds on a 4 GB laptop GPU. Across 64 tests it missed no urgent case, with half the uncertainty of a keyword baseline.",
           "Built the keypad fallback, SMS, encrypted sync, the phone gateway, the clinician dashboard and the website.",
+          "Presented it on stage at the World Bank Group's Global AI & Digital Summit in Seoul, in the session “Benefiting Billions: Scaling AI for Healthier Lives”, on 21 October 2026.",
         ],
         stats: [
           { value: "1st", label: "of 3,000+ builders, Hack-Nation" },
           { value: "1st", label: "Health track, World Bank Group" },
-          { value: "21 Oct", label: "a talk in Seoul" },
+          { value: "21 Oct", label: "on stage in Seoul" },
         ],
         result:
-          "Grand winner of Hack-Nation, winner of the World Bank's Health track, and a talk in Seoul.",
+          "Grand winner of Hack-Nation, winner of the World Bank's Health track, and a talk on stage in Seoul.",
         link: {
           label: "the announcement",
           href: "https://www.linkedin.com/posts/hack-nation_hacknation-globalaihackathon-buildinpublic-activity-7515871527326699520-EMsF",
@@ -320,17 +548,20 @@ export const COLLECTIONS: Collection[] = [
         repo: "https://github.com/Meet2304/vitamin-bob",
         peek: { src: "/work/hackathon-wins/both.webp", width: 1212, height: 600 },
         media: {
-          kind: "photo",
-          src: "/work/vitamin-bob/team.webp",
-          width: 1600,
-          height: 1200,
-          alt: "Yusril, Rizaldy, Egshiglen and Meet, smiling, in a glass atrium at Carnegie Mellon.",
-          caption: "Yusril, Rizaldy, Egshiglen and me, at Carnegie Mellon.",
+          kind: "album",
+          photos: [SEOUL.hall, SEOUL.winners, SEOUL.wall],
         },
         story: {
-          title: "Two wins for Vitamin Bob",
+          title: "Two wins, and a stage in Seoul",
           intro:
-            "In October, four of us at Carnegie Mellon built Vitamin Bob in 24 hours. It won the World Bank Group's Health track, then the whole of Hack-Nation's global hackathon. Next, I'm presenting it at the World Bank's summit in Seoul.",
+            "In October, four of us at Carnegie Mellon built Vitamin Bob in 24 hours. It won the World Bank Group's Health track, then the whole of Hack-Nation's global hackathon. Then it took us to Seoul, where I presented it on stage at the World Bank's Global AI & Digital Summit.",
+          hero: SEOUL.hall,
+          stage: {
+            title: "On stage",
+            event: "Global AI & Digital Summit",
+            where: "Seoul",
+            date: "21 Oct 2026",
+          },
           wins: [
             {
               by: "Hack-Nation",
@@ -407,7 +638,74 @@ export const COLLECTIONS: Collection[] = [
             ],
             with: "With Egshiglen Batjargal, Rizaldy Al Kautsar Utomo and Yusril Hana.",
           },
+          /* The team's roles are as the Vitamin Bob site gives them. Anna
+             Bjerde's title and LinkedIn are as the World Bank's own bio
+             gives them; the others' links are from Meet. */
+          people: [
+            {
+              id: "egshiglen",
+              name: "Egshiglen Batjargal",
+              role: "Vitamin Bob, Policy & Data",
+              linkedin: "https://www.linkedin.com/in/egshiglen/",
+              group: "team",
+            },
+            {
+              id: "rizaldy",
+              name: "Rizaldy Al Kautsar Utomo",
+              role: "Vitamin Bob, Analytics & Research",
+              linkedin: "https://www.linkedin.com/in/rizaldykautsar/",
+              group: "team",
+            },
+            {
+              id: "yusril",
+              name: "Yusril Hana",
+              role: "Vitamin Bob, Strategy & Impact",
+              linkedin: "https://www.linkedin.com/in/yusrilhana/",
+              group: "team",
+            },
+            {
+              id: "tae-yoon",
+              name: "Tae Yoon Moon",
+              role: "Winner, Agriculture track",
+              linkedin: "https://www.linkedin.com/in/tae-yoon-moon-398b11313/",
+              group: "winners",
+            },
+            {
+              id: "olivia",
+              name: "Olivia Putri",
+              role: "Winner, Tourism track",
+              linkedin: "https://www.linkedin.com/in/olivia-putri-5a13412b0/",
+              group: "winners",
+            },
+            {
+              id: "anna",
+              name: "Anna Bjerde",
+              role: "Managing Director of Operations, World Bank",
+              linkedin: "https://www.linkedin.com/in/anna-bjerde/",
+              group: "summit",
+            },
+            {
+              id: "matt",
+              name: "Matt Hulse",
+              linkedin: "https://www.linkedin.com/in/mthulse/",
+              group: "summit",
+            },
+            {
+              id: "hayley",
+              name: "Hayley Pottle",
+              linkedin: "https://www.linkedin.com/in/hayleypottle/",
+              group: "summit",
+            },
+            {
+              id: "jonathan",
+              name: "Jonathan Gen Nagao",
+              linkedin: "https://www.linkedin.com/in/jonathan-gen-nagao-445307/",
+              group: "summit",
+            },
+            { id: "mj", name: "MJ", group: "summit" },
+          ],
           days: {
+            line: "Pittsburgh to Seoul: 21 hours of travel, four days at the summit, one talk, and a city that was beautiful at every hour.",
             stops: [
               {
                 at: "2026-10-03T09:00:00-04:00",
@@ -416,6 +714,8 @@ export const COLLECTIONS: Collection[] = [
                 title: "24 hours start",
                 line: "Four of us and one laptop.",
                 ll: [-79.94, 40.44],
+                photos: [SEOUL.team],
+                with: ["egshiglen", "rizaldy", "yusril"],
               },
               {
                 at: "2026-10-06T12:01:00-04:00",
@@ -435,18 +735,99 @@ export const COLLECTIONS: Collection[] = [
               },
               {
                 at: "2026-10-17T17:59:00-04:00",
-                when: "17 Oct",
-                place: "Pittsburgh → Seoul",
-                title: "21 hours in the air",
-                line: "Over the top of the world.",
+                when: "17 Oct, 17:59",
+                place: "Pittsburgh → Atlanta",
+                title: "Wheels up",
+                line: "South to Atlanta first, the sun going down under the wing.",
+                along: 0.025,
+                photos: [SEOUL.sunset],
+              },
+              {
+                when: "In the air",
+                place: "Over the top of the world",
+                title: "Northern lights",
+                line: "Atlanta to Seoul goes over the top of the world. In the middle of the night, the sky out of the window turned green.",
+                along: 0.5,
+                aurora: true,
+                photos: [SEOUL.aurora],
+              },
+              {
+                at: "2026-10-19T04:15:00+09:00",
+                when: "19 Oct, 04:15",
+                place: "Seoul",
+                title: "Seoul, before dawn",
+                line: "Into Incheon, 21 hours after leaving Pittsburgh. The summit opened that day.",
+                ll: [126.99, 37.54],
+              },
+              {
+                when: "19–22 Oct",
+                place: "Seoul",
+                title: "The city",
+                line: "Between sessions, Seoul: the skyline at sunset, mountains behind the traffic, quiet streets at night, a lane under string lights, and hanok walls in the morning sun.",
+                ll: [126.99, 37.54],
+                photos: [
+                  SEOUL.skyline,
+                  SEOUL.traffic,
+                  SEOUL.night,
+                  SEOUL.lights,
+                  SEOUL.hanok,
+                ],
+                rows: [1, 4],
+              },
+              {
+                at: "2026-10-19T09:00:00+09:00",
+                when: "19 Oct",
+                place: "Seoul",
+                title: "The summit opens",
+                line: "The Global AI & Digital Summit, at the Grand Hyatt Seoul: held by the World Bank Group with Korea's Ministry of Finance and Economy and Ministry of Science and ICT.",
+                ll: [126.99, 37.54],
+                photos: [SEOUL.wall],
+              },
+              {
+                when: "19–22 Oct",
+                place: "Seoul",
+                title: "Meeting Anna Bjerde",
+                line: "The winners of all three tracks met the World Bank's Managing Director of Operations.",
+                ll: [126.99, 37.54],
+                photos: [SEOUL.anna],
+                with: ["anna", "olivia", "tae-yoon"],
+              },
+              {
+                when: "19–22 Oct",
+                place: "Seoul",
+                title: "With Matt and Hayley",
+                line: "Hayley held the camera, outside the Grand Salon.",
+                ll: [126.99, 37.54],
+                photos: [SEOUL.matt],
+                with: ["matt", "hayley"],
+              },
+              {
+                when: "19–22 Oct",
+                place: "Seoul",
+                title: "Breakfast with Jonathan and MJ",
+                line: "The track winners round one table, with Jonathan, MJ and Hayley.",
+                ll: [126.99, 37.54],
+                photos: [SEOUL.breakfast],
+                with: ["jonathan", "mj", "hayley"],
+              },
+              {
+                when: "19–22 Oct",
+                place: "Seoul",
+                title: "All three tracks",
+                line: "Health, Agriculture and Tourism: the four of us, with Tae Yoon and Olivia, who won the other two tracks, and Hayley.",
+                ll: [126.99, 37.54],
+                photos: [SEOUL.winners, SEOUL.mirror],
+                with: ["tae-yoon", "olivia", "hayley"],
               },
               {
                 at: "2026-10-21T10:30:00+09:00",
                 when: "21 Oct, 10:30",
                 place: "Seoul",
                 title: "On stage",
-                line: "“Benefiting Billions: Scaling AI for Healthier Lives.”",
+                line: "“Benefiting Billions: Scaling AI for Healthier Lives.” I told Kevin's story: one missed call, and one computer in every district that calls him back, free, in his own language.",
                 ll: [126.99, 37.54],
+                photos: [SEOUL.stage, SEOUL.podium],
+                with: ["egshiglen", "rizaldy", "yusril"],
               },
             ],
             flight: {
@@ -459,14 +840,6 @@ export const COLLECTIONS: Collection[] = [
               lands: "2026-10-19T04:15:00+09:00",
             },
           },
-          photo: {
-            src: "/work/vitamin-bob/team.webp",
-            width: 1600,
-            height: 1200,
-            alt: "Yusril, Rizaldy, Egshiglen and Meet, smiling, in a glass atrium at Carnegie Mellon.",
-            caption: "Yusril, Rizaldy, Egshiglen and me, Carnegie Mellon, October 2026",
-          },
-          soon: { label: "Seoul, 19 to 22 Oct", until: "2026-10-23T00:00:00+09:00" },
         },
       },
       {
@@ -1109,7 +1482,7 @@ export const NEWS: News | null = {
   before:
     "Two hackathon wins: Grand winner at Hack-Nation, and the World Bank's Health track. Speaking in Seoul on 21 Oct.",
   after:
-    "Two hackathon wins: Grand winner at Hack-Nation, and the World Bank's Health track, with a talk in Seoul.",
+    "Back from Seoul: on stage at the World Bank's Global AI & Digital Summit, after two hackathon wins.",
   turn: "2026-10-21T12:00:00+09:00",
   until: "2026-12-15T00:00:00-05:00",
 };

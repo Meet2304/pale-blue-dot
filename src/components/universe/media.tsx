@@ -44,8 +44,14 @@ const SCREEN_H = 800;
  * can be used. Nothing of the live site loads until then. The address in the
  * frame's bar, and the small arrow in its corner, open it in a new tab.
  *
- * The screens turn only while the frame is on screen, and nothing leans or
- * turns under reduced motion.
+ * An album is a small stack of prints: the top one whole, the others
+ * peeking out from under it. Pointed at, the stack fans out; every few
+ * seconds while it's on screen the top print slides off and is tucked
+ * under the rest, and the next one is on top. Opened up, its photos can be
+ * stepped through.
+ *
+ * The screens and prints turn only while the frame is on screen, and
+ * nothing leans or turns under reduced motion.
  */
 export function WorkMedia({ media }: { media: Media }) {
   if (media.kind === "splat") return <SplatMedia media={media} />;
@@ -64,7 +70,14 @@ function Framed({ media }: { media: FramedMedia }) {
     from: DOMRect | null;
     vars: CSSProperties;
   } | null>(null);
-  const count = media.kind === "site" ? media.screens.length : 1;
+  const count =
+    media.kind === "site"
+      ? media.screens.length
+      : media.kind === "album"
+        ? media.photos.length
+        : 1;
+  /* Which way the last turn went: forward, a print is tucked under. */
+  const [dir, setDir] = useState(1);
   /* Until its screens have all been shown once, a site always starts from
      its first: the first look is the site as it opens. */
   const firstPass = useRef(true);
@@ -73,6 +86,7 @@ function Framed({ media }: { media: FramedMedia }) {
   const step = (d: number) => {
     firstPass.current = false;
     pausedUntil.current = Date.now() + HOLD * 1.5;
+    setDir(d);
     setAt((i) => (i + d + count) % count);
   };
 
@@ -110,17 +124,19 @@ function Framed({ media }: { media: FramedMedia }) {
     if (!seen || open || count < 2) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = window.setInterval(
-      () =>
+      () => {
+        if (Date.now() < pausedUntil.current) return;
+        setDir(1);
         setAt((i) => {
-          if (Date.now() < pausedUntil.current) return i;
           const next = (i + 1) % count;
           if (next === 0) firstPass.current = false;
           return next;
-        }),
-      HOLD,
+        });
+      },
+      media.kind === "album" ? HOLD * 1.25 : HOLD,
     );
     return () => window.clearInterval(id);
-  }, [seen, open, count]);
+  }, [seen, open, count, media.kind]);
 
   /* The lean and the sheen follow the pointer. */
   const lean = (e: PointerEvent<HTMLDivElement>) => {
@@ -135,6 +151,8 @@ function Framed({ media }: { media: FramedMedia }) {
     el.style.setProperty("--mx", `${x * 100}%`);
     el.style.setProperty("--my", `${y * 100}%`);
     el.dataset.lean = "true";
+    /* A stack fanned out holds still while it's looked at. */
+    if (media.kind === "album") pausedUntil.current = Date.now() + HOLD;
   };
   const rest = () => {
     const el = ref.current;
@@ -172,7 +190,9 @@ function Framed({ media }: { media: FramedMedia }) {
     <figure className={s.media}>
       <div
         ref={ref}
-        className={`${s.tilt} ${media.kind === "photo" ? s.photo : s.site}`}
+        className={`${s.tilt} ${
+          media.kind === "photo" ? s.photo : media.kind === "album" ? s.album : s.site
+        }`}
         onPointerMove={lean}
         onPointerLeave={rest}
         style={{ visibility: open ? "hidden" : undefined }}
@@ -193,6 +213,39 @@ function Framed({ media }: { media: FramedMedia }) {
               load={near}
               className={s.photoImg}
             />
+          </button>
+        ) : media.kind === "album" ? (
+          <button
+            type="button"
+            className={s.zoomIn}
+            onClick={() => show(false)}
+            aria-label={`Enlarge: ${media.photos[at].alt}`}
+          >
+            <span className={s.stack}>
+              {media.photos.map((p, i) => {
+                const depth = (i - at + count) % count;
+                return (
+                  <span
+                    key={p.src}
+                    className={s.print}
+                    data-depth={Math.min(depth, 3)}
+                    data-tuck={(dir > 0 && depth === count - 1) || undefined}
+                    style={{ zIndex: count - depth } as CSSProperties}
+                    aria-hidden={depth > 0 || undefined}
+                  >
+                    <Picture
+                      src={p.src}
+                      alt={depth === 0 ? p.alt : ""}
+                      width={p.width}
+                      height={p.height}
+                      sizes={SIZES}
+                      load={near}
+                      className={s.printImg}
+                    />
+                  </span>
+                );
+              })}
+            </span>
           </button>
         ) : (
           <>
@@ -250,15 +303,15 @@ function Framed({ media }: { media: FramedMedia }) {
             </div>
           </>
         )}
-        <span className={s.sheen} aria-hidden />
+        {media.kind !== "album" && <span className={s.sheen} aria-hidden />}
       </div>
       <figcaption className={s.caption}>
-        {media.kind === "site" && (
+        {media.kind !== "photo" && (
           <span className={s.stepper}>
             <button
               type="button"
               className={s.stepButton}
-              aria-label="Previous screen"
+              aria-label={media.kind === "album" ? "Previous photo" : "Previous screen"}
               onClick={() => step(-1)}
             >
               <svg viewBox="0 0 10 10" aria-hidden>
@@ -266,14 +319,14 @@ function Framed({ media }: { media: FramedMedia }) {
               </svg>
             </button>
             <span className={s.pips} aria-hidden>
-              {media.screens.map((_, i) => (
+              {Array.from({ length: count }, (_, i) => (
                 <i key={i} data-on={i === at} />
               ))}
             </span>
             <button
               type="button"
               className={s.stepButton}
-              aria-label="Next screen"
+              aria-label={media.kind === "album" ? "Next photo" : "Next screen"}
               onClick={() => step(1)}
             >
               <svg viewBox="0 0 10 10" aria-hidden>
@@ -282,7 +335,11 @@ function Framed({ media }: { media: FramedMedia }) {
             </button>
           </span>
         )}
-        {media.kind === "site" ? media.screens[at].alt : media.caption}
+        {media.kind === "site"
+          ? media.screens[at].alt
+          : media.kind === "album"
+            ? (media.photos[at].caption ?? media.photos[at].alt)
+            : media.caption}
       </figcaption>
       {open && (
         <Lightbox

@@ -1,0 +1,998 @@
+/* The journey on an award's page (journey.tsx), its photographs as prints
+   (prints.tsx), and the people met (people.tsx). Set in the work page's
+   frame (work.module.css): true black, Marcellus for what's said over
+   Hanken Grotesk, Plex Mono for when and where. Colour is the award's own,
+   used sparingly: for what is now, and for what's pointed at.
+
+   The journey opens out from the page's column to nearly the screen's full
+   width, so the globe can be large: it holds on screen while the days pass
+   beside it. */
+
+/* A face's place in a photograph, registered so that the frame glides from
+   one face to the next. */
+@property --fx {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.5;
+}
+
+@property --fy {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.4;
+}
+
+@property --fr {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.05;
+}
+
+/* ------------------------------------------------------------- The section */
+
+.section {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 112rem);
+  margin: 0 auto;
+  padding: clamp(3rem, 10vh, 6.5rem) 4vw 0;
+  /* Nothing in it, a tip or a lifted print, ever widens the page. */
+  overflow-x: clip;
+  scroll-margin-top: 3rem;
+}
+
+/* Where the page opens out: a hairline across, fading at its ends. */
+.section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 4vw;
+  right: 4vw;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--hair) 18%,
+    var(--hair) 82%,
+    transparent
+  );
+}
+
+.head {
+  max-width: 54rem;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kind-soft);
+}
+
+.kickerMark {
+  color: var(--kind);
+}
+
+.h2 {
+  margin-top: 0.8rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+}
+
+.lede {
+  max-width: 44rem;
+  margin-top: 1.2rem;
+  font-size: clamp(1.125rem, 1.5vw, 1.35rem);
+  line-height: 1.6;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------- The globe and days
+
+   The globe on the left, large, held on screen; the days on the right,
+   read down, each taking a good part of a screen so the globe has time to
+   turn. */
+
+.journey {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: clamp(2rem, 4.5vw, 5.5rem);
+  align-items: start;
+  margin-top: clamp(0.5rem, 3vh, 2rem);
+}
+
+.globe {
+  position: sticky;
+  top: 3.75rem;
+  height: calc(100svh - 4.5rem);
+  max-height: 62rem;
+}
+
+.globeCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.globeCanvas:active {
+  cursor: grabbing;
+}
+
+.globeHint {
+  position: absolute;
+  left: 0;
+  bottom: 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.log {
+  margin: 0;
+  padding: 24vh 0 38vh;
+  list-style: none;
+}
+
+.stop {
+  display: grid;
+  align-content: center;
+  gap: 1.15rem;
+  min-height: 54svh;
+  padding: 3vh 0;
+}
+
+.stop[data-photos] {
+  min-height: 0;
+  padding: 8vh 0;
+}
+
+.stopHead {
+  display: grid;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.35rem 0 0.35rem 1.5rem;
+  border: 0;
+  border-left: 1px solid var(--hair);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.36;
+  transition:
+    opacity 450ms,
+    border-color 450ms;
+}
+
+.stop[data-active] .stopHead {
+  opacity: 1;
+  border-left-color: var(--kind);
+}
+
+.stopHead:hover {
+  opacity: 0.8;
+}
+
+.stopHead:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+.when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--kind-soft);
+}
+
+.mark {
+  display: inline-block;
+  color: var(--kind);
+}
+
+/* The day just reached: its mark flares once. */
+.stop[data-active] .mark {
+  animation: flare 900ms ease-out;
+}
+
+@keyframes flare {
+  40% {
+    scale: 1.9;
+    text-shadow: 0 0 10px var(--kind);
+  }
+}
+
+.place {
+  color: var(--mute);
+}
+
+.place::before {
+  content: "· ";
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.3vw, 3.1rem);
+  line-height: 1.08;
+  color: var(--fg);
+  text-wrap: balance;
+}
+
+.line {
+  max-width: 36rem;
+  font-size: clamp(1.0625rem, 1.25vw, 1.25rem);
+  line-height: 1.6;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+.soon {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.stop[data-soon] .title {
+  color: var(--soft);
+}
+
+/* ---------------------------------------------------------- Who was there */
+
+.with {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.2rem;
+  margin: 0;
+  padding-left: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  opacity: 0.45;
+  transition: opacity 450ms;
+}
+
+.stop[data-active] .with {
+  opacity: 1;
+}
+
+.withLabel {
+  color: var(--mute);
+}
+
+/* A name, linked to LinkedIn. At rest it's quiet, in the text's grey.
+   Pointed at, its mark takes LinkedIn's blue and pops, a ring ripples out
+   from it once, a line draws in under the name, the arrow lifts, and what
+   they do rises over it. Pressed, it gives a little. */
+.person {
+  --brand: #0a66c2;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0;
+  border-bottom: 0;
+  color: var(--soft);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.person[data-plain] {
+  cursor: default;
+}
+
+.personMark {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--mute);
+  transition:
+    color 220ms,
+    scale 380ms cubic-bezier(0.34, 1.6, 0.64, 1),
+    rotate 380ms cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
+.person:not([data-plain])::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: -0.45rem;
+  border: 1px solid var(--brand);
+  border-radius: 50%;
+  opacity: 0;
+  scale: 0.6;
+  pointer-events: none;
+}
+
+.person:is(:hover, :focus-visible)::before {
+  animation: ripple 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 0.8;
+    scale: 0.6;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 2.3;
+  }
+}
+
+.personName {
+  position: relative;
+}
+
+.personName::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2rem;
+  height: 1px;
+  background: var(--kind);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.personArrow {
+  display: inline-block;
+  color: var(--mute);
+  transition:
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 200ms;
+}
+
+.personTip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.25rem);
+  z-index: 3;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.88);
+  font-size: 0.6875rem;
+  color: var(--kind-soft);
+  white-space: nowrap;
+  opacity: 0;
+  translate: 0 5px;
+  pointer-events: none;
+  transition:
+    opacity 200ms,
+    translate 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.person:is(:hover, :focus-visible) {
+  color: var(--fg);
+}
+
+.person:is(:hover, :focus-visible) .personMark {
+  color: var(--brand);
+  scale: 1.2;
+  rotate: -8deg;
+}
+
+.person:is(:hover, :focus-visible) .personName::after {
+  transform: scaleX(1);
+}
+
+.person:is(:hover, :focus-visible) .personArrow {
+  color: var(--kind);
+  translate: 2px -2px;
+}
+
+.person:is(:hover, :focus-visible) .personTip {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.person:active .personMark {
+  scale: 0.92;
+  rotate: 0deg;
+}
+
+.person:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+/* ------------------------------------------------------------- The prints
+
+   Rows of one height, each print in its own shape and a little askew. A
+   row is never taller than --row-h. They develop in the first time their
+   day is read: out of a white blur, through grey, into colour, one after
+   another, rising and settling as they come. */
+
+.prints {
+  --row-h: min(24rem, 44svh);
+  --gap: clamp(0.55rem, 1vw, 0.9rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap);
+}
+
+.dayPrints {
+  margin-top: 0.4rem;
+  padding-left: 1.5rem;
+  transition:
+    opacity 600ms,
+    filter 600ms;
+}
+
+.stop:not([data-active]) .dayPrints {
+  opacity: 0.5;
+  filter: saturate(0.55);
+}
+
+.row {
+  display: flex;
+  gap: var(--gap);
+  min-width: 0;
+  max-width: calc(var(--sum) * var(--row-h));
+}
+
+/* Portraits alone in a row stand taller, so faces read. */
+.row[data-tall] {
+  --row-h: min(31rem, 60svh);
+}
+
+.print {
+  position: relative;
+  container-type: inline-size;
+  /* Grown in proportion to its shape (scaled up, since grow factors that
+     add up to less than one leave space unfilled). */
+  flex: calc(var(--ar) * 100) 1 0%;
+  min-width: 0;
+  aspect-ratio: var(--ar);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 5px;
+  background: #0b0c0e;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 0.5);
+  cursor: zoom-in;
+  rotate: var(--tilt);
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition:
+    rotate 520ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    translate 520ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 520ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 400ms,
+    border-color 300ms;
+}
+
+.print[data-lean="true"] {
+  transition-duration: 520ms, 520ms, 520ms, 160ms, 400ms, 300ms;
+}
+
+.print:is(:hover, :focus-visible) {
+  z-index: 2;
+  rotate: 0deg;
+  translate: 0 -5px;
+  scale: 1.025;
+  border-color: color-mix(in srgb, var(--kind) 55%, transparent);
+  box-shadow: 0 26px 60px rgb(0 0 0 / 0.65);
+}
+
+.print:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.printImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgb(255 255 255 / 0.16),
+    transparent 42%
+  );
+  opacity: 0;
+  transition: opacity 400ms;
+}
+
+.print[data-lean="true"] .sheen {
+  opacity: 1;
+}
+
+.prints:not([data-shown]) .print {
+  opacity: 0;
+}
+
+.prints[data-shown] .print {
+  animation: develop 1400ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i) * 140ms)
+    backwards;
+}
+
+@keyframes develop {
+  0% {
+    opacity: 0;
+    translate: 0 28px;
+    rotate: calc(var(--tilt) * -4);
+    filter: blur(12px) grayscale(1) brightness(2.2) contrast(0.6);
+  }
+
+  35% {
+    opacity: 1;
+  }
+
+  70% {
+    filter: blur(0) grayscale(0.35) brightness(1.18) contrast(0.92);
+  }
+
+  100% {
+    filter: none;
+  }
+}
+
+/* One print on its own, at the head of the page: straight, and as wide as
+   the column. */
+.single {
+  --row-h: 30rem;
+}
+
+.single .print {
+  rotate: 0deg;
+}
+
+/* ------------------------------------------------------- A face, framed
+
+   As the sky frames a body: the photograph dims a little round the face,
+   four corners close in on it, and the name is set under them. */
+
+.frame {
+  --fx: var(--x);
+  --fy: var(--y);
+  --fr: var(--r);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition:
+    --fx 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    --fy 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    --fr 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at calc(var(--fx) * 100%) calc(var(--fy) * 100%),
+    transparent calc(var(--fr) * 120cqw),
+    rgb(0 0 0 / 0.55) calc(var(--fr) * 320cqw)
+  );
+  opacity: 0;
+  transition: opacity 320ms;
+}
+
+.corners {
+  --c: var(--kind-soft);
+  --l: clamp(6px, calc(var(--fr) * 60cqw), 14px);
+  position: absolute;
+  left: calc(var(--fx) * 100%);
+  top: calc(var(--fy) * 100%);
+  width: calc(var(--fr) * 300cqw);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--l) 1px,
+    linear-gradient(var(--c), var(--c)) top left / 1px var(--l),
+    linear-gradient(var(--c), var(--c)) top right / var(--l) 1px,
+    linear-gradient(var(--c), var(--c)) top right / 1px var(--l),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--l) 1px,
+    linear-gradient(var(--c), var(--c)) bottom left / 1px var(--l),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--l) 1px,
+    linear-gradient(var(--c), var(--c)) bottom right / 1px var(--l);
+  background-repeat: no-repeat;
+  opacity: 0;
+  scale: 1.4;
+  transition:
+    opacity 220ms,
+    scale 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.frame[data-on] .shade {
+  opacity: 1;
+}
+
+.frame[data-on] .corners {
+  opacity: 1;
+  scale: 1;
+}
+
+.frameName {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.75);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------- The people */
+
+.peoplePart {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 68rem);
+  margin: 0 auto;
+  padding: clamp(3rem, 10vh, 6rem) 6vw 1rem;
+  overflow-x: clip;
+  scroll-margin-top: 3rem;
+}
+
+.people {
+  display: grid;
+  gap: 2.6rem;
+  margin-top: 2.6rem;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--kind-soft);
+}
+
+.groupCount {
+  color: var(--mute);
+}
+
+.rows {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hair);
+}
+
+.rowItem {
+  border-bottom: 1px solid var(--hair);
+}
+
+.people:not([data-in]) .rowItem {
+  opacity: 0;
+}
+
+.people[data-in] .rowItem {
+  animation: rowIn 700ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i) * 90ms) backwards;
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+
+.personRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 7rem;
+  align-items: center;
+  gap: 0.4rem 1.5rem;
+  padding: 1.05rem 0.2rem;
+  border-bottom: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* A line in the award's colour, drawn in under the row pointed at. */
+.personRow::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--kind), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 560ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.personRow:is(:hover, :focus-visible, [data-hot])::after {
+  transform: scaleX(1);
+}
+
+.rowName {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--fg);
+  transition:
+    translate 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 200ms;
+}
+
+.personRow:is(:hover, :focus-visible, [data-hot]) .rowName {
+  translate: 0.5rem 0;
+  color: #fff;
+}
+
+.rowAbout {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.rowRole {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--text-body);
+}
+
+.rowWhere {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mute);
+}
+
+.rowLink {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--soft);
+}
+
+.rowMark {
+  width: 1rem;
+  height: 1rem;
+  color: var(--mute);
+  transition:
+    color 220ms,
+    scale 380ms cubic-bezier(0.34, 1.6, 0.64, 1),
+    rotate 380ms cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
+.rowArrow {
+  display: inline-block;
+  color: var(--mute);
+  transition:
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 200ms;
+}
+
+.personRow:is(:hover, :focus-visible) .rowLink {
+  color: var(--fg);
+}
+
+.personRow:is(:hover, :focus-visible) .rowMark {
+  color: #0a66c2;
+  scale: 1.2;
+  rotate: -8deg;
+}
+
+.personRow:is(:hover, :focus-visible) .rowArrow {
+  color: var(--kind);
+  translate: 2px -2px;
+}
+
+.personRow:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* Where we met, floating beside the pointer, leaning as it moves. */
+.preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  scale: 0.9;
+  transform-origin: center;
+  transition:
+    opacity 220ms,
+    scale 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.preview[data-on] {
+  opacity: 1;
+  scale: 1;
+}
+
+.previewPhoto {
+  position: relative;
+  container-type: inline-size;
+  width: calc(var(--ar, 1) * 15rem);
+  height: 15rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 6px;
+  background: #0b0c0e;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.7);
+  transition: width 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.previewImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 260ms;
+}
+
+.previewImg[data-on] {
+  opacity: 1;
+}
+
+.previewWhere {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.85);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--kind-soft);
+  white-space: nowrap;
+}
+
+@media (hover: none) {
+  .preview,
+  .personTip {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------- Narrower */
+
+@media (max-width: 860px) {
+  .section {
+    padding-inline: var(--gutter);
+  }
+
+  .section::before {
+    left: var(--gutter);
+    right: var(--gutter);
+  }
+
+  /* On a phone the globe stays at the top of the screen, under the bar,
+     and the days pass behind it. */
+  .journey {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .globe {
+    top: 3.5rem;
+    z-index: 2;
+    height: 40svh;
+    max-height: none;
+    margin-inline: calc(-1 * var(--gutter));
+    background: linear-gradient(#000 84%, transparent);
+  }
+
+  /* Between it and the bar, black too, so the days pass out of sight. */
+  .globe::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    height: 3.5rem;
+    background: #000;
+  }
+
+  .globeHint {
+    display: none;
+  }
+
+  /* Its own layer, under the globe's, so the days pass behind it. */
+  .log {
+    position: relative;
+    z-index: 0;
+    padding: 6vh 0 30vh;
+  }
+
+  .stop {
+    min-height: 36svh;
+  }
+
+  .stop[data-photos] {
+    padding: 4vh 0;
+  }
+
+  .stopHead,
+  .with {
+    padding-left: 1rem;
+  }
+
+  .dayPrints {
+    padding-left: 0;
+  }
+
+  .prints {
+    --row-h: 20rem;
+  }
+
+  /* A row of four becomes two of two. */
+  .row:has(> :nth-child(4)) {
+    flex-wrap: wrap;
+  }
+
+  .row:has(> :nth-child(4)) > .print {
+    flex: 1 1 calc(50% - var(--gap));
+  }
+
+  .peoplePart {
+    padding-inline: var(--gutter);
+  }
+
+  .personRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rowAbout {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .rowLink {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .rowLinkText {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .print,
+  .prints[data-shown] .print,
+  .people[data-in] .rowItem,
+  .stop[data-active] .mark,
+  .frame,
+  .corners,
+  .preview,
+  .person:is(:hover, :focus-visible)::before {
+    animation: none;
+    transition: none;
+  }
+
+  .print:is(:hover, :focus-visible) {
+    translate: 0 0;
+    scale: 1;
+  }
+}

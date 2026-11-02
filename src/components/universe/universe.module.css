@@ -1280,6 +1280,37 @@
   color: var(--mute);
 }
 
+/* The stage it led to, marked by a small light, like a lamp on air: it
+   flares once as the chapter comes on. */
+.stageDot {
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin: 0 0.1rem 0 0.05rem;
+  translate: 0 -0.1rem;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 8px var(--kind);
+}
+
+.chapter[data-on="true"] .stageDot {
+  animation: onAir 1400ms ease-out 500ms both;
+}
+
+@keyframes onAir {
+  0% {
+    box-shadow: 0 0 0 var(--kind);
+    scale: 0.6;
+  }
+
+  35% {
+    box-shadow:
+      0 0 14px var(--kind),
+      0 0 0 6px color-mix(in srgb, var(--kind) 25%, transparent);
+    scale: 1.3;
+  }
+}
+
 /* What it took, for a recruiter scanning: quiet tags under the brief. */
 .skills {
   display: flex;
@@ -1379,6 +1410,98 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* An album: a small stack of prints, in the shape of the first, each print
+   whole and centred in it. The ones under the top print peek out, turned a
+   little; pointed at, they fan out to either side. When the top print
+   turns, it slides off to the right and is tucked under the rest. */
+.stack {
+  position: relative;
+  display: block;
+  aspect-ratio: var(--aspect, 1.33);
+  /* Room for the prints underneath, which hang a little lower. */
+  margin-bottom: 2.4rem;
+}
+
+.print {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition:
+    translate 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    rotate 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 500ms;
+}
+
+.printImg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 6px;
+  background: #0b0c0e;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+.print[data-depth="1"] {
+  translate: -3% 2.5%;
+  rotate: -3.5deg;
+  scale: 0.96;
+}
+
+.print[data-depth="2"] {
+  translate: 3.5% 3%;
+  rotate: 4deg;
+  scale: 0.93;
+}
+
+.print[data-depth="3"] {
+  opacity: 0;
+  scale: 0.9;
+}
+
+.tilt[data-lean="true"] .print[data-depth="0"] {
+  translate: 0 -2%;
+}
+
+.tilt[data-lean="true"] .print[data-depth="1"] {
+  translate: -15% 3%;
+  rotate: -8deg;
+}
+
+.tilt[data-lean="true"] .print[data-depth="2"] {
+  translate: 15% 4%;
+  rotate: 8deg;
+}
+
+.print[data-tuck] {
+  animation: tuck 950ms cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+@keyframes tuck {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+    scale: 1;
+    z-index: 9;
+  }
+
+  45% {
+    translate: 62% -3%;
+    rotate: 9deg;
+    scale: 0.98;
+    z-index: 9;
+  }
+
+  55%,
+  100% {
+    z-index: 0;
+  }
 }
 
 /* A photograph rebuilt in depth (splat.ts): it can be dragged round, so it
@@ -2161,6 +2284,18 @@
   box-shadow: 0 30px 90px rgb(0 0 0 / 0.8);
 }
 
+/* An album's next photo comes in softly, in place. */
+.lbSwap {
+  animation: lbSwap 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes lbSwap {
+  from {
+    opacity: 0;
+    scale: 0.985;
+  }
+}
+
 .lbSite {
   width: min(92vw, 1280px, calc((100svh - 12rem) * 1.6));
   overflow: hidden;
@@ -2229,6 +2364,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tilt,
+  .print,
+  .lbSwap,
+  .chapter[data-on="true"] .stageDot,
   .lightbox::before,
   .lbClose,
   .lbFoot {

@@ -9,7 +9,7 @@
   z-index: 1;
   width: min(100%, 68rem);
   margin: 0 auto;
-  padding: clamp(2rem, 7vh, 4.5rem) 6vw var(--space-10);
+  padding: clamp(2rem, 7vh, 4.5rem) 6vw 0;
   animation: rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
 }
 
@@ -126,11 +126,6 @@
   padding: 2.2rem 0 2.4rem;
   border-top: 1px solid var(--hair);
   scroll-margin-top: 4rem;
-}
-
-/* The journey, with a globe: past the column, to the page's right edge. */
-.part[data-wide] {
-  width: min(calc(100vw - 12vw - 10rem), 56rem);
 }
 
 /* ------------------------------------------------------------- The writing */
@@ -404,7 +399,26 @@
   }
 }
 
-/* ---------------------------------------------------------- The journey */
+/* ------------------------------------------------- The head's photograph
+
+   The achievement in one picture, under the head, as wide as the column,
+   with the day it happened beside its caption. */
+
+.hero {
+  margin: 2rem 0 0;
+}
+
+.heroCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  margin-top: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--mute);
+}
 
 .talk {
   display: inline-flex;
@@ -423,159 +437,13 @@
   box-shadow: 0 0 8px var(--kind);
 }
 
-.photo {
-  max-width: 40rem;
-  margin: 2rem 0 0;
-}
-
-.photo img {
-  display: block;
-  width: 100%;
-  height: auto;
-  background: #0b0c0e;
-}
-
-.photo figcaption {
-  margin-top: 0.6rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--mute);
-}
-
+/* After the journey and the people, back to the column's width. */
 .pager {
-  padding-top: 1rem;
-}
-
-/* ------------------------------------------------------- The globe and days
-
-   The trip: the days on the right, read down, and the Earth on the left,
-   held on screen while they pass, turning to each (journey.tsx). */
-
-.journey {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: clamp(1.5rem, 4vw, 3.5rem);
-  align-items: start;
-  margin-top: 1.4rem;
-}
-
-.globe {
-  position: sticky;
-  top: 4.5rem;
-  height: min(calc(100svh - 7rem), 36rem);
-}
-
-.globeCanvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-  touch-action: pan-y;
-}
-
-.globeCanvas:active {
-  cursor: grabbing;
-}
-
-.globeHint {
-  position: absolute;
-  left: 0;
-  bottom: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--mute);
-}
-
-/* Each day takes a good part of a screen, so the globe has time to turn. */
-.log {
-  margin: 0;
-  padding: 8vh 0 14vh;
-  list-style: none;
-}
-
-.stop {
-  min-height: 34svh;
-  display: flex;
-  align-items: center;
-}
-
-.stopButton {
-  display: grid;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.9rem 0 0.9rem 1.2rem;
-  border: 0;
-  border-left: 1px solid var(--hair);
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  opacity: 0.38;
-  transition:
-    opacity 300ms,
-    border-color 300ms;
-}
-
-.stop[data-active] .stopButton {
-  opacity: 1;
-  border-left-color: var(--kind);
-}
-
-.stopButton:hover {
-  opacity: 0.75;
-}
-
-.stopButton:focus-visible {
-  outline: 1px solid var(--fg);
-  outline-offset: 4px;
-}
-
-.stopWhen {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--kind-soft);
-}
-
-.stopMark {
-  color: var(--kind);
-}
-
-.stopPlace {
-  color: var(--mute);
-}
-
-.stopPlace::before {
-  content: "· ";
-}
-
-.stopTitle {
-  font-family: var(--font-display);
-  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
-  line-height: 1.15;
-  color: var(--fg);
-}
-
-.stopLine {
-  max-width: 28rem;
-  font-size: var(--text-body-m);
-  line-height: 1.6;
-  color: var(--text-body);
-  text-wrap: pretty;
-}
-
-.stopSoon {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--mute);
-}
-
-.stop[data-soon] .stopTitle {
-  color: var(--soft);
+  position: relative;
+  z-index: 1;
+  width: min(100%, 68rem);
+  margin: 0 auto;
+  padding: 1rem 6vw var(--space-10);
 }
 
 /* -------------------------------------------------------------- Narrower */
@@ -622,41 +490,6 @@
   .part {
     scroll-margin-top: 7rem;
   }
-
-  .part[data-wide] {
-    width: auto;
-  }
-}
-
-@media (max-width: 860px) {
-  /* On a phone the globe stays at the top of the screen, under the rail,
-     and the days pass behind it. */
-  .journey {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .globe {
-    top: 6rem;
-    z-index: 2;
-    height: 38svh;
-    background: linear-gradient(#000 85%, transparent);
-  }
-
-  .globeHint {
-    display: none;
-  }
-
-  /* Its own layer, under the globe's, so the days pass behind it. */
-  .log {
-    position: relative;
-    z-index: 0;
-    padding: 4vh 0 24vh;
-  }
-
-  .stop {
-    min-height: 30svh;
-  }
 }
 
 @media (max-width: 640px) {
@@ -666,6 +499,10 @@
 
   .steps {
     margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+  }
+
+  .pager {
     padding-inline: var(--gutter);
   }
 }

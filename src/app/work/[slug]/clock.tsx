@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Words that depend on the visitor's day, which the server can't know: the
@@ -34,14 +34,4 @@ export function Countdown({
       {before} {days > 0 ? `in ${days} day${days > 1 ? "s" : ""}` : `in ${hours} h`}
     </>
   );
-}
-
-/** Its children until `until`, then nothing. */
-export function Until({ until, children }: { until: string; children: ReactNode }) {
-  const [gone, setGone] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the visitor's clock, which the server can't know
-    setGone(Date.now() >= Date.parse(until));
-  }, [until]);
-  return gone ? null : <>{children}</>;
 }
