@@ -7,6 +7,14 @@ import { hash } from "@/components/universe/bodies";
 import { EARTH_COLORS } from "@/components/universe/encoding";
 import { fillGlyphs, glyphs } from "@/components/universe/glyph-gl";
 import { CELL, fit } from "@/components/universe/helpers";
+import {
+  createGlow,
+  gatherGlow,
+  rampAt,
+  shadeSphere,
+  shedGlow,
+  smoothstep,
+} from "@/components/universe/orb";
 
 import { LinkedInMark } from "./platforms";
 import { Prints, type Names } from "./prints";
@@ -14,17 +22,23 @@ import j from "./journey.module.css";
 
 /**
  * The days of an award, read down one side, and the Earth on the other,
- * large, turning to wherever the day being read happened. It is the site's
- * Earth, set in the same characters (bodies.ts), but with the real
- * coastlines (`/earth-land.png`, Natural Earth's land at 1:110m, white on
- * black), because here the places matter.
+ * large, turning to wherever the day being read happened. It is drawn as
+ * the site draws every body, a lit orb set in type (orb.ts): how much
+ * light falls on a cell is told by how dense its character is, the land
+ * brighter and paler than the sea, the sea throwing a glint where the sun
+ * reflects in it, an atmosphere at the limb, and the night side dark but
+ * for the faint shape of the land. A dark disc under it stops the sky at
+ * its edge, and its own glow spills round it. Pointed at, the light moves
+ * with the pointer, as if held up to a lamp. The coastlines are real
+ * (`/earth-land.png`, Natural Earth's land at 1:110m), because here the
+ * places matter.
  *
  * The flight is drawn on it as a ground track, flown as far as the day being
  * read: before it leaves, in faint dots; in the air, up to where the plane
  * is, with the plane a point of light; after it lands, all of it. Over the
  * top of the world, the northern lights come out round the magnetic pole.
- * Once it has landed, the globe comes in close on where it landed, and
- * each day there sends a ring out from it, as a ping.
+ * Once it has landed, the globe comes a little nearer, and each day there
+ * sends a ring out from it, as a ping; the way home is drawn as it's taken.
  *
  * Each day can carry its photographs (prints.tsx), which develop in the
  * first time it is read, and the people who were there, named and linked
@@ -47,23 +61,29 @@ type Props = {
 
 /* Light from the upper left, as for every lit body on the site. */
 const SUN = [-0.62, 0.42, 0.66];
-const OCEAN = ["·", "-", "~", "≈"];
-const LAND = [".", ",", ":", ";", "+"];
 const AURORA = ["'", ":", "|", "!"];
 const LEVELS = 4;
 const BUCKETS = 7 * LEVELS;
 const D = Math.PI / 180;
 const TURN = 1100;
 const PING = 1600;
-/* How close the globe comes in on where the flight lands. */
-const CLOSE = 2.3;
+/* How much nearer the globe comes once the flight lands: a little, so it
+   is always a whole orb. */
+const CLOSE = 1.14;
 /* The globe's radius, as a share of the smaller side of its box. */
-const SIZE = 0.46;
+const SIZE = 0.41;
 /* The north geomagnetic pole, and how far from it the auroral oval runs. */
 const POLE: LonLat = [-72.7, 80.7];
 const OVAL = 21;
 
-type View = { lon: number; lat: number; flown: number; zoom: number; glow: number };
+type View = {
+  lon: number;
+  lat: number;
+  flown: number;
+  zoom: number;
+  glow: number;
+  home: number;
+};
 
 /* A point on the unit sphere, and back. */
 const vec = ([lon, lat]: LonLat) => [
@@ -179,6 +199,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
         flown: st.along,
         zoom: 1,
         glow: st.aurora ? 1 : 0,
+        home: 0,
       };
     }
     const landed = lastAir >= 0 ? i > lastAir : !!st.at && Date.parse(st.at) >= lands;
@@ -188,10 +209,11 @@ export function Journey({ stops, flight, colors, people }: Props) {
     const zoom = landed ? CLOSE : 1;
     return {
       lon: ll[0],
-      lat: clamp(ll[1] - 6 / zoom, -50, 62),
+      lat: clamp(ll[1] - 8, -50, 62),
       flown: landed ? 1 : 0,
       zoom,
       glow: 0,
+      home: st.home ?? 0,
     };
   };
 
@@ -206,6 +228,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     const g = ctx;
+    const el: HTMLCanvasElement = canvas;
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let w = 0;
@@ -219,6 +242,17 @@ export function Journey({ stops, flight, colors, people }: Props) {
     let raf = 0;
     let turning: { from: View; to: View; at: number } | null = null;
     let ping: { ll: LonLat; at: number } | null = null;
+    /* Where the light comes from, and where it's going: the sun's corner
+       at rest, the pointer's while it's over the globe. */
+    let light = [...SUN];
+    let lightGoal = [...SUN];
+    const glowBuf = createGlow();
+    const homePath = flight.home
+      ? track(
+          flight.home.map((p) => p.ll),
+          90,
+        )
+      : null;
     /* The places pinned, once each: the first day each appears. */
     const pins = stops
       .map((st, i) => ({ st, i }))
@@ -240,8 +274,8 @@ export function Journey({ stops, flight, colors, people }: Props) {
     const aa: number[] = [];
     const ac: string[] = [];
 
-    /* Land, read between the mask's pixels, so a coast seen up close is a
-       line and not a staircase. */
+    /* Land, read between the mask's pixels, so a coast is a line and not a
+       staircase. */
     const land = (lon: number, lat: number) => {
       const m = mask;
       if (!m) return false;
@@ -266,62 +300,49 @@ export function Journey({ stops, flight, colors, people }: Props) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
       const narrow = w < 520;
-      /* The globe's disc on screen (Rw) stays one size. Coming in close,
-         the sphere behind it grows (R), and the disc becomes a lens on it,
-         ringed and read out, as an instrument's would be. */
-      const Rw = Math.min(w, h) * SIZE;
-      const R = Rw * view.zoom;
-      const lens = clamp((view.zoom - 1) / (CLOSE - 1), 0, 1);
+      const R = Math.min(w, h) * SIZE * view.zoom;
       const cx = w / 2;
       const cy = h / 2;
       const l0 = view.lon * D;
       const p0 = view.lat * D;
       const sp = Math.sin(p0);
       const cp = Math.cos(p0);
+      const L = light;
 
-      const halo = g.createRadialGradient(cx, cy, Rw * 0.9, cx, cy, Rw * 1.22);
-      halo.addColorStop(0, hexA(EARTH_COLORS[2], 0.16));
-      halo.addColorStop(1, hexA(EARTH_COLORS[2], 0));
-      g.fillStyle = halo;
-      g.fillRect(0, 0, w, h);
+      /* The orb's own dark, so the sky stops at its limb. */
+      shadeSphere(g, cx, cy, R, 1);
 
       /* Earth, in characters, and the northern lights where they're out. */
       for (let b = 0; b < BUCKETS; b++) bx[b].length = by[b].length = bc[b].length = 0;
       ax.length = ay.length = aa.length = ac.length = 0;
       const cw = narrow ? CELL.narrow : CELL.wide;
       const chh = cw * 1.72;
-      /* Through the lens, the characters fade out towards its rim. */
-      let fade = 1;
       const put = (X: number, Y: number, c: string, k: number, a: number) => {
         const b =
           k * LEVELS +
-          Math.min(LEVELS - 1, Math.max(0, Math.floor(a * fade * LEVELS - 0.001)));
+          Math.min(LEVELS - 1, Math.max(0, Math.floor(a * LEVELS - 0.001)));
         bx[b].push(X);
         by[b].push(Y);
         bc[b].push(c);
       };
-      const gy0 = Math.max(0, Math.floor((cy - Rw) / chh));
-      const gy1 = Math.min(Math.ceil(h / chh), Math.ceil((cy + Rw) / chh));
-      const gx0 = Math.max(0, Math.floor((cx - Rw) / cw));
-      const gx1 = Math.min(Math.ceil(w / cw), Math.ceil((cx + Rw) / cw));
+      const gy0 = Math.max(0, Math.floor((cy - R) / chh));
+      const gy1 = Math.min(Math.ceil(h / chh), Math.ceil((cy + R) / chh));
+      const gx0 = Math.max(0, Math.floor((cx - R) / cw));
+      const gx1 = Math.min(Math.ceil(w / cw), Math.ceil((cx + R) / cw));
       const glow = view.glow;
       for (let gy = gy0; gy < gy1; gy++) {
         for (let gx = gx0; gx < gx1; gx++) {
           const X = (gx + 0.5) * cw;
           const Y = (gy + 0.5) * chh;
-          const wx = (X - cx) / Rw;
-          const wy = (cy - Y) / Rw;
-          const wd2 = wx * wx + wy * wy;
-          if (wd2 > 1) continue;
-          fade = lens > 0 ? 1 - lens * clamp((Math.sqrt(wd2) - 0.8) / 0.2, 0, 1) : 1;
-          const x = wx / view.zoom;
-          const y = wy / view.zoom;
+          const x = (X - cx) / R;
+          const y = (cy - Y) / R;
           const d2 = x * x + y * y;
+          if (d2 > 1) continue;
           const z = Math.sqrt(1 - d2);
           const id = gx * 131 + gy * 977;
           const lat = Math.asin(y * cp + z * sp) / D;
           const lon = (l0 + Math.atan2(x, z * cp - y * sp)) / D;
-          const lambert = x * SUN[0] + y * SUN[1] + z * SUN[2];
+          const lambert = x * L[0] + y * L[1] + z * L[2];
           if (glow > 0.01) {
             /* The auroral oval: a band round the magnetic pole, hung in
                curtains along it, brightest on the night side. */
@@ -345,40 +366,36 @@ export function Journey({ stops, flight, colors, people }: Props) {
             }
           }
           const isLand = land(lon, lat);
-          if (lambert < 0.04) {
+          const day = smoothstep(-0.16, 0.6, lambert);
+          /* Atmosphere: brightest at the limb, on the lit side. */
+          const air = (1 - z) ** 3 * smoothstep(-0.25, 0.45, lambert);
+          if (day < 0.05) {
+            /* Night: the land's shape, faintly; the sea all but empty. */
             if (isLand) {
-              if (hash(id, 3) > 0.93) put(X, Y, "·", 5, 0.95);
-              else if (hash(id, 1) < 0.3) put(X, Y, ".", 3, 0.45);
-            } else if (hash(id, 2) < 0.16) put(X, Y, "·", 0, 0.9);
+              if (hash(id, 1) < 0.34) put(X, Y, "·", 1, 0.5);
+            } else if (air > 0.05) put(X, Y, "·", 1, 0.3 + air);
+            else if (hash(id, 2) < 0.04) put(X, Y, "·", 0, 0.6);
             continue;
           }
-          const b = Math.max(0, lambert * 1.05 + 0.08);
-          if (isLand) {
-            put(
-              X,
-              Y,
-              LAND[Math.min(LAND.length - 1, Math.floor(b * LAND.length))],
-              b < 0.35 ? 3 : 4,
-              b < 0.35 ? 0.55 : 0.85,
-            );
-            continue;
-          }
-          /* The lines of latitude and longitude, every 30°, faint over the sea. */
-          const onLat = Math.abs(lat - Math.round(lat / 30) * 30) < 0.7 / view.zoom;
-          const onLon =
-            Math.abs(wrap(lon - Math.round(lon / 30) * 30)) <
-            0.9 / view.zoom / Math.max(0.2, Math.cos(lat * D));
-          if ((onLat || onLon) && hash(id, 7) < 0.7) {
-            put(X, Y, onLat ? "-" : "|", 1, 0.35 + b * 0.3);
-            continue;
-          }
-          put(
-            X,
-            Y,
-            OCEAN[Math.min(OCEAN.length - 1, Math.floor(b * OCEAN.length))],
-            b < 0.3 ? 0 : b < 0.65 ? 1 : 2,
-            0.9,
-          );
+          /* The sun's glint on the sea: where the reflected light meets the
+             eye. */
+          const glint = isLand ? 0 : Math.max(0, 2 * lambert * z - L[2]) ** 24;
+          /* How dense: the light on the surface. How bright: that, and the
+             air at the limb, which glows rather than thickens. */
+          const v = Math.min(1, day * (isLand ? 0.62 : 0.36 + glint * 0.5) + air * 0.1);
+          const lit = Math.min(1, v + air * 0.5);
+          const k = isLand
+            ? lit > 0.5
+              ? 4
+              : 3
+            : glint > 0.3 || air > 0.35
+              ? 4
+              : lit > 0.28
+                ? 2
+                : lit > 0.14
+                  ? 1
+                  : 0;
+          put(X, Y, rampAt(v), k, Math.min(1, 0.3 + lit * 0.75));
         }
       }
       fillGlyphs(
@@ -392,60 +409,84 @@ export function Journey({ stops, flight, colors, people }: Props) {
         bc,
       );
 
+      const font = `${narrow ? 10 : 12}px ${mono}`;
+      const batch = () => {
+        const gpu = glyphs();
+        if (gpu) gpu.begin(g, font);
+        else {
+          g.font = font;
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+        }
+        const put1 = (ch: string, x: number, y: number, col: string, a: number) => {
+          if (gpu) {
+            gpu.color(col, a);
+            gpu.add(ch, x, y);
+          } else {
+            g.fillStyle = col;
+            g.globalAlpha = a;
+            g.fillText(ch, x, y);
+          }
+        };
+        const end = () => {
+          gpu?.end();
+          g.globalAlpha = 1;
+        };
+        return { put1, end };
+      };
+
+      /* The lights, then the orb's own glow over all of it (orb.ts). */
+      if (ax.length) {
+        const lights = batch();
+        for (let k = 0; k < ax.length; k++)
+          lights.put1(ac[k], ax[k], ay[k], aa[k] > 0.6 ? colors[3] : colors[2], aa[k]);
+        lights.end();
+      }
+      gatherGlow(glowBuf, el);
+      shedGlow(g, glowBuf, 0, 0, el.width, el.height);
+
       /* Places on the globe: on screen, and whether on the near side. */
       const at = ([lon, lat]: LonLat) => {
         const dl = lon * D - l0;
         const c = Math.cos(lat * D);
         const cosc = sp * Math.sin(lat * D) + cp * c * Math.cos(dl);
-        const x = cx + c * Math.sin(dl) * R;
-        const y = cy - (cp * Math.sin(lat * D) - sp * c * Math.cos(dl)) * R;
-        /* Seen: on the near side, and inside the disc. */
-        return { x, y, near: cosc > 0.02 && Math.hypot(x - cx, y - cy) <= Rw + 0.5 };
+        return {
+          x: cx + c * Math.sin(dl) * R,
+          y: cy - (cp * Math.sin(lat * D) - sp * c * Math.cos(dl)) * R,
+          near: cosc > 0.02,
+        };
       };
 
-      /* The lights, then the flight: flown, in the award's colour; still to
-         fly, faint. */
-      const font = `${narrow ? 10 : 12}px ${mono}`;
-      const gpu = glyphs();
-      if (gpu) gpu.begin(g, font);
-      else {
-        g.font = font;
-        g.textAlign = "center";
-        g.textBaseline = "middle";
-      }
-      const put1 = (ch: string, x: number, y: number, col: string, a: number) => {
-        if (gpu) {
-          gpu.color(col, a);
-          gpu.add(ch, x, y);
-        } else {
-          g.fillStyle = col;
-          g.globalAlpha = a;
-          g.fillText(ch, x, y);
-        }
+      /* The flight, and the way home: flown, in the award's colour, with
+         the plane a point of light at its head; still to fly, faint. */
+      const lamp = (x: number, y: number) => {
+        const r = 18;
+        const grad = g.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0, hexA("#ffffff", 0.95));
+        grad.addColorStop(0.3, hexA(colors[3], 0.45));
+        grad.addColorStop(1, hexA(colors[3], 0));
+        g.fillStyle = grad;
+        g.fillRect(x - r, y - r, r * 2, r * 2);
       };
-      for (let k = 0; k < ax.length; k++)
-        put1(ac[k], ax[k], ay[k], aa[k] > 0.6 ? colors[3] : colors[2], aa[k]);
-      let head: { x: number; y: number } | null = null;
-      path.forEach((p, k) => {
-        const q = at(p);
-        if (!q.near) return;
-        const done = k / (path.length - 1) <= view.flown;
-        if (done) {
-          put1("•", q.x, q.y, colors[3], 0.95);
-          head = q;
-        } else if (k % 2 === 0) put1("·", q.x, q.y, colors[2], 0.5);
-      });
-      gpu?.end();
-      g.globalAlpha = 1;
-      if (head && view.flown > 0.01 && view.flown < 0.99) {
-        const { x, y } = head;
-        const glowR = 18;
-        const lamp = g.createRadialGradient(x, y, 0, x, y, glowR);
-        lamp.addColorStop(0, hexA("#ffffff", 0.95));
-        lamp.addColorStop(0.3, hexA(colors[3], 0.45));
-        lamp.addColorStop(1, hexA(colors[3], 0));
-        g.fillStyle = lamp;
-        g.fillRect(x - glowR, y - glowR, glowR * 2, glowR * 2);
+      const trackOf = (pts: LonLat[], flown: number, dim: boolean) => {
+        const line = batch();
+        let head: { x: number; y: number } | null = null;
+        pts.forEach((p, k) => {
+          const q = at(p);
+          if (!q.near) return;
+          if (k / (pts.length - 1) <= flown) {
+            line.put1("•", q.x, q.y, colors[3], 0.95);
+            head = q;
+          } else if (!dim && k % 2 === 0) line.put1("·", q.x, q.y, colors[2], 0.5);
+        });
+        line.end();
+        return head as { x: number; y: number } | null;
+      };
+      const head = trackOf(path, view.flown, false);
+      if (head && view.flown > 0.01 && view.flown < 0.99) lamp(head.x, head.y);
+      if (homePath && view.home > 0.01) {
+        const back = trackOf(homePath, view.home, true);
+        if (back && view.home < 0.99) lamp(back.x, back.y);
       }
 
       /* The airports between, small. */
@@ -480,41 +521,24 @@ export function Journey({ stops, flight, colors, people }: Props) {
         }
       }
 
-      /* Close in, the lens's ring: a hairline with a tick every 15°, and
-         where it looks, and how close, read out under it. */
-      if (lens > 0.01) {
-        const r0 = Rw + 6;
-        g.strokeStyle = hexA(colors[3], 0.5 * lens);
-        g.lineWidth = 1;
-        g.beginPath();
-        g.arc(cx, cy, r0, 0, Math.PI * 2);
-        for (let k = 0; k < 24; k++) {
-          const a = (k * Math.PI) / 12;
-          const r1 = r0 + (k % 6 === 0 ? 10 : 4);
-          g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
-          g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
-        }
-        g.stroke();
-        const deg = (v: number, pos: string, neg: string) =>
-          `${Math.abs(v).toFixed(2)}° ${v >= 0 ? pos : neg}`;
-        g.font = `${narrow ? 10 : 11}px ${mono}`;
-        g.textAlign = "center";
-        g.textBaseline = "middle";
-        g.fillStyle = hexA(colors[3], 0.85 * lens);
-        g.fillText(
-          `${deg(view.lat, "N", "S")}   ${deg(wrap(view.lon), "E", "W")}   ×${view.zoom.toFixed(1)}`,
-          cx,
-          Math.min(h - 10, cy + r0 + 24),
-        );
-      }
-
       /* The places, pinned; the one being read is framed and dated. */
       const here = stops[activeRef.current];
       const big = narrow ? 12 : 15;
-      for (const { st } of pins) {
-        const q = at(st.ll as LonLat);
+      /* A place is pinned once the story reaches it, but for where the
+         flight is bound, which its track already points to. */
+      const bound = flight.stops[flight.stops.length - 1].ll;
+      for (const { st, i } of pins) {
+        const ll = st.ll as LonLat;
+        const q = at(ll);
         if (!q.near) continue;
+        const toward = Math.hypot(ll[0] - bound[0], ll[1] - bound[1]) < 2;
+        if (i > activeRef.current && !toward) continue;
         const on = here.place === st.place && !!here.ll;
+        const halo = g.createRadialGradient(q.x, q.y, 0, q.x, q.y, on ? 16 : 9);
+        halo.addColorStop(0, hexA(colors[3], on ? 0.55 : 0.3));
+        halo.addColorStop(1, hexA(colors[3], 0));
+        g.fillStyle = halo;
+        g.fillRect(q.x - 16, q.y - 16, 32, 32);
         g.strokeStyle = hexA(colors[3], on ? 1 : 0.7);
         g.lineWidth = 1;
         g.beginPath();
@@ -526,12 +550,17 @@ export function Journey({ stops, flight, colors, people }: Props) {
         g.fill();
         g.font = `${on ? big : big - 3}px ${mono}`;
         g.textAlign = "left";
+        g.shadowColor = "rgba(0,0,0,0.9)";
+        g.shadowBlur = 6;
         g.fillStyle = hexA(on ? "#f2f5f8" : EARTH_COLORS[3], on ? 1 : 0.75);
         g.fillText(st.place, q.x + 14, q.y - (on ? 7 : 0));
         if (on) {
           g.font = `${big - 3}px ${mono}`;
-          g.fillStyle = hexA(colors[3], 0.9);
+          g.fillStyle = hexA(colors[3], 0.95);
           g.fillText(here.when, q.x + 14, q.y + 10);
+        }
+        g.shadowBlur = 0;
+        if (on) {
           const rr = 12;
           g.beginPath();
           for (let k = 0; k < 4; k++) {
@@ -544,7 +573,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
       }
     }
 
-    /* Drawn only when asked: a turn or a ping in progress, a drag, a
+    /* Drawn only when asked: a turn, a ping or the light moving, a drag, a
        resize. */
     const ask = () => {
       if (!raf) raf = requestAnimationFrame(tick);
@@ -559,12 +588,24 @@ export function Journey({ stops, flight, colors, people }: Props) {
           lon: from.lon + wrap(to.lon - from.lon) * e,
           lat: from.lat + (to.lat - from.lat) * e,
           flown: from.flown + (to.flown - from.flown) * e,
-          /* In and out in even steps, as a lens does. */
           zoom: from.zoom * (to.zoom / from.zoom) ** e,
           glow: from.glow + (to.glow - from.glow) * e,
+          home: from.home + (to.home - from.home) * e,
         };
         if (k < 1) ask();
         else turning = null;
+      }
+      /* The light eases after the pointer. */
+      const dl = Math.hypot(
+        lightGoal[0] - light[0],
+        lightGoal[1] - light[1],
+        lightGoal[2] - light[2],
+      );
+      if (dl > 0.002) {
+        light = calm
+          ? [...lightGoal]
+          : unit(light.map((v, i) => v + (lightGoal[i] - v) * 0.14));
+        ask();
       }
       if (ping && t < ping.at + PING) ask();
       draw(t);
@@ -597,7 +638,8 @@ export function Journey({ stops, flight, colors, people }: Props) {
     };
     img.src = "/earth-land.png";
 
-    /* A drag turns the globe under the pointer. */
+    /* A drag turns the globe under the pointer; pointed at, the light
+       follows the pointer, as if the globe were held up to a lamp. */
     let drag: { x: number; y: number; lon: number; lat: number } | null = null;
     const onDown = (e: PointerEvent) => {
       drag = { x: e.clientX, y: e.clientY, lon: view.lon, lat: view.lat };
@@ -605,22 +647,36 @@ export function Journey({ stops, flight, colors, people }: Props) {
       canvas.setPointerCapture(e.pointerId);
     };
     const onMove = (e: PointerEvent) => {
-      if (!drag) return;
       const R = Math.min(w, h) * SIZE * view.zoom;
-      view = {
-        ...view,
-        lon: drag.lon - ((e.clientX - drag.x) / R) * 57,
-        lat: clamp(drag.lat + ((e.clientY - drag.y) / R) * 57, -80, 80),
-      };
+      if (drag) {
+        view = {
+          ...view,
+          lon: drag.lon - ((e.clientX - drag.x) / R) * 57,
+          lat: clamp(drag.lat + ((e.clientY - drag.y) / R) * 57, -80, 80),
+        };
+        ask();
+        return;
+      }
+      if (e.pointerType !== "mouse") return;
+      const box = canvas.getBoundingClientRect();
+      const px = (e.clientX - box.left - w / 2) / R;
+      const py = (h / 2 - (e.clientY - box.top)) / R;
+      lightGoal =
+        Math.hypot(px, py) > 1.5 ? [...SUN] : unit([px * 0.95, py * 0.95, 0.55]);
       ask();
     };
     const onUp = () => {
       drag = null;
     };
+    const onLeave = () => {
+      lightGoal = [...SUN];
+      ask();
+    };
     canvas.addEventListener("pointerdown", onDown);
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointercancel", onUp);
+    canvas.addEventListener("pointerleave", onLeave);
 
     resize();
     const ro = new ResizeObserver(resize);
@@ -632,6 +688,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
+      canvas.removeEventListener("pointerleave", onLeave);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- drawn from props that never change
   }, []);
@@ -646,7 +703,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
           aria-label={`A globe showing the trip: ${flight.stops.map((p) => p.code).join(", ")}.`}
         />
         <p className={j.globeHint} aria-hidden>
-          Drag to turn
+          Point to move the light · drag to turn
         </p>
       </div>
       <ol ref={listRef} className={j.log}>

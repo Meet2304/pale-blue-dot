@@ -20,6 +20,7 @@ import { glyphs } from "./glyph-gl";
 import { CELL, fit, mulberry32, whenIdle } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
+import { createGlow, gatherGlow, shedGlow } from "./orb";
 import { bodyCache, drawBody, makeFrame } from "./render";
 
 /**
@@ -158,6 +159,12 @@ export function UniverseCanvas({
       box: [0, 0, 0, 0] as [number, number, number, number],
     };
     const eg = earth.canvas.getContext("2d");
+    /* Each layer's light, spilling round what it holds (orb.ts): gathered
+       when the layer is drawn, laid over it every frame. Earth's is
+       gathered from a box wider than Earth, so its glow has room. */
+    const workGlow = createGlow();
+    const earthGlow = createGlow();
+    let earthGlowBox: [number, number, number, number] = [0, 0, 0, 0];
     /* Each body's characters, carried along while the camera moves
        (render.ts). */
     const cells = placed.map(() => bodyCache());
@@ -1058,12 +1065,25 @@ export function UniverseCanvas({
             wg.stroke();
           }
         }
+        gatherGlow(workGlow, work.canvas);
       }
       if (workA > 0.01) {
         g.save();
         g.setTransform(1, 0, 0, 1, 0, 0);
         g.drawImage(work.canvas, 0, 0);
         g.restore();
+        /* A star already gives its own light: its glow is kept low, so it
+           burns rather than blows out. */
+        const star = KINDS[placed[focusI].kind].body === "sun";
+        shedGlow(
+          g,
+          workGlow,
+          0,
+          0,
+          work.canvas.width,
+          work.canvas.height,
+          star ? 0.18 : 0.7,
+        );
       }
 
       /* Earth. */
@@ -1137,6 +1157,13 @@ export function UniverseCanvas({
             });
             earth.key = earthKey;
             earth.at = now;
+            const gr = earthR * 1.5 + ech;
+            const gx0 = Math.max(0, Math.floor((ex - gr) * dpr));
+            const gy0 = Math.max(0, Math.floor((ey - gr) * dpr));
+            const gx1 = Math.min(pw, Math.ceil((ex + gr) * dpr));
+            const gy1 = Math.min(ph, Math.ceil((ey + gr) * dpr));
+            earthGlowBox = [gx0, gy0, gx1 - gx0, gy1 - gy0];
+            gatherGlow(earthGlow, earth.canvas, ...earthGlowBox);
           }
           const [x0, y0, x1, y1] = earth.box;
           if (x1 > x0 && y1 > y0) {
@@ -1154,41 +1181,45 @@ export function UniverseCanvas({
               y1 - y0,
             );
             g.restore();
+            shedGlow(g, earthGlow, ...earthGlowBox);
           }
         }
       }
 
-      /* Earth's orbits, while it is big enough to have them. */
+      /* Earth's orbits, while it is big enough to have them: each a ring of
+         particles, points of light rather than a drawn line, brighter and
+         larger on the near side, hidden behind Earth on the far. */
       const orbitAlpha = Math.min(1, Math.max(0, (earthR - 40) / 120));
       if (orbitAlpha > 0) {
-        g.lineWidth = 1;
+        const base = orbitAlpha * (1 - workA);
         for (const o of orbits) {
           const ci = Math.cos(o.inc);
           const si = Math.sin(o.inc);
           const cn = Math.cos(o.node);
           const sn = Math.sin(o.node);
-          g.beginPath();
+          /* Three depths: far, middle, near. */
+          const depth = [new Path2D(), new Path2D(), new Path2D()];
           for (let j = 0; j < o.a.length; j++) {
             if (!calm) o.a[j] += o.speed * dt * (0.8 + (j % 7) * 0.05);
-            const proj = (a: number) => {
-              const x0 = Math.cos(a) * o.r;
-              const z0 = Math.sin(a) * o.r;
-              const y1 = -z0 * si;
-              const z1 = z0 * ci;
-              return [
-                ex + (x0 * cn - y1 * sn) * earthR,
-                ey + (x0 * sn + y1 * cn) * earthR,
-                z1,
-              ] as const;
-            };
-            const [x1, y1, z1] = proj(o.a[j]);
-            if (z1 < 0 && Math.hypot(x1 - ex, y1 - ey) < earthR) continue;
-            const [x0, y0] = proj(o.a[j] - 0.05 * Math.sign(o.speed));
-            g.moveTo(x0, y0);
-            g.lineTo(x1, y1);
+            const a = o.a[j];
+            const x0 = Math.cos(a) * o.r;
+            const z0 = Math.sin(a) * o.r;
+            const y1 = -z0 * si;
+            const z1 = z0 * ci;
+            const x = ex + (x0 * cn - y1 * sn) * earthR;
+            const y = ey + (x0 * sn + y1 * cn) * earthR;
+            if (z1 < 0 && Math.hypot(x - ex, y - ey) < earthR) continue;
+            const d = Math.min(2, Math.floor(((z1 / o.r) * 0.5 + 0.5) * 3));
+            const size = 1 + d * 0.45;
+            depth[d].rect(x - size / 2, y - size / 2, size, size);
           }
-          g.strokeStyle = hexA(EARTH_COLORS[3], 0.35 * orbitAlpha * (1 - workA));
-          g.stroke();
+          depth.forEach((path, d) => {
+            g.fillStyle = hexA(
+              EARTH_COLORS[d === 2 ? 4 : 3],
+              [0.22, 0.42, 0.75][d] * base,
+            );
+            g.fill(path);
+          });
         }
       }
 

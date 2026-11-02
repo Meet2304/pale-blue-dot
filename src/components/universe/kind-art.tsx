@@ -9,6 +9,7 @@ import { KINDS, kindColors } from "./encoding";
 import { fit, mulberry32 } from "./helpers";
 import { GLYPHS } from "./intro-timeline";
 import { PORTRAITS, type PortraitId } from "./portraits";
+import { createGlow, gatherGlow, shedGlow } from "./orb";
 import { drawBody, makeFrame } from "./render";
 import s from "./universe.module.css";
 
@@ -46,6 +47,7 @@ export function KindViewer({ open, kind }: { open: boolean; kind: Kind }) {
     /* Opening shows the current body without a morph. */
     morph.current = { from: morph.current.to, to: morph.current.to, at: 0 };
     const rnd = mulberry32(29);
+    const glow = createGlow();
     const stars = Array.from({ length: 360 }, () => ({
       x: rnd(),
       y: rnd(),
@@ -254,6 +256,18 @@ export function KindViewer({ open, kind }: { open: boolean; kind: Kind }) {
       if (prev) prev.portrait.over?.(g, lightOf(prev, 1 - m));
       next.portrait.over?.(g, lightOf(next, prev ? m : 1));
 
+      /* Its own light, spilling round it (orb.ts). */
+      gatherGlow(glow, canvas);
+      shedGlow(
+        g,
+        glow,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+        next.body === "sun" ? 0.2 : 1,
+      );
+
       /* The reticle: four ticks, no circle, as on the map. */
       if (lift > 0.02) {
         const [rx, ry] = next.portrait.reach;
@@ -334,6 +348,7 @@ export function KindThumb({ kind, live }: { kind: Kind; live: boolean }) {
     const ch = cw * 1.72;
     let raf = 0;
     let last = 0;
+    const glow = createGlow();
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       /* A dozen frames a second is plenty for a body this small. */
@@ -361,6 +376,8 @@ export function KindThumb({ kind, live }: { kind: Kind; live: boolean }) {
         light: portrait.mapLight ?? false,
       });
       portrait.over?.(g, light);
+      gatherGlow(glow, canvas);
+      shedGlow(g, glow, 0, 0, canvas.width, canvas.height, body === "sun" ? 0.2 : 0.8);
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);

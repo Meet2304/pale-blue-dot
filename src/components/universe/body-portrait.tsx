@@ -8,13 +8,15 @@ import { KINDS, layout } from "./encoding";
 import { CELL, fit } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
+import { createGlow, gatherGlow, shedGlow } from "./orb";
 import { drawBody, makeFrame } from "./render";
 
 /* How bright the body is drawn: present, but quieter than the words. */
 const ALPHA = { wide: 0.62, narrow: 0.42 };
 
 /**
- * A piece of work's body, behind the top of its own page: the same body
+ * A piece of work's body, behind the top of its own page, as a lit orb
+ * with its own glow (orb.ts): the same body
  * the map draws for it (its look, its colours, its seed), turning slowly,
  * off to the side of the column on a wide screen, and on a narrow one half
  * risen past the right edge, behind the end of the title. It sits back: drawn at part strength on a clear canvas over
@@ -41,6 +43,7 @@ export function BodyPortrait({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     const g = ctx;
+    const el: HTMLCanvasElement = canvas;
 
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const seed = layout().placed.find((p) => p.id === id)?.seed ?? 0.4;
@@ -63,6 +66,7 @@ export function BodyPortrait({
     let mono = "monospace";
     let raf = 0;
     let visible = true;
+    const glow = createGlow();
 
     const resize = () => {
       ({ w, h, dpr } = fit(canvas, 2));
@@ -113,6 +117,9 @@ export function BodyPortrait({
         light: portrait.mapLight ?? false,
       });
       portrait.over?.(g, light);
+      /* Its own light, spilling round it (orb.ts). */
+      gatherGlow(glow, el);
+      shedGlow(g, glow, 0, 0, el.width, el.height, body === "sun" ? 0.2 : 1);
     }
 
     const frame = (now: number) => {

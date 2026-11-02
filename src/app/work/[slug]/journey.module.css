@@ -128,8 +128,10 @@
 
 .globeHint {
   position: absolute;
-  left: 0;
+  left: 50%;
   bottom: 1.2rem;
+  translate: -50% 0;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--mute);

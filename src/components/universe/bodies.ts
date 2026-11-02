@@ -1,6 +1,7 @@
 import { mulberry32 } from "./helpers";
 import type { Look } from "./looks";
 import { fbm3 } from "./noise";
+import { rampAt, smoothstep } from "./orb";
 
 /**
  * The bodies of the universe, each drawn one character cell at a time.
@@ -74,18 +75,20 @@ const SUN = [-0.62, 0.42, 0.66];
 
 /* ------------------------------------------------------------------ Earth */
 
-const OCEAN = ["·", "-", "~", "≈"];
-const LAND = [".", ",", ":", ";", "+"];
-const CLOUD = ["'", "`", "°", "o"];
-
+/**
+ * Earth as a lit orb set in type: how much light falls on a cell is told
+ * by how dense its character is (orb.ts's ramp), from a dot at the
+ * terminator to the densest marks where the sun is high. The terminator is
+ * soft; the land is brighter than the sea and paler in colour; clouds are
+ * brightest and white; the sea throws a glint where the sun reflects in it;
+ * and the limb holds a little atmosphere on its lit side. The night side is
+ * left dark, but for the lights of cities. The renderer lays a dark disc
+ * under it and the canvas a glow over it (orb.ts), so it stands in front
+ * of the sky.
+ */
 const earth: BodyFn = (nx, ny, id, f, o) => {
   const d2 = nx * nx + ny * ny;
-  if (d2 > 1.16) return false;
-  if (d2 > 1) {
-    return hash(id, f.calm ? 0 : Math.floor(f.t * 2)) < 0.5
-      ? set(o, "·", 3, 0.5)
-      : false;
-  }
+  if (d2 > 1) return false;
   const nz = Math.sqrt(1 - d2);
   const sx = nx;
   const sy = -ny;
@@ -107,38 +110,50 @@ const earth: BodyFn = (nx, ny, id, f, o) => {
     if (onLat || onLon) return set(o, onLat && onLon ? "+" : onLat ? "-" : "|", 2, 1);
   }
 
-  const b = Math.max(0, lambert * 1.05 + 0.08);
+  const day = smoothstep(-0.16, 0.62, lambert);
   const isLand = fbm3(ox * 1.7 + 11, oy * 1.7 + 3, oz * 1.7 + 7) > 0.54;
   const drift = f.t * 0.018;
-  const cloud = fbm3(
-    ox * 3.2 + Math.cos(drift) * 2,
-    oy * 3.6,
-    oz * 3.2 + Math.sin(drift) * 2,
-    3,
+  const cloud = smoothstep(
+    0.58,
+    0.78,
+    fbm3(ox * 3.2 + Math.cos(drift) * 2, oy * 3.6, oz * 3.2 + Math.sin(drift) * 2, 3),
   );
-  if (cloud > 0.6 && b > 0.08) {
-    const i = Math.min(
-      CLOUD.length - 1,
-      Math.floor(((cloud - 0.6) / 0.25) * CLOUD.length),
-    );
-    return set(o, CLOUD[i], 6, 0.85);
-  }
-  if (lambert < 0.04) {
-    if (isLand) {
-      if (hash(Math.round(lon * 60) * 97 + Math.round(lat * 60), 3) > 0.9) {
-        const tw = f.calm ? 1 : 0.5 + 0.5 * Math.sin(f.t * 2 + id);
-        return set(o, tw > 0.5 ? "*" : "·", 5, 0.95);
-      }
-      return hash(id, 1) < 0.3 ? set(o, ".", 3, 0.45) : false;
+  /* The sun's glint on the sea: where the reflected light meets the eye. */
+  const glint = isLand ? 0 : Math.max(0, 2 * lambert * sz - SUN[2]) ** 24;
+  /* Atmosphere: brightest at the limb, on the lit side. */
+  const air = (1 - nz) ** 3 * smoothstep(-0.25, 0.45, lambert);
+
+  if (day < 0.05) {
+    if (isLand && hash(Math.round(lon * 60) * 97 + Math.round(lat * 60), 3) > 0.9) {
+      const tw = f.calm ? 1 : 0.5 + 0.5 * Math.sin(f.t * 2 + id);
+      return set(o, tw > 0.5 ? "*" : "·", 5, 0.95);
     }
-    return hash(id, 2) < 0.16 ? set(o, "·", 0, 0.9) : false;
+    if (air > 0.05) return set(o, "·", 1, 0.35 + air);
+    return hash(id, isLand ? 1 : 2) < (isLand ? 0.14 : 0.05)
+      ? set(o, "·", 0, 0.6)
+      : false;
   }
-  if (isLand) {
-    const i = Math.min(LAND.length - 1, Math.floor(b * LAND.length));
-    return set(o, LAND[i], b < 0.35 ? 3 : 4, b < 0.35 ? 0.55 : 0.85);
-  }
-  const i = Math.min(OCEAN.length - 1, Math.floor(b * OCEAN.length));
-  return set(o, OCEAN[i], b < 0.3 ? 0 : b < 0.65 ? 1 : 2, 0.95);
+
+  /* How dense a cell is: the light on its surface. How bright: that, and
+     the air at the limb, which glows rather than thickens. */
+  const surface = isLand ? 0.62 : 0.36 + glint * 0.5;
+  const v = Math.min(1, Math.max(day * surface, cloud * day * 0.72) + air * 0.1);
+  const lit = Math.min(1, v + air * 0.5);
+  const k =
+    cloud > 0.45 && day > 0.25
+      ? 6
+      : isLand
+        ? lit > 0.5
+          ? 4
+          : 3
+        : glint > 0.3 || air > 0.35
+          ? 4
+          : lit > 0.3
+            ? 2
+            : lit > 0.15
+              ? 1
+              : 0;
+  return set(o, rampAt(v), k, Math.min(1, 0.32 + lit * 0.75));
 };
 
 /* ----------------------------------------------------------------- Planet */

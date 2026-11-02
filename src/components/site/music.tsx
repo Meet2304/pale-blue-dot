@@ -21,7 +21,8 @@ import s from "@/components/universe/universe.module.css";
  * first attempt is blocked it waits for the first tap, click or key and
  * starts then.
  *
- * The switch sits in the bottom-left corner, and what it was set to is
+ * The switch sits in the bottom-left corner: a note and four bars, with
+ * what it's doing said beside them on a wide screen. What it was set to is
  * remembered for the next visit (sound-pref.ts). It silences every sound: the music, the clicks and the opening's ticks.
  */
 
@@ -133,18 +134,40 @@ export function Music() {
      it by the time the click lands. */
   const waiting = !muted && !playing;
 
+  const state = muted ? "off" : waiting ? "waiting" : "on";
+  const label =
+    state === "on" ? "Music on" : state === "off" ? "Music off" : "Play music";
+
   return (
     <button
       type="button"
       className={s.sound}
+      data-state={state}
       data-muted={muted || waiting}
       aria-pressed={muted}
       aria-label={muted || waiting ? "Play the music" : "Mute the music"}
+      title={label}
       onClick={() => {
         if (waiting) markIntroOver();
         else setMuted(!muted);
       }}
     >
+      {/* A note, so it reads as music at a glance: it sways while the
+          music plays, and is struck through when it's off. */}
+      <span className={s.soundNote} aria-hidden>
+        <svg viewBox="0 0 24 24">
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+          <path className={s.soundSlash} d="M3 3l18 18" />
+        </svg>
+        {/* While it plays, notes drift up from it now and then. */}
+        <span className={s.soundDrift}>
+          <i>♪</i>
+          <i>♫</i>
+          <i>♪</i>
+        </span>
+      </span>
       {/* Four bars, as boxes rather than SVG: a box's transform animates on
           the compositor, where an SVG shape's repainted the page every frame. */}
       <span className={s.soundBars} aria-hidden>
@@ -155,6 +178,9 @@ export function Music() {
             style={{ animationDelay: `${i * -0.35}s` }}
           />
         ))}
+      </span>
+      <span className={s.soundLabel} aria-hidden>
+        {label}
       </span>
     </button>
   );

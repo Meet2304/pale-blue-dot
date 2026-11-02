@@ -7,6 +7,7 @@ import {
   type Frame,
 } from "./bodies";
 import { fillGlyphs } from "./glyph-gl";
+import { shadeSphere } from "./orb";
 
 /**
  * Draw one body into the character grid. The grid is absolute (cells sit at
@@ -75,6 +76,8 @@ export function drawBody(
     /** The light under the glyphs and the photon ring; off when the
         caller draws its own. */
     light?: boolean;
+    /** The dark disc under a sphere (orb.ts); on unless said. */
+    shade?: boolean;
     /** Keep the cells here, and reuse them while they are younger than
         `maxAge` ms (at `now`) and the body is near the same size. */
     cache?: BodyCache;
@@ -121,6 +124,11 @@ export function drawBody(
       g.fill();
     }
   }
+
+  /* A sphere stands in front of the sky: a dark disc under its glyphs,
+     so the stars behind stop at its limb and its night side is night. */
+  if (o.shade !== false && (body === "earth" || body === "planet"))
+    shadeSphere(g, cx, cy, R, alpha);
 
   for (let b = 0; b < BUCKETS; b++) {
     bx[b].length = 0;

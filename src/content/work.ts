@@ -249,6 +249,8 @@ export type AwardStory = {
       ll?: LonLat;
       /** In the air: how far along the flight, 0 to 1, by distance. */
       along?: number;
+      /** On the way home: how far along it, 0 to 1. */
+      home?: number;
       /** The northern lights, on the globe, while this day is read. */
       aurora?: boolean;
       /** Its photographs, and how many go in each row (all in one, if
@@ -259,8 +261,14 @@ export type AwardStory = {
       with?: string[];
     }[];
     /** The trip, airport by airport, with the hour it leaves the first and
-        reaches the last (ISO, with offsets). */
-    flight?: { stops: { code: string; ll: LonLat }[]; leaves: string; lands: string };
+        reaches the last (ISO, with offsets); and the way home, as far as
+        it's known. */
+    flight?: {
+      stops: { code: string; ll: LonLat }[];
+      leaves: string;
+      lands: string;
+      home?: { code: string; ll: LonLat }[];
+    };
   };
 };
 
@@ -355,13 +363,13 @@ const SEOUL = {
     width: 1400,
     height: 1400,
     alt: "A wingtip in silhouette against a band of orange sunset, the lights of towns on the ground below.",
-    caption: "Leaving, at sunset.",
+    caption: "On the way home, by way of Tokyo.",
   },
   aurora: {
     src: `${DIR}/aurora.webp`,
-    width: 900,
-    height: 1600,
-    alt: "Through the plane's window at night, green northern lights along the horizon, past the red-lit wingtip.",
+    width: 940,
+    height: 1670,
+    alt: "Through the plane's window at night, curtains of green northern lights along the horizon, past the red-lit wingtip, under the stars.",
     caption: "The northern lights, out of the window.",
   },
   wall: {
@@ -640,7 +648,10 @@ export const COLLECTIONS: Collection[] = [
           },
           /* The team's roles are as the Vitamin Bob site gives them. Anna
              Bjerde's title and LinkedIn are as the World Bank's own bio
-             gives them; the others' links are from Meet. */
+             gives them; Jonathan Nagao's as his World Bank profile does,
+             Matt Hulse's as a 2025 speaker profile does, and Hayley
+             Pottle's as UNA-NCA's board page does. The other links are
+             from Meet. */
           people: [
             {
               id: "egshiglen",
@@ -687,18 +698,21 @@ export const COLLECTIONS: Collection[] = [
             {
               id: "matt",
               name: "Matt Hulse",
+              role: "Senior Health Specialist, World Bank",
               linkedin: "https://www.linkedin.com/in/mthulse/",
               group: "summit",
             },
             {
               id: "hayley",
               name: "Hayley Pottle",
+              role: "Consultant, World Bank Group Digital Vice Presidency",
               linkedin: "https://www.linkedin.com/in/hayleypottle/",
               group: "summit",
             },
             {
               id: "jonathan",
-              name: "Jonathan Gen Nagao",
+              name: "Jonathan Nagao",
+              role: "Director of Data and AI, World Bank Group",
               linkedin: "https://www.linkedin.com/in/jonathan-gen-nagao-445307/",
               group: "summit",
             },
@@ -738,9 +752,8 @@ export const COLLECTIONS: Collection[] = [
                 when: "17 Oct, 17:59",
                 place: "Pittsburgh → Atlanta",
                 title: "Wheels up",
-                line: "South to Atlanta first, the sun going down under the wing.",
+                line: "South to Atlanta first, then the long way round: over the top of the world to Seoul.",
                 along: 0.025,
-                photos: [SEOUL.sunset],
               },
               {
                 when: "In the air",
@@ -787,7 +800,7 @@ export const COLLECTIONS: Collection[] = [
                 when: "19–22 Oct",
                 place: "Seoul",
                 title: "Meeting Anna Bjerde",
-                line: "The winners of all three tracks met the World Bank's Managing Director of Operations.",
+                line: "The winners of all three tracks sat down with Anna Bjerde, the World Bank's Managing Director of Operations.",
                 ll: [126.99, 37.54],
                 photos: [SEOUL.anna],
                 with: ["anna", "olivia", "tae-yoon"],
@@ -795,8 +808,8 @@ export const COLLECTIONS: Collection[] = [
               {
                 when: "19–22 Oct",
                 place: "Seoul",
-                title: "With Matt and Hayley",
-                line: "Hayley held the camera, outside the Grand Salon.",
+                title: "What's next for Vitamin Bob",
+                line: "With Matt Hulse, a Senior Health Specialist at the World Bank, and Hayley Pottle, from the World Bank Group's Digital Vice Presidency, we talked about how to take Vitamin Bob forward.",
                 ll: [126.99, 37.54],
                 photos: [SEOUL.matt],
                 with: ["matt", "hayley"],
@@ -805,7 +818,7 @@ export const COLLECTIONS: Collection[] = [
                 when: "19–22 Oct",
                 place: "Seoul",
                 title: "Breakfast with Jonathan and MJ",
-                line: "The track winners round one table, with Jonathan, MJ and Hayley.",
+                line: "The track winners round one table with Jonathan Nagao, the World Bank Group's Director of Data and AI, MJ and Hayley.",
                 ll: [126.99, 37.54],
                 photos: [SEOUL.breakfast],
                 with: ["jonathan", "mj", "hayley"],
@@ -814,7 +827,7 @@ export const COLLECTIONS: Collection[] = [
                 when: "19–22 Oct",
                 place: "Seoul",
                 title: "All three tracks",
-                line: "Health, Agriculture and Tourism: the four of us, with Tae Yoon and Olivia, who won the other two tracks, and Hayley.",
+                line: "Health, Agriculture and Tourism: the four of us for Health, Tae Yoon Moon for Agriculture and Olivia Putri for Tourism, with Hayley.",
                 ll: [126.99, 37.54],
                 photos: [SEOUL.winners, SEOUL.mirror],
                 with: ["tae-yoon", "olivia", "hayley"],
@@ -829,12 +842,25 @@ export const COLLECTIONS: Collection[] = [
                 photos: [SEOUL.stage, SEOUL.podium],
                 with: ["egshiglen", "rizaldy", "yusril"],
               },
+              {
+                when: "On the way home",
+                place: "Tokyo",
+                title: "The way home",
+                line: "Back by way of Tokyo, with the sun going down under the wing.",
+                ll: [139.77, 35.68],
+                home: 1,
+                photos: [SEOUL.sunset],
+              },
             ],
             flight: {
               stops: [
                 { code: "PIT", ll: [-80.23, 40.49] },
                 { code: "ATL", ll: [-84.43, 33.64] },
                 { code: "ICN", ll: [126.45, 37.46] },
+              ],
+              home: [
+                { code: "ICN", ll: [126.45, 37.46] },
+                { code: "TYO", ll: [139.77, 35.68] },
               ],
               leaves: "2026-10-17T17:59:00-04:00",
               lands: "2026-10-19T04:15:00+09:00",
