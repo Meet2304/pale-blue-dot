@@ -43,6 +43,8 @@
 }
 
 .top {
+  /* Over the award's supernova, which reaches up behind it (award.tsx). */
+  z-index: 2;
   display: flex;
   /* Clear of the bar, docked at the top (page-nav.tsx). */
   padding: 4.5rem var(--edge) 0;

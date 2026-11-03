@@ -14,30 +14,27 @@ import {
 } from "@/components/universe/nova-burst";
 import { createGlow, gatherGlow, shedGlow } from "@/components/universe/orb";
 import { PORTRAITS } from "@/components/universe/portraits";
-import { drawBody, makeFrame } from "@/components/universe/render";
+import { bodyCache, drawBody, makeFrame } from "@/components/universe/render";
 
 import a from "./award.module.css";
 
 /**
- * The award's supernova, small, at the side of its page's head: the same
- * body the map draws for it (bodies.ts), with its glow (orb.ts). It goes
- * off by itself every ten seconds or so, as it does on the home page
- * (nova-burst.ts), and it's alive to the pointer for anyone who finds it.
- * Nothing on the page says so.
+ * The award's supernova, behind the head of its page: large, faded, part
+ * of the sky the page sits in rather than something on it. The same body
+ * the map draws for it (bodies.ts), with its glow (orb.ts). It goes off by
+ * itself every ten seconds or so, as it does on the home page
+ * (nova-burst.ts), and it feels the pointer pass over it, through the page:
  *
- *   - Pointed at, its shell bulges away from the pointer, as if pushed by
- *     it; sparks fly off the pointer as it moves; and as the pointer nears
- *     the star at its heart, the core flares.
- *   - Clicked (or Enter or Space), it goes off again: a shockwave of
- *     characters runs out from the core, the core flashes, and a burst of
- *     sparks is flung outwards.
- *   - Dragged, it spins, spikes and all, and coasts to a stop; left alone
- *     it turns, slowly.
+ *   - its shell bulges away from the pointer, as if pushed by it; sparks
+ *     fly off the pointer as it moves; and as the pointer nears the star at
+ *     its heart, the core flares;
+ *   - a click on the sky round it, not on a word or a link, sets it off.
  *
- * It draws only while it's on screen, a little over twenty times a second
- * when nothing is happening and every frame when something is, at one and
- * a half times the pixels at most. Under
- * reduced motion it is still, and a press only flares the core.
+ * Left alone it turns, slowly. It draws only while it's on screen, about
+ * fifteen times a second when nothing is happening (its characters worked
+ * out again every other time) and every frame when something is, at the
+ * screen's own pixels at most, since it's faded. Under reduced motion it is
+ * still.
  */
 
 const SPARKS = ["*", "+", "·", "x", "'"];
@@ -54,7 +51,6 @@ type Spark = {
 
 export function Nova({ colors }: { colors: string[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const burstRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const canvas = ref.current;
@@ -66,6 +62,7 @@ export function Nova({ colors }: { colors: string[] }) {
     const portrait = PORTRAITS.supernova;
     const base = portrait.fn;
     const glow = createGlow();
+    const cells = bodyCache();
 
     let w = 0;
     let h = 0;
@@ -77,11 +74,10 @@ export function Nova({ colors }: { colors: string[] }) {
     /* Starting turned, so its spikes cross on the diagonals and none stands
        upright as a rule would. */
     let spin = 0.4;
-    let spinVel = 0;
     let flare = 0;
     let hover = 0;
     let frames = 0;
-    const ptr = { x: 0, y: 0, in: false, down: false, lastX: 0, lastY: 0, moved: 0 };
+    const ptr = { x: 0, y: 0, in: false, lastX: 0, lastY: 0 };
     const waves: number[] = [];
     const sparks: Spark[] = [];
     /* When it next goes off by itself: a moment after it's first seen,
@@ -136,7 +132,6 @@ export function Nova({ colors }: { colors: string[] }) {
       later(now, NOVA_EVERY);
       ask();
     };
-    burstRef.current = burst;
 
     function draw(now: number) {
       const t = calm ? 0 : now / 1000;
@@ -145,11 +140,13 @@ export function Nova({ colors }: { colors: string[] }) {
       const R = radius();
       const cx = w / 2;
       const cy = h / 2;
-      const light = { cx, cy, R, colors, alpha: 1, t, calm };
+      /* Its heart and spikes kept low, so the words over it stay easy to
+         read; its shell of characters carries it. */
+      const light = { cx, cy, R, colors, alpha: 0.5, t, calm };
       portrait.under?.(g, light);
 
       /* The core's flare, white-hot, over its glow. */
-      drawFlash(g, cx, cy, R, flare);
+      drawFlash(g, cx, cy, R, flare * 0.6);
 
       /* The body, spun, pushed by the pointer, and crossed by its waves. */
       const cs = Math.cos(spin);
@@ -173,6 +170,8 @@ export function Nova({ colors }: { colors: string[] }) {
         return base(sx * cs + sy * sn, -sx * sn + sy * cs, id, f, o);
       };
       const fn = withWaves(pushed, live);
+      /* At rest, its characters are carried over from the last time. */
+      const still = hover < 0.01 && !live.length;
       const narrow = w < 360;
       const cw = narrow ? CELL.narrow : CELL.wide;
       const ch = cw * 1.72;
@@ -191,6 +190,9 @@ export function Nova({ colors }: { colors: string[] }) {
         fn,
         extent: portrait.extent,
         light: false,
+        cache: still ? cells : undefined,
+        now,
+        maxAge: 120,
       });
 
       /* Its spikes, turned with it. */
@@ -201,7 +203,7 @@ export function Nova({ colors }: { colors: string[] }) {
       portrait.over?.(g, { ...light, R: R * (1 + flare * 0.25) });
       g.restore();
 
-      /* Sparks, and round the pointer the site's reticle. */
+      /* Sparks. */
       if (sparks.length) {
         const batch = glyphs();
         const font = `12px ${mono}`;
@@ -230,56 +232,26 @@ export function Nova({ colors }: { colors: string[] }) {
       /* Its own light, spilling round it: gathered every other frame. */
       if (frames++ % 2 === 0) gatherGlow(glow, el);
       shedGlow(g, glow, 0, 0, el.width, el.height, 0.75);
-
-      if (ptr.in && hover > 0.05) {
-        const r = 10 + flare * 6;
-        const tick = 6;
-        g.strokeStyle = colors[3];
-        g.globalAlpha = 0.8 * hover;
-        g.lineWidth = 1;
-        g.beginPath();
-        for (const [sx, sy] of [
-          [-1, -1],
-          [1, -1],
-          [1, 1],
-          [-1, 1],
-        ]) {
-          const x = ptr.x + sx * r;
-          const y = ptr.y + sy * r;
-          g.moveTo(x, y);
-          g.lineTo(x - sx * tick, y);
-          g.moveTo(x, y);
-          g.lineTo(x, y - sy * tick);
-        }
-        g.stroke();
-        g.globalAlpha = 1;
-      }
     }
 
     const busy = () =>
-      ptr.in ||
-      waves.length > 0 ||
-      sparks.length > 0 ||
-      Math.abs(spinVel) > 1e-4 ||
-      flare > 0.01 ||
-      hover > 0.01;
+      ptr.in || waves.length > 0 || sparks.length > 0 || flare > 0.01 || hover > 0.01;
 
     function tick(now: number) {
       raf = requestAnimationFrame(tick);
       if (!visible) return;
       if (!nextAt) later(now, NOVA_FIRST);
-      else if (now >= nextAt && !ptr.down) burst();
-      /* Left alone, a little over twenty frames a second is plenty. */
-      if (!busy() && now - last < 44) return;
-      const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+      else if (now >= nextAt) burst();
+      /* Left alone, about fifteen frames a second is plenty. */
+      if (!busy() && now - last < 66) return;
+      const dt = Math.min(0.07, (now - last) / 1000 || 0.016);
       last = now;
       hover += ((ptr.in ? 1 : 0) - hover) * Math.min(1, dt * 8);
       const R = radius();
       const nearCore = ptr.in && Math.hypot(ptr.x - w / 2, ptr.y - h / 2) < R * 0.45;
       flare +=
         ((nearCore ? 0.45 : 0) - flare) * Math.min(1, dt * (flare > 0.5 ? 2.2 : 4));
-      if (!ptr.down) spinVel *= Math.pow(0.04, dt);
-      spin += spinVel + dt * 0.05;
+      spin += dt * 0.05;
       while (waves.length && (now - waves[0]) / 1000 > WAVE_LIFE) waves.shift();
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
@@ -302,60 +274,54 @@ export function Nova({ colors }: { colors: string[] }) {
     };
 
     const resize = () => {
-      ({ w, h, dpr } = fit(el, 1.5));
+      ({ w, h, dpr } = fit(el, 1));
       mono = getComputedStyle(el).getPropertyValue("--font-mono").trim() || "monospace";
       if (calm) draw(0);
     };
 
-    const local = (e: PointerEvent) => {
-      const box = el.getBoundingClientRect();
-      return { x: e.clientX - box.left, y: e.clientY - box.top };
-    };
+    /* The pointer, felt through the page: the canvas itself takes no
+       events, so the words and links over it work as ever. */
+    let box = el.getBoundingClientRect();
+    const local = (e: PointerEvent | MouseEvent) => ({
+      x: e.clientX - box.left,
+      y: e.clientY - box.top,
+    });
+    const over = (x: number, y: number) =>
+      Math.hypot(x - w / 2, y - h / 2) < radius() * 1.35;
     const onMove = (e: PointerEvent) => {
+      if (!visible || e.pointerType !== "mouse") return;
+      box = el.getBoundingClientRect();
       const { x, y } = local(e);
+      const was = ptr.in;
+      ptr.in = over(x, y);
       const dx = x - ptr.lastX;
       const dy = y - ptr.lastY;
       ptr.x = x;
       ptr.y = y;
-      ptr.in = true;
-      if (ptr.down) {
-        /* A drag spins it, the way the pointer goes round its centre. */
-        const a0 = Math.atan2(ptr.lastY - h / 2, ptr.lastX - w / 2);
-        const a1 = Math.atan2(y - h / 2, x - w / 2);
-        let da = a1 - a0;
-        if (da > Math.PI) da -= Math.PI * 2;
-        if (da < -Math.PI) da += Math.PI * 2;
-        spinVel = spinVel * 0.5 + da * 0.5;
-        ptr.moved += Math.abs(dx) + Math.abs(dy);
-      } else if (!calm && e.pointerType === "mouse") {
-        const speed = Math.hypot(dx, dy);
-        if (speed > 2)
-          emit(x, y, Math.min(3, Math.ceil(speed / 14)), [20, 90], [0.35, 0.9]);
-      }
       ptr.lastX = x;
       ptr.lastY = y;
+      if (!ptr.in || !was || calm) return;
+      const speed = Math.hypot(dx, dy);
+      if (speed > 2)
+        emit(x, y, Math.min(3, Math.ceil(speed / 14)), [20, 90], [0.35, 0.9]);
     };
-    const onDown = (e: PointerEvent) => {
+    /* A click on the sky round it, not on anything on the page. */
+    const QUIET =
+      "a, button, input, textarea, select, label, p, h1, h2, h3, li, figure, img, nav, canvas";
+    const onClick = (e: MouseEvent) => {
+      if (!visible) return;
+      if ((e.target as Element | null)?.closest(QUIET)) return;
+      if (!window.getSelection()?.isCollapsed) return;
+      box = el.getBoundingClientRect();
       const { x, y } = local(e);
-      ptr.down = true;
-      ptr.moved = 0;
-      ptr.lastX = x;
-      ptr.lastY = y;
-      el.setPointerCapture(e.pointerId);
-    };
-    const onUp = () => {
-      if (ptr.down && ptr.moved < 6) burst();
-      ptr.down = false;
+      if (over(x, y)) burst();
     };
     const onLeave = () => {
       ptr.in = false;
-      ptr.down = false;
     };
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerdown", onDown);
-    el.addEventListener("pointerup", onUp);
-    el.addEventListener("pointercancel", onLeave);
-    el.addEventListener("pointerleave", onLeave);
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("click", onClick);
+    document.documentElement.addEventListener("pointerleave", onLeave);
 
     resize();
     const ro = new ResizeObserver(resize);
@@ -372,29 +338,15 @@ export function Nova({ colors }: { colors: string[] }) {
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerdown", onDown);
-      el.removeEventListener("pointerup", onUp);
-      el.removeEventListener("pointercancel", onLeave);
-      el.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("click", onClick);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
     };
   }, [colors]);
 
   return (
-    <div className={a.nova}>
-      <canvas
-        ref={ref}
-        className={a.novaCanvas}
-        role="button"
-        tabIndex={0}
-        aria-label="A supernova. Press to set it off again."
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            burstRef.current();
-          }
-        }}
-      />
+    <div className={a.nova} aria-hidden>
+      <canvas ref={ref} className={a.novaCanvas} />
     </div>
   );
 }
