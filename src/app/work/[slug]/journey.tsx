@@ -76,9 +76,9 @@ const CLOSE = 1.14;
 /* The globe's radius, as a share of the smaller side of its box. */
 const SIZE = 0.41;
 /* How strongly the globe is drawn: it is the days' setting, not their
-   subject, so it sits back; the flight, the pins and their names stay
-   clear. */
-const QUIET = 0.68;
+   subject, so it sits back, the more so now it's large; the flight, the
+   pins and their names stay clear. */
+const QUIET = 0.6;
 /* The north geomagnetic pole, and how far from it the auroral oval runs. */
 const POLE: LonLat = [-72.7, 80.7];
 const OVAL = 21;

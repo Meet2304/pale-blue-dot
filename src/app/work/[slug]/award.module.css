@@ -9,15 +9,17 @@
 
 .page {
   --side: 11rem;
+  --side-gap: clamp(1.5rem, 3vw, 3rem);
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: var(--side) minmax(0, 1fr);
-  column-gap: clamp(1.5rem, 3vw, 3rem);
+  column-gap: var(--side-gap);
   width: 100%;
   padding: clamp(1.5rem, 5vh, 3.5rem) var(--edge) 0;
-  /* The supernova reaches off the left of the screen; it never widens the
-     page. (A clip makes no scroll box, so the index still sticks.) */
+  /* Nothing that reaches past its edges (the journey's globe, a lifted
+     print) ever widens the page. (A clip makes no scroll box, so the index
+     still sticks.) */
   overflow-x: clip;
   animation: rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
 }
@@ -38,18 +40,22 @@
   grid-row: 1 / span 2;
 }
 
-/* The supernova (nova.tsx): large and faded, behind the head. Its heart is
-   up in the page's top left corner, clear of the words, and its shell runs
-   out behind the index and the title and off the edges of the screen. Part
-   of the sky: under everything on the page, and taking no clicks itself. */
+/* The supernova (nova.tsx): large and faded, in the sky behind the page,
+   held in the screen's top left corner while the page scrolls over it. Its
+   heart sits up in the corner, clear of the words; its shell runs out
+   behind the index and off the edges of the screen. Over the stars, under
+   everything on the page, and taking no clicks itself. */
 .nova {
   --nova: min(60rem, 68vw);
-  position: absolute;
-  z-index: -1;
-  top: calc(1rem - var(--nova) / 2);
+  position: fixed;
+  z-index: 0;
+  top: calc(3.5rem - var(--nova) / 2);
   left: calc(var(--edge) * 0.5 - var(--nova) / 2);
+  --o: 0.6;
   width: var(--nova);
-  opacity: 0.6;
+  opacity: var(--o);
+  /* At rest it breathes, slowly: a little brighter, a little fainter. */
+  animation: breathe 9s ease-in-out infinite alternate;
   /* Fainter the further out it reaches, so where it runs behind the words
      it is only a texture. */
   mask-image: radial-gradient(
@@ -59,6 +65,16 @@
     transparent
   );
   pointer-events: none;
+}
+
+@keyframes breathe {
+  from {
+    opacity: calc(var(--o) * 0.82);
+  }
+
+  to {
+    opacity: calc(var(--o) * 1.08);
+  }
 }
 
 .novaCanvas {
@@ -133,10 +149,28 @@
   min-width: 0;
 }
 
+/* Over the journey's globe, which reaches back behind it, and the
+   supernova: on a pool of shadow of its own, so it reads over either. */
 .steps {
   position: sticky;
+  z-index: 3;
   top: 5rem;
   padding-top: 1.4rem;
+}
+
+.steps::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1rem -3rem -3rem -2.6rem;
+  background: radial-gradient(
+    closest-side,
+    rgb(0 0 0 / 0.94),
+    rgb(0 0 0 / 0.86) 55%,
+    rgb(0 0 0 / 0.4) 82%,
+    transparent
+  );
+  pointer-events: none;
 }
 
 .steps ol {
@@ -158,6 +192,7 @@
   font-size: 0.75rem;
   color: var(--mute);
   text-decoration: none;
+  text-shadow: 0 0 10px #000;
   transition: color 200ms;
 }
 
@@ -536,6 +571,10 @@
    can stay to the end. */
 @media (max-width: 1000px) {
   .page {
+    /* No side column: the journey's globe reaches back only to the screen's
+       edge. */
+    --side: 0rem;
+    --side-gap: 0rem;
     --rail-h: 2.75rem;
     grid-template-columns: minmax(0, 1fr);
   }
@@ -544,13 +583,13 @@
     display: contents;
   }
 
-  /* On a narrow screen, its heart up in the top right corner, over the
-     head. */
+  /* On a narrow screen, its heart in the top right corner, under the bar
+     and the index's row. */
   .nova {
     --nova: min(38rem, 125vw);
-    top: calc(0.5rem - var(--nova) / 2);
+    top: calc(8rem - var(--nova) / 2);
     left: calc(100% - var(--edge) - var(--nova) / 2);
-    opacity: 0.45;
+    --o: 0.45;
   }
 
   .head {
@@ -595,7 +634,8 @@
     white-space: nowrap;
   }
 
-  .steps a::before {
+  .steps a::before,
+  .steps::before {
     display: none;
   }
 
@@ -616,7 +656,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page {
+  .page,
+  .nova {
     animation: none;
   }
 }

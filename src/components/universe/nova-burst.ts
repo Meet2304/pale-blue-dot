@@ -5,12 +5,12 @@ import { rampAt } from "./orb";
  * A supernova going off again, as both of the site's supernovae do: the
  * award's chapter on the home page (universe-canvas.tsx) and the head of
  * the award's own page (nova.tsx). A shockwave of characters runs out from
- * the core, and the core flashes white. It happens every ten seconds or so
+ * the core, and the core flashes white. It happens every twenty seconds or so
  * while it's on screen, a moment after it arrives.
  */
 
 /** How often it goes off, in ms, and how long after arriving the first. */
-export const NOVA_EVERY = 10000;
+export const NOVA_EVERY = 20000;
 export const NOVA_FIRST = 1500;
 /** How fast a wave runs out (radii a second) and how long it lasts (s). */
 export const WAVE_SPEED = 1.5;

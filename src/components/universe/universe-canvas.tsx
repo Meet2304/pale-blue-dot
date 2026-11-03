@@ -891,7 +891,7 @@ export function UniverseCanvas({
         drawShootingStar(g, backdrop, back);
       }
 
-      /* A supernova being read goes off every ten seconds or so
+      /* A supernova being read goes off every twenty seconds or so
          (nova-burst.ts); while it does, its layer is drawn every frame. */
       const novaAt = placed.map(() => -1);
       let novaLive = false;

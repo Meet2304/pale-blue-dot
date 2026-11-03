@@ -18,8 +18,9 @@ import w from "./work.module.css";
 
 /**
  * An award's own page, across the full width of the screen, as every page
- * is. Behind its head, the award's supernova, large and faded, part of the
- * sky, going off now and then (nova.tsx). Beside everything, a side column
+ * is. Behind it, the award's supernova, large and faded, held in the
+ * screen's top corner as the page scrolls over it, part of the sky, going
+ * off now and then (nova.tsx). Beside everything, a side column
  * with the page's index (steps.tsx), which stays on screen through every
  * part. Beside that, the content:
  *
@@ -59,8 +60,10 @@ export function AwardBody({
 
   return (
     <>
+      {/* Fixed behind the page, so outside the article, whose arrival
+          animation would otherwise carry it along. */}
+      <Nova colors={colors} />
       <article className={a.page}>
-        <Nova colors={colors} />
         <aside className={a.side}>
           <Steps parts={parts} />
         </aside>
