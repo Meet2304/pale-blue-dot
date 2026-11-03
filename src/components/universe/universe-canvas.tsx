@@ -160,11 +160,10 @@ export function UniverseCanvas({
     };
     const eg = earth.canvas.getContext("2d");
     /* Each layer's light, spilling round what it holds (orb.ts): gathered
-       when the layer is drawn, laid over it every frame. Earth's is
-       gathered from a box wider than Earth, so its glow has room. */
+       and baked into the layer when it's drawn. Earth's is gathered from a
+       box wider than Earth, so its glow has room. */
     const workGlow = createGlow();
     const earthGlow = createGlow();
-    let earthGlowBox: [number, number, number, number] = [0, 0, 0, 0];
     /* Each body's characters, carried along while the camera moves
        (render.ts). */
     const cells = placed.map(() => bodyCache());
@@ -503,7 +502,9 @@ export function UniverseCanvas({
       raf = requestAnimationFrame(frame);
       if (now < settleUntil && now - drawnAt < 80) return;
       drawnAt = now;
-      if (!visible) return;
+      /* Off screen, or under an opened picture, the sky holds still, and
+         the picture has the main thread to itself. */
+      if (!visible || document.documentElement.dataset.lightbox) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const t = now / 1000;
@@ -1065,18 +1066,13 @@ export function UniverseCanvas({
             wg.stroke();
           }
         }
-        gatherGlow(workGlow, work.canvas);
-      }
-      if (workA > 0.01) {
-        g.save();
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        g.drawImage(work.canvas, 0, 0);
-        g.restore();
-        /* A star already gives its own light: its glow is kept low, so it
-           burns rather than blows out. */
+        /* The layer's glow, baked into it as it's drawn, so a frame only
+           ever copies the layer. A star already gives its own light: its
+           glow is kept low, so it burns rather than blows out. */
         const star = KINDS[placed[focusI].kind].body === "sun";
+        gatherGlow(workGlow, work.canvas);
         shedGlow(
-          g,
+          wg,
           workGlow,
           0,
           0,
@@ -1084,6 +1080,12 @@ export function UniverseCanvas({
           work.canvas.height,
           star ? 0.18 : 0.7,
         );
+      }
+      if (workA > 0.01) {
+        g.save();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.drawImage(work.canvas, 0, 0);
+        g.restore();
       }
 
       /* Earth. */
@@ -1162,8 +1164,17 @@ export function UniverseCanvas({
             const gy0 = Math.max(0, Math.floor((ey - gr) * dpr));
             const gx1 = Math.min(pw, Math.ceil((ex + gr) * dpr));
             const gy1 = Math.min(ph, Math.ceil((ey + gr) * dpr));
-            earthGlowBox = [gx0, gy0, gx1 - gx0, gy1 - gy0];
-            gatherGlow(earthGlow, earth.canvas, ...earthGlowBox);
+            /* Its glow, baked into the layer round it; the box copied (and
+               cleared next time) is the glow's. */
+            const glowBox: [number, number, number, number] = [
+              gx0,
+              gy0,
+              gx1 - gx0,
+              gy1 - gy0,
+            ];
+            gatherGlow(earthGlow, earth.canvas, ...glowBox);
+            shedGlow(eg, earthGlow, ...glowBox);
+            earth.box = [gx0, gy0, gx1, gy1];
           }
           const [x0, y0, x1, y1] = earth.box;
           if (x1 > x0 && y1 > y0) {
@@ -1181,7 +1192,6 @@ export function UniverseCanvas({
               y1 - y0,
             );
             g.restore();
-            shedGlow(g, earthGlow, ...earthGlowBox);
           }
         }
       }

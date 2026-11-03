@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { AwardStory, LonLat, Person } from "@/content/work";
 import { hash } from "@/components/universe/bodies";
@@ -57,6 +57,9 @@ type Props = {
   /** The award's colours, as the map draws its body (looks.ts). */
   colors: string[];
   people: Person[];
+  /** The announcements of the wins, and their posts: shown with the day
+      the wins were announced. */
+  posts?: ReactNode;
 };
 
 /* Light from the upper left, as for every lit body on the site. */
@@ -72,6 +75,10 @@ const PING = 1600;
 const CLOSE = 1.14;
 /* The globe's radius, as a share of the smaller side of its box. */
 const SIZE = 0.41;
+/* How strongly the globe is drawn: it is the days' setting, not their
+   subject, so it sits back; the flight, the pins and their names stay
+   clear. */
+const QUIET = 0.68;
 /* The north geomagnetic pole, and how far from it the auroral oval runs. */
 const POLE: LonLat = [-72.7, 80.7];
 const OVAL = 21;
@@ -137,7 +144,7 @@ const ease = (k: number) => (k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2);
 const wrap = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-export function Journey({ stops, flight, colors, people }: Props) {
+export function Journey({ stops, flight, colors, people, posts }: Props) {
   const [active, setActive] = useState(0);
   const [now, setNow] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -403,7 +410,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
         `${chh * 0.92}px ${mono}`,
         BUCKETS,
         (b) => EARTH_COLORS[Math.floor(b / LEVELS)],
-        (b) => ((b % LEVELS) + 1) / LEVELS,
+        (b) => (((b % LEVELS) + 1) / LEVELS) * QUIET,
         bx,
         by,
         bc,
@@ -443,7 +450,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
         lights.end();
       }
       gatherGlow(glowBuf, el);
-      shedGlow(g, glowBuf, 0, 0, el.width, el.height);
+      shedGlow(g, glowBuf, 0, 0, el.width, el.height, 0.6);
 
       /* Places on the globe: on screen, and whether on the near side. */
       const at = ([lon, lat]: LonLat) => {
@@ -574,9 +581,11 @@ export function Journey({ stops, flight, colors, people }: Props) {
     }
 
     /* Drawn only when asked: a turn, a ping or the light moving, a drag, a
-       resize. */
+       resize; and not at all until the globe is within a screen of being
+       seen, so the page's first moments are the head's alone. */
+    let awake = false;
     const ask = () => {
-      if (!raf) raf = requestAnimationFrame(tick);
+      if (awake && !raf) raf = requestAnimationFrame(tick);
     };
     function tick(t: number) {
       raf = 0;
@@ -626,6 +635,17 @@ export function Journey({ stops, flight, colors, people }: Props) {
     };
 
     const img = new Image();
+    const wake = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        wake.disconnect();
+        awake = true;
+        img.src = "/earth-land.png";
+        ask();
+      },
+      { rootMargin: "100% 0px 100% 0px" },
+    );
+    wake.observe(el);
     img.onload = () => {
       const c = document.createElement("canvas");
       c.width = MW;
@@ -636,7 +656,6 @@ export function Journey({ stops, flight, colors, people }: Props) {
       mask = x.getImageData(0, 0, MW, MH).data;
       ask();
     };
-    img.src = "/earth-land.png";
 
     /* A drag turns the globe under the pointer; pointed at, the light
        follows the pointer, as if the globe were held up to a lamp. */
@@ -684,6 +703,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      wake.disconnect();
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
@@ -716,6 +736,7 @@ export function Journey({ stops, flight, colors, people }: Props) {
             onPick={() => setActive(i)}
             people={byId}
             names={names}
+            posts={st.wins ? posts : undefined}
           />
         ))}
       </ol>
@@ -732,6 +753,7 @@ function Day({
   onPick,
   people,
   names,
+  posts,
 }: {
   st: Stop;
   active: boolean;
@@ -739,6 +761,7 @@ function Day({
   onPick: () => void;
   people: Record<string, Person>;
   names: Names;
+  posts?: ReactNode;
 }) {
   const [shown, setShown] = useState(active);
   if (active && !shown) setShown(true);
@@ -779,6 +802,7 @@ function Day({
           )}
         </p>
       )}
+      {posts && <div className={j.dayExtra}>{posts}</div>}
       {st.photos && (
         <Prints
           photos={st.photos}

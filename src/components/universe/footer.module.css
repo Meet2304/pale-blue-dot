@@ -10,7 +10,7 @@
   position: relative;
   z-index: 3;
   /* Room at the very bottom for "Back to Earth" (footer-actions.tsx). */
-  padding: 3.6rem 6vw calc(4.6rem + env(safe-area-inset-bottom));
+  padding: 3.6rem var(--edge) calc(4.6rem + env(safe-area-inset-bottom));
   overflow: hidden;
   background: #000;
   color: var(--fg);

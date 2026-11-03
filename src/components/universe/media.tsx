@@ -7,19 +7,14 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from "react";
-import dynamic from "next/dynamic";
 
 import { SquareArrowOutUpRight } from "@/components/site/icons";
 import type { FramedMedia, Media } from "@/content/work";
 
+import { useLightbox } from "./lightbox-lazy";
 import { FigureMedia, SplatMedia } from "./pictures";
 import { Picture } from "./picture";
 import s from "./universe.module.css";
-
-/* The zoom view's code is fetched on the first click, not with the page. */
-const Lightbox = dynamic(() => import("./lightbox").then((m) => m.Lightbox), {
-  ssr: false,
-});
 
 /* Each screen of a site holds for a moment, then the next scrolls up. */
 const HOLD = 3400;
@@ -70,6 +65,8 @@ function Framed({ media }: { media: FramedMedia }) {
     from: DOMRect | null;
     vars: CSSProperties;
   } | null>(null);
+  /* The zoom view, fetched once the picture is near (lightbox-lazy.ts). */
+  const Lightbox = useLightbox(near);
   const count =
     media.kind === "site"
       ? media.screens.length
@@ -186,132 +183,171 @@ function Framed({ media }: { media: FramedMedia }) {
     });
   };
 
+  const album = media.kind === "album" && count > 1;
+  /* An album's arrows, at its left and right edges, outside the lean. */
+  const edges = album && (
+    <>
+      <button
+        type="button"
+        className={s.edge}
+        data-side="prev"
+        aria-label="Previous photo"
+        onClick={() => step(-1)}
+      >
+        <svg viewBox="0 0 10 10" aria-hidden>
+          <path d="M6.5 1.5 3 5l3.5 3.5" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        className={s.edge}
+        data-side="next"
+        aria-label="Next photo"
+        onClick={() => step(1)}
+      >
+        <svg viewBox="0 0 10 10" aria-hidden>
+          <path d="M3.5 1.5 7 5 3.5 8.5" />
+        </svg>
+      </button>
+    </>
+  );
+
   return (
     <figure className={s.media}>
-      <div
-        ref={ref}
-        className={`${s.tilt} ${
-          media.kind === "photo" ? s.photo : media.kind === "album" ? s.album : s.site
-        }`}
-        onPointerMove={lean}
-        onPointerLeave={rest}
-        style={{ visibility: open ? "hidden" : undefined }}
-      >
-        {media.kind === "photo" ? (
-          <button
-            type="button"
-            className={s.zoomIn}
-            onClick={() => show(false)}
-            aria-label={`Enlarge: ${media.alt}`}
-          >
-            <Picture
-              src={media.src}
-              alt={media.alt}
-              width={media.width}
-              height={media.height}
-              sizes={SIZES}
-              load={near}
-              className={s.photoImg}
-            />
-          </button>
-        ) : media.kind === "album" ? (
-          <button
-            type="button"
-            className={s.zoomIn}
-            onClick={() => show(false)}
-            aria-label={`Enlarge: ${media.photos[at].alt}`}
-          >
-            <span className={s.stack}>
-              {media.photos.map((p, i) => {
-                const depth = (i - at + count) % count;
-                return (
-                  <span
-                    key={p.src}
-                    className={s.print}
-                    data-depth={Math.min(depth, 3)}
-                    data-tuck={(dir > 0 && depth === count - 1) || undefined}
-                    style={{ zIndex: count - depth } as CSSProperties}
-                    aria-hidden={depth > 0 || undefined}
-                  >
-                    <Picture
-                      src={p.src}
-                      alt={depth === 0 ? p.alt : ""}
-                      width={p.width}
-                      height={p.height}
-                      sizes={SIZES}
-                      load={near}
-                      className={s.printImg}
-                    />
-                  </span>
-                );
-              })}
-            </span>
-          </button>
-        ) : (
-          <>
-            <div className={s.chrome}>
-              <span className={s.dots} aria-hidden>
-                <i />
-                <i />
-                <i />
+      <div className={s.frameBox}>
+        {edges}
+        <div
+          ref={ref}
+          className={`${s.tilt} ${
+            media.kind === "photo" ? s.photo : media.kind === "album" ? s.album : s.site
+          }`}
+          onPointerMove={lean}
+          onPointerLeave={rest}
+          style={{ visibility: open ? "hidden" : undefined }}
+        >
+          {media.kind === "photo" ? (
+            <button
+              type="button"
+              className={s.zoomIn}
+              onClick={() => show(false)}
+              aria-label={`Enlarge: ${media.alt}`}
+            >
+              <Picture
+                src={media.src}
+                alt={media.alt}
+                width={media.width}
+                height={media.height}
+                sizes={SIZES}
+                load={near}
+                className={s.photoImg}
+              />
+            </button>
+          ) : media.kind === "album" ? (
+            <button
+              type="button"
+              className={s.zoomIn}
+              onClick={() => show(false)}
+              aria-label={`Enlarge: ${media.photos[at].alt}`}
+            >
+              <span className={s.stack}>
+                {media.photos.map((p, i) => {
+                  const depth = (i - at + count) % count;
+                  return (
+                    <span
+                      key={p.src}
+                      className={s.print}
+                      data-depth={Math.min(depth, 3)}
+                      data-tuck={(dir > 0 && depth === count - 1) || undefined}
+                      style={{ zIndex: count - depth } as CSSProperties}
+                      aria-hidden={depth > 0 || undefined}
+                    >
+                      <Picture
+                        src={p.src}
+                        alt={depth === 0 ? p.alt : ""}
+                        width={p.width}
+                        height={p.height}
+                        sizes={SIZES}
+                        load={near}
+                        className={s.printImg}
+                      />
+                    </span>
+                  );
+                })}
               </span>
-              <a
-                className={s.address}
-                href={media.href}
-                target="_blank"
-                rel="noreferrer"
-                title={`Open ${media.label} in a new tab`}
-              >
-                {media.label}
-              </a>
-              {/* The live site, in a new tab: at the bar's end, as a
-                  browser's own control would be; it moves when pointed at. */}
-              <a
-                data-animate-icon
-                className={s.openLive}
-                href={media.href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Open ${media.label} in a new tab`}
-                title={`Open ${media.label} in a new tab`}
-              >
-                <SquareArrowOutUpRight size={16} aria-hidden />
-              </a>
-            </div>
-            <div className={s.screen}>
-              <button
-                type="button"
-                className={s.tryLive}
-                onClick={() => show(false)}
-                aria-label={`Enlarge ${media.label}`}
-              >
-                <span className={s.strip} style={{ translate: `0 ${-at * 100}%` }}>
-                  {media.screens.map((sc, i) => (
-                    <Picture
-                      key={i}
-                      src={sc.src}
-                      alt={sc.alt}
-                      width={SCREEN_W}
-                      height={SCREEN_H}
-                      sizes={SIZES}
-                      load={near}
-                      className={s.shot}
-                    />
-                  ))}
+            </button>
+          ) : (
+            <>
+              <div className={s.chrome}>
+                <span className={s.dots} aria-hidden>
+                  <i />
+                  <i />
+                  <i />
                 </span>
-              </button>
-            </div>
-          </>
-        )}
-        {media.kind !== "album" && <span className={s.sheen} aria-hidden />}
+                <a
+                  className={s.address}
+                  href={media.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`Open ${media.label} in a new tab`}
+                >
+                  {media.label}
+                </a>
+                {/* The live site, in a new tab: at the bar's end, as a
+                  browser's own control would be; it moves when pointed at. */}
+                <a
+                  data-animate-icon
+                  className={s.openLive}
+                  href={media.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open ${media.label} in a new tab`}
+                  title={`Open ${media.label} in a new tab`}
+                >
+                  <SquareArrowOutUpRight size={16} aria-hidden />
+                </a>
+              </div>
+              <div className={s.screen}>
+                <button
+                  type="button"
+                  className={s.tryLive}
+                  onClick={() => show(false)}
+                  aria-label={`Enlarge ${media.label}`}
+                >
+                  <span className={s.strip} style={{ translate: `0 ${-at * 100}%` }}>
+                    {media.screens.map((sc, i) => (
+                      <Picture
+                        key={i}
+                        src={sc.src}
+                        alt={sc.alt}
+                        width={SCREEN_W}
+                        height={SCREEN_H}
+                        sizes={SIZES}
+                        load={near}
+                        className={s.shot}
+                      />
+                    ))}
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
+          {media.kind !== "album" && <span className={s.sheen} aria-hidden />}
+        </div>
       </div>
       <figcaption className={s.caption}>
-        {media.kind !== "photo" && (
+        {album && (
+          <span className={s.pips} aria-hidden>
+            {Array.from({ length: count }, (_, i) => (
+              <i key={i} data-on={i === at} />
+            ))}
+          </span>
+        )}
+        {media.kind === "site" && (
           <span className={s.stepper}>
             <button
               type="button"
               className={s.stepButton}
-              aria-label={media.kind === "album" ? "Previous photo" : "Previous screen"}
+              aria-label="Previous screen"
               onClick={() => step(-1)}
             >
               <svg viewBox="0 0 10 10" aria-hidden>
@@ -326,7 +362,7 @@ function Framed({ media }: { media: FramedMedia }) {
             <button
               type="button"
               className={s.stepButton}
-              aria-label={media.kind === "album" ? "Next photo" : "Next screen"}
+              aria-label="Next screen"
               onClick={() => step(1)}
             >
               <svg viewBox="0 0 10 10" aria-hidden>
@@ -341,7 +377,8 @@ function Framed({ media }: { media: FramedMedia }) {
             ? (media.photos[at].caption ?? media.photos[at].alt)
             : media.caption}
       </figcaption>
-      {open && (
+      {open && Lightbox && (
+        // eslint-disable-next-line react-hooks/static-components -- not made here: the lightbox module's own export, the same on every render, held once fetched (lightbox-lazy.ts)
         <Lightbox
           media={media}
           start={at}

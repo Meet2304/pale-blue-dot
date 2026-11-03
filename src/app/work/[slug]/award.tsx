@@ -7,6 +7,7 @@ import type { AwardStory, Unit } from "@/content/work";
 import { CallFlow } from "./call-flow";
 import { Countdown } from "./clock";
 import { Journey } from "./journey";
+import { Nova } from "./nova";
 import { People } from "./people";
 import { PlatformLinks } from "./platforms";
 import { Prints } from "./prints";
@@ -16,17 +17,17 @@ import j from "./journey.module.css";
 import w from "./work.module.css";
 
 /**
- * An award's own page, written to be read like a short article: a title, a
- * paragraph and the achievement in one photograph, then each win side by
- * side with its announcement. Below them, how it works, shown by a short
- * animation of a call (call-flow.tsx) with a line above it and a few
- * bullets under it, and my part; a rail beside the column (steps.tsx) jumps
- * between the parts.
+ * An award's own page, across the full width of the screen, as every page
+ * is: the head (a title, a paragraph and the achievement in one
+ * photograph, with the award's supernova beside them, to play with:
+ * nova.tsx); how it works, shown by a short animation of a
+ * call (call-flow.tsx); and my part, with a rail beside them (steps.tsx).
  *
- * Then the page opens out to its full width for the journey: the days on a
- * large globe, from the first hour of the hackathon to the stage in Seoul,
- * with their photographs and the people in them (journey.tsx). Last, those
- * people, each linked to their LinkedIn (people.tsx).
+ * Then the journey: the days, from the first hour of the hackathon to the
+ * way home, with their photographs, the people in them, and on the day of
+ * the wins, the announcements and the posts they were made in; the globe
+ * beside them, quieter, as their setting (journey.tsx). Last, the people,
+ * each with their face and their LinkedIn (people.tsx).
  */
 export function AwardBody({
   u,
@@ -43,7 +44,6 @@ export function AwardBody({
   const kind = KINDS[u.kind];
   const flight = story.days.flight;
   const parts = [
-    { id: "wins", label: "The wins" },
     { id: "how", label: "How it works" },
     { id: "part", label: "My part" },
     ...(flight ? [{ id: "journey", label: "The journey" }] : []),
@@ -56,102 +56,71 @@ export function AwardBody({
     <>
       <article className={a.page}>
         <header className={a.head}>
-          <p className={w.kicker}>
-            <span className={w.mark} aria-hidden>
-              {kind.mark}
-            </span>{" "}
-            Awards
-            <span className={w.sep} aria-hidden>
-              ·
-            </span>
-            October 2026
-          </p>
-          <h1 className={a.title}>{story.title}</h1>
-          <p className={a.intro}>{story.intro}</p>
-          <p className={a.links}>
-            <a href={story.project.href} target="_blank" rel="noreferrer">
-              {story.project.name} ↗
-            </a>
-            {story.project.repo && (
-              <a
-                href={story.project.repo}
-                target="_blank"
-                rel="noreferrer"
-                data-icon="github"
-              >
-                <WayMark icon="github" className={w.codeMark} />
-                Code
+          <div className={a.headText}>
+            <p className={w.kicker}>
+              <span className={w.mark} aria-hidden>
+                {kind.mark}
+              </span>{" "}
+              Awards
+              <span className={w.sep} aria-hidden>
+                ·
+              </span>
+              October 2026
+            </p>
+            <h1 className={a.title}>{story.title}</h1>
+            <p className={a.intro}>{story.intro}</p>
+            <p className={a.links}>
+              <a href={story.project.href} target="_blank" rel="noreferrer">
+                {story.project.name} ↗
               </a>
+              {story.project.repo && (
+                <a
+                  href={story.project.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-icon="github"
+                >
+                  <WayMark icon="github" className={w.codeMark} />
+                  Code
+                </a>
+              )}
+            </p>
+            {story.hero && (
+              <figure className={a.hero}>
+                <Prints
+                  photos={[story.hero]}
+                  shown
+                  names={names}
+                  sizes="(max-width: 860px) 92vw, 44rem"
+                  className={j.single}
+                />
+                <figcaption className={a.heroCaption}>
+                  {talk?.at && (
+                    <span className={a.talk}>
+                      <span className={a.dot} aria-hidden />
+                      <Countdown
+                        at={talk.at}
+                        before="On stage in Seoul"
+                        after={`Spoke in Seoul, ${talk.when}`}
+                      />
+                    </span>
+                  )}
+                  <span>{story.hero.caption}</span>
+                </figcaption>
+              </figure>
             )}
-          </p>
-          {story.hero && (
-            <figure className={a.hero}>
-              <Prints
-                photos={[story.hero]}
-                shown
-                names={names}
-                sizes="(max-width: 860px) 92vw, 40rem"
-                className={j.single}
-              />
-              <figcaption className={a.heroCaption}>
-                {talk?.at && (
-                  <span className={a.talk}>
-                    <span className={a.dot} aria-hidden />
-                    <Countdown
-                      at={talk.at}
-                      before="On stage in Seoul"
-                      after={`Spoke in Seoul, ${talk.when}`}
-                    />
-                  </span>
-                )}
-                <span>{story.hero.caption}</span>
-              </figcaption>
-            </figure>
-          )}
+          </div>
+          <Nova colors={colors} />
         </header>
 
         <div className={a.body}>
           <Steps parts={parts} />
 
           <div className={a.parts}>
-            <Part id="wins" title="The wins">
-              <div className={a.wins}>
-                {story.wins.map((win) => (
-                  <div key={win.by} className={a.win}>
-                    <a
-                      href={win.links[0].href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={a.winImage}
-                      tabIndex={-1}
-                      aria-hidden
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- served as is, as every picture on the site is (picture.tsx) */}
-                      <img
-                        src={win.image.src}
-                        width={win.image.width}
-                        height={win.image.height}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </a>
-                    <span className={a.winBy}>
-                      {win.by} · {win.date}
-                    </span>
-                    <span className={a.winTitle}>{win.title}</span>
-                    <span className={a.winEvent}>{win.event}</span>
-                    <span className={a.winLine}>{win.line}</span>
-                    <PlatformLinks links={win.links} by={win.by} />
-                  </div>
-                ))}
-              </div>
-            </Part>
-
             <Part id="how" title="How it works">
               <p className={a.p}>{story.how.line}</p>
               <CallFlow steps={story.how.steps} label="Steps of a call" />
-              <ul className={a.list}>
+              <ul className={`${a.list} ${a.spread}`}>
                 {story.how.points.map((pt) => (
                   <li key={pt}>{pt}</li>
                 ))}
@@ -162,7 +131,7 @@ export function AwardBody({
               <p className={a.p}>
                 On the team I was <b>{story.role.title}</b>. I built:
               </p>
-              <ul className={a.list}>
+              <ul className={`${a.list} ${a.spread}`}>
                 {story.role.built.map((d) => (
                   <li key={d}>{d}</li>
                 ))}
@@ -197,6 +166,7 @@ export function AwardBody({
             flight={flight}
             colors={colors}
             people={story.people ?? []}
+            posts={<Posts wins={story.wins} />}
           />
         </section>
       )}
@@ -208,7 +178,6 @@ export function AwardBody({
           </h2>
           <p className={j.lede}>
             The team I went with, the other winners, and the people I met at the summit.
-            Point at a name to see where we met.
           </p>
           <People people={story.people} stops={story.days.stops} />
         </section>
@@ -216,6 +185,47 @@ export function AwardBody({
 
       <div className={a.pager}>{pager}</div>
     </>
+  );
+}
+
+/**
+ * The wins as they were announced: each announcement's own card, who gave
+ * it and when, what it is, a line on it, and the post on each platform it
+ * was made on (platforms.tsx). Shown with the day of the wins.
+ */
+function Posts({ wins }: { wins: AwardStory["wins"] }) {
+  return (
+    <div className={a.wins}>
+      {wins.map((win) => (
+        <div key={win.by} className={a.win}>
+          <a
+            href={win.links[0].href}
+            target="_blank"
+            rel="noreferrer"
+            className={a.winImage}
+            tabIndex={-1}
+            aria-hidden
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- served as is, as every picture on the site is (picture.tsx) */}
+            <img
+              src={win.image.src}
+              width={win.image.width}
+              height={win.image.height}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+          <span className={a.winBy}>
+            {win.by} · {win.date}
+          </span>
+          <span className={a.winTitle}>{win.title}</span>
+          <span className={a.winEvent}>{win.event}</span>
+          <span className={a.winLine}>{win.line}</span>
+          <PlatformLinks links={win.links} by={win.by} />
+        </div>
+      ))}
+    </div>
   );
 }
 

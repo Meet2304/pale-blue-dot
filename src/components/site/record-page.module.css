@@ -1,5 +1,5 @@
-/* A reading page: the work list, the résumé, the record.
-   The same frame as the story page, with a column instead of the photograph. */
+/* A reading page: the work list, the résumé, the record. The same frame as
+   every page, across the full width at the site's edges. */
 .root {
   --fg: #e7eaef;
   --soft: #a3a9b4;
@@ -19,7 +19,7 @@
 
 .top {
   display: flex;
-  padding: 4.5rem 6vw 0;
+  padding: 4.5rem var(--edge) 0;
 }
 
 .back {
@@ -39,10 +39,15 @@
   color: var(--fg);
 }
 
+/* Across the full width at the site's edges: the title and its lede keep a
+   reading measure; the entries run in columns across the width. */
 .page {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: clamp(2.5rem, 8vh, 5rem) 6vw 6rem;
+  width: 100%;
+  padding: clamp(2.5rem, 8vh, 5rem) var(--edge) 6rem;
+}
+
+.page > p {
+  max-width: 46rem;
 }
 
 .title {
@@ -103,6 +108,9 @@
 }
 
 .entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  column-gap: clamp(1.5rem, 3vw, 3rem);
   margin: 0.8rem 0 0;
   padding: 0;
   list-style: none;

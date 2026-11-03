@@ -4,7 +4,7 @@
   place-content: center;
   justify-items: center;
   min-height: 80svh;
-  padding: 6rem 6vw 4rem;
+  padding: 6rem var(--edge) 4rem;
   background: #000;
   color: #e7eaef;
   font-family: var(--plex-sans), sans-serif;

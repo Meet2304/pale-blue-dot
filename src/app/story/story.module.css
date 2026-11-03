@@ -19,7 +19,7 @@
 .top {
   display: flex;
   /* Clear of the bar, docked at the top (page-nav.tsx). */
-  padding: 4.5rem 6vw 0;
+  padding: 4.5rem var(--edge) 0;
 }
 
 .home {
@@ -42,4 +42,34 @@
 /* There is no bar over the photograph here, so it sits nearer the top. */
 .root :global(.hz-note-sky) {
   padding-top: clamp(2rem, 7vh, 4.5rem);
+}
+
+/* On a wide screen the page runs the full width at the site's edges, in
+   two columns: the photograph on the left, held in view, and the letter
+   beside it, read down. */
+@media (min-width: 1001px) {
+  .content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 5vw, 6rem);
+    align-items: start;
+    padding: 0 var(--edge);
+  }
+
+  .content :global(.hz-note-sky) {
+    position: sticky;
+    top: calc(var(--nav-h) + 1.5rem);
+    justify-content: flex-start;
+    padding: 2.5rem 0 0;
+  }
+
+  .content :global(.hz-note-frame) {
+    width: 100%;
+  }
+
+  .content :global(.hz-note-letter) {
+    max-width: 38rem;
+    margin: 0;
+    padding: 2.5rem 0 var(--space-10);
+  }
 }

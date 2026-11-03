@@ -34,4 +34,15 @@
   /* One height, shared by the bar itself, the top padding every page needs to
      clear it, and scroll-padding-top for in-page anchors. */
   --nav-h: 60px;
+
+  /* The page's side gutter: the one edge every page's content keeps to, the
+     same as the home page's and the footer's, so no page sits in a narrow
+     column with empty space either side. On a phone, the gutter. */
+  --edge: 6vw;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --edge: var(--gutter);
+  }
 }

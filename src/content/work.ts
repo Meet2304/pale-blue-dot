@@ -124,6 +124,8 @@ export type Person = {
   linkedin?: string;
   /** The list they're named in on the page. */
   group: "team" | "winners" | "summit";
+  /** Their face, cut from the photographs (4:5, in two sizes). */
+  portrait?: string;
 };
 
 /** What a piece of work shows in the bar's panel when pointed at. */
@@ -253,6 +255,9 @@ export type AwardStory = {
       home?: number;
       /** The northern lights, on the globe, while this day is read. */
       aurora?: boolean;
+      /** The day the wins were announced: the announcements, and the posts
+          they were made in, are shown with it. */
+      wins?: boolean;
       /** Its photographs, and how many go in each row (all in one, if
           not said). */
       photos?: Snapshot[];
@@ -655,6 +660,7 @@ export const COLLECTIONS: Collection[] = [
           people: [
             {
               id: "egshiglen",
+              portrait: "/work/hackathon-wins/people/egshiglen.webp",
               name: "Egshiglen Batjargal",
               role: "Vitamin Bob, Policy & Data",
               linkedin: "https://www.linkedin.com/in/egshiglen/",
@@ -662,6 +668,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "rizaldy",
+              portrait: "/work/hackathon-wins/people/rizaldy.webp",
               name: "Rizaldy Al Kautsar Utomo",
               role: "Vitamin Bob, Analytics & Research",
               linkedin: "https://www.linkedin.com/in/rizaldykautsar/",
@@ -669,6 +676,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "yusril",
+              portrait: "/work/hackathon-wins/people/yusril.webp",
               name: "Yusril Hana",
               role: "Vitamin Bob, Strategy & Impact",
               linkedin: "https://www.linkedin.com/in/yusrilhana/",
@@ -676,6 +684,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "tae-yoon",
+              portrait: "/work/hackathon-wins/people/tae-yoon.webp",
               name: "Tae Yoon Moon",
               role: "Winner, Agriculture track",
               linkedin: "https://www.linkedin.com/in/tae-yoon-moon-398b11313/",
@@ -683,6 +692,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "olivia",
+              portrait: "/work/hackathon-wins/people/olivia.webp",
               name: "Olivia Putri",
               role: "Winner, Tourism track",
               linkedin: "https://www.linkedin.com/in/olivia-putri-5a13412b0/",
@@ -690,6 +700,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "anna",
+              portrait: "/work/hackathon-wins/people/anna.webp",
               name: "Anna Bjerde",
               role: "Managing Director of Operations, World Bank",
               linkedin: "https://www.linkedin.com/in/anna-bjerde/",
@@ -697,6 +708,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "matt",
+              portrait: "/work/hackathon-wins/people/matt.webp",
               name: "Matt Hulse",
               role: "Senior Health Specialist, World Bank",
               linkedin: "https://www.linkedin.com/in/mthulse/",
@@ -704,6 +716,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "hayley",
+              portrait: "/work/hackathon-wins/people/hayley.webp",
               name: "Hayley Pottle",
               role: "Consultant, World Bank Group Digital Vice Presidency",
               linkedin: "https://www.linkedin.com/in/hayleypottle/",
@@ -711,12 +724,19 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "jonathan",
+              portrait: "/work/hackathon-wins/people/jonathan-mj.webp",
               name: "Jonathan Nagao",
               role: "Director of Data and AI, World Bank Group",
               linkedin: "https://www.linkedin.com/in/jonathan-gen-nagao-445307/",
               group: "summit",
             },
-            { id: "mj", name: "MJ", group: "summit" },
+            {
+              id: "mj",
+              name: "MJ",
+              group: "summit",
+              /* With Jonathan: which of the two is which isn't known. */
+              portrait: "/work/hackathon-wins/people/jonathan-mj.webp",
+            },
           ],
           days: {
             line: "Pittsburgh to Seoul: 21 hours of travel, four days at the summit, one talk, and a city that was beautiful at every hour.",
@@ -733,50 +753,29 @@ export const COLLECTIONS: Collection[] = [
               },
               {
                 at: "2026-10-06T12:01:00-04:00",
-                when: "6 Oct",
+                when: "6 and 14 Oct",
                 place: "Pittsburgh",
-                title: "World Bank: we won Health",
-                line: "And an invitation to speak in Seoul.",
+                title: "Two wins",
+                line: "On 6 October the World Bank Group named us winners of its Health track, with an invitation to speak in Seoul. On 14 October we pitched live in Hack-Nation's final, and took the whole hackathon.",
                 ll: [-79.94, 40.44],
-              },
-              {
-                at: "2026-10-14T20:00:00-04:00",
-                when: "14 Oct",
-                place: "Pittsburgh",
-                title: "Hack-Nation: Grand winner",
-                line: "We pitched live, and took the whole hackathon.",
-                ll: [-79.94, 40.44],
+                wins: true,
               },
               {
                 at: "2026-10-17T17:59:00-04:00",
                 when: "17 Oct, 17:59",
-                place: "Pittsburgh → Atlanta",
-                title: "Wheels up",
-                line: "South to Atlanta first, then the long way round: over the top of the world to Seoul.",
-                along: 0.025,
-              },
-              {
-                when: "In the air",
-                place: "Over the top of the world",
-                title: "Northern lights",
-                line: "Atlanta to Seoul goes over the top of the world. In the middle of the night, the sky out of the window turned green.",
+                place: "Pittsburgh → Seoul",
+                title: "Wheels up, and the northern lights",
+                line: "South to Atlanta first, then the long way round, over the top of the world. In the middle of the night, the sky out of the window turned green.",
                 along: 0.5,
                 aurora: true,
                 photos: [SEOUL.aurora],
               },
               {
                 at: "2026-10-19T04:15:00+09:00",
-                when: "19 Oct, 04:15",
-                place: "Seoul",
-                title: "Seoul, before dawn",
-                line: "Into Incheon, 21 hours after leaving Pittsburgh. The summit opened that day.",
-                ll: [126.99, 37.54],
-              },
-              {
                 when: "19–22 Oct",
                 place: "Seoul",
-                title: "The city",
-                line: "Between sessions, Seoul: the skyline at sunset, mountains behind the traffic, quiet streets at night, a lane under string lights, and hanok walls in the morning sun.",
+                title: "Into Seoul",
+                line: "Into Incheon before dawn, 21 hours after leaving Pittsburgh. Between sessions, the city: the skyline at sunset, mountains behind the traffic, quiet streets at night, a lane under string lights, and hanok walls in the morning sun.",
                 ll: [126.99, 37.54],
                 photos: [
                   SEOUL.skyline,
@@ -795,6 +794,15 @@ export const COLLECTIONS: Collection[] = [
                 line: "The Global AI & Digital Summit, at the Grand Hyatt Seoul: held by the World Bank Group with Korea's Ministry of Finance and Economy and Ministry of Science and ICT.",
                 ll: [126.99, 37.54],
                 photos: [SEOUL.wall],
+              },
+              {
+                when: "19–22 Oct",
+                place: "Seoul",
+                title: "All three tracks",
+                line: "Health, Agriculture and Tourism: the four of us for Health, Tae Yoon Moon for Agriculture and Olivia Putri for Tourism, with Hayley.",
+                ll: [126.99, 37.54],
+                photos: [SEOUL.winners, SEOUL.mirror],
+                with: ["tae-yoon", "olivia", "hayley"],
               },
               {
                 when: "19–22 Oct",
@@ -822,15 +830,6 @@ export const COLLECTIONS: Collection[] = [
                 ll: [126.99, 37.54],
                 photos: [SEOUL.breakfast],
                 with: ["jonathan", "mj", "hayley"],
-              },
-              {
-                when: "19–22 Oct",
-                place: "Seoul",
-                title: "All three tracks",
-                line: "Health, Agriculture and Tourism: the four of us for Health, Tae Yoon Moon for Agriculture and Olivia Putri for Tourism, with Hayley.",
-                ll: [126.99, 37.54],
-                photos: [SEOUL.winners, SEOUL.mirror],
-                with: ["tae-yoon", "olivia", "hayley"],
               },
               {
                 at: "2026-10-21T10:30:00+09:00",

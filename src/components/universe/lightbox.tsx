@@ -96,6 +96,16 @@ export function Lightbox({
     fly("in");
   }, [fly]);
 
+  /* While it's open the sky behind holds still (universe-canvas.tsx), so
+     opening and stepping through are never kept waiting by it. */
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.lightbox = "open";
+    return () => {
+      delete root.dataset.lightbox;
+    };
+  }, []);
+
   const close = useCallback(() => {
     if (closing) return;
     setClosing(true);
@@ -185,6 +195,34 @@ export function Lightbox({
       <button ref={closeRef} type="button" className={s.lbClose} onClick={close}>
         <span aria-hidden>×</span> Close
       </button>
+
+      {/* An album's arrows, at the screen's left and right edges. */}
+      {album && count > 1 && (
+        <>
+          <button
+            type="button"
+            className={s.lbEdge}
+            data-side="prev"
+            onClick={() => setAt((i) => (i - 1 + count) % count)}
+            aria-label="Previous photo"
+          >
+            <svg viewBox="0 0 10 10" aria-hidden>
+              <path d="M6.5 1.5 3 5l3.5 3.5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={s.lbEdge}
+            data-side="next"
+            onClick={() => setAt((i) => (i + 1) % count)}
+            aria-label="Next photo"
+          >
+            <svg viewBox="0 0 10 10" aria-hidden>
+              <path d="M3.5 1.5 7 5 3.5 8.5" />
+            </svg>
+          </button>
+        </>
+      )}
 
       <div ref={stageRef} className={s.lbStage}>
         {shot ? (
@@ -276,12 +314,19 @@ export function Lightbox({
       </div>
 
       <div className={s.lbFoot}>
-        {steps && (
+        {album && count > 1 && (
+          <span className={s.pips} aria-hidden>
+            {Array.from({ length: count }, (_, i) => (
+              <i key={i} data-on={i === at} />
+            ))}
+          </span>
+        )}
+        {site && !live && (
           <span className={s.lbSteps}>
             <button
               type="button"
               onClick={() => setAt((i) => (i - 1 + count) % count)}
-              aria-label={album ? "Previous photo" : "Previous screen"}
+              aria-label="Previous screen"
             >
               ←
             </button>
@@ -293,7 +338,7 @@ export function Lightbox({
             <button
               type="button"
               onClick={() => setAt((i) => (i + 1) % count)}
-              aria-label={album ? "Next photo" : "Next screen"}
+              aria-label="Next screen"
             >
               →
             </button>

@@ -8,18 +8,12 @@ import {
   type PointerEvent,
   type RefObject,
 } from "react";
-import dynamic from "next/dynamic";
 
+import { useLightbox } from "@/components/universe/lightbox-lazy";
 import { Picture } from "@/components/universe/picture";
 import type { Snapshot } from "@/content/work";
 
 import j from "./journey.module.css";
-
-/* The zoom view's code is fetched on the first click, not with the page. */
-const Lightbox = dynamic(
-  () => import("@/components/universe/lightbox").then((m) => m.Lightbox),
-  { ssr: false },
-);
 
 /* At rest each print sits a little askew, each its own way, as prints laid
    on a table do. */
@@ -86,6 +80,8 @@ export function Prints({
   const ref = useRef<HTMLDivElement>(null);
   const near = useNear(ref);
   const [open, setOpen] = useState<{ at: number; from: DOMRect | null } | null>(null);
+  /* The zoom view, fetched once the prints are near (lightbox-lazy.ts). */
+  const Lightbox = useLightbox(near);
 
   /* What opened the lightbox gets focus back when it closes. */
   const opener = useRef<HTMLElement | null>(null);
@@ -135,7 +131,8 @@ export function Prints({
           </div>
         );
       })}
-      {open && (
+      {open && Lightbox && (
+        // eslint-disable-next-line react-hooks/static-components -- not made here: the lightbox module's own export, the same on every render, held once fetched (lightbox-lazy.ts)
         <Lightbox
           media={{ kind: "album", photos }}
           start={open.at}

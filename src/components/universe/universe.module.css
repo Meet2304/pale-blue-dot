@@ -357,12 +357,10 @@
   flex: 1;
 }
 
-/* Between the pages and the ways to get in touch: a short hairline. */
+/* Between the pages and the ways to get in touch: a little space, never a
+   rule (no line runs down anything on the site). */
 .barRule {
-  width: 1px;
-  height: 1rem;
-  margin: 0 0.35rem;
-  background: var(--hair);
+  width: 0.35rem;
 }
 
 /* Contact's mark, in the bar's monochrome: it reads as an address before
@@ -474,7 +472,6 @@
 
 .viewer {
   position: relative;
-  border-right: 1px solid var(--hair);
 }
 
 /* The viewer's cell: the kind's body, and over it the still of whichever
@@ -482,11 +479,9 @@
 .viewerCell {
   position: relative;
   display: grid;
-  border-right: 1px solid var(--hair);
 }
 
 .viewerCell > .viewer {
-  border-right: 0;
   transition: opacity 180ms ease-out;
 }
 
@@ -875,7 +870,28 @@
 
 .period {
   color: var(--earth);
-  text-shadow: 0 0 0.5em rgb(146 203 251 / 0.55);
+}
+
+/* Its glow, a light of its own behind it, centred on the dot's ink (IBM
+   Plex Sans, at the greeting's line height of 1.1) rather than a text
+   shadow: a shadow widens the text's painted box, and the browser then
+   counted the dot, lit last, as the page's largest paint, at ~3.8 s. */
+.period::after {
+  content: "";
+  position: absolute;
+  top: 0.883em;
+  left: 0.13em;
+  width: 1.2em;
+  height: 1.2em;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(146 203 251 / 0.16),
+    rgb(146 203 251 / 0.05) 45%,
+    transparent
+  );
+  pointer-events: none;
 }
 
 /* The full stop is the pale blue dot, and the last thing said: it glows in
@@ -1481,6 +1497,96 @@
 
 .print[data-tuck] {
   animation: tuck 950ms cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+/* What a picture and its arrows sit in. */
+.frameBox {
+  position: relative;
+}
+
+/* An album's arrows, at its left and right edges, half outside it, level
+   with its middle: round, dark, a hairline, a chevron. Brighter when the
+   album is pointed at; pointed at themselves, they light in the piece's
+   colour and nudge the way they go. */
+.edge {
+  position: absolute;
+  top: 50%;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  margin-top: -1.3rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.62);
+  backdrop-filter: blur(6px);
+  color: var(--fg);
+  cursor: pointer;
+  opacity: 0.72;
+  transition:
+    opacity 200ms,
+    border-color 200ms,
+    color 200ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 200ms;
+}
+
+.edge[data-side="prev"] {
+  left: -1.3rem;
+}
+
+.edge[data-side="next"] {
+  right: -1.3rem;
+}
+
+.edge svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.frameBox:hover .edge {
+  opacity: 1;
+}
+
+.edge:is(:hover, :focus-visible) {
+  opacity: 1;
+  border-color: var(--kind);
+  color: var(--kind-soft);
+}
+
+.edge[data-side="prev"]:hover {
+  translate: -2px 0;
+}
+
+.edge[data-side="next"]:hover {
+  translate: 2px 0;
+}
+
+.edge:active {
+  scale: 0.92;
+}
+
+.edge:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* On a phone, inside the album's edges. */
+@media (max-width: 640px) {
+  .edge[data-side="prev"] {
+    left: 0.4rem;
+  }
+
+  .edge[data-side="next"] {
+    right: 0.4rem;
+  }
 }
 
 @keyframes tuck {
@@ -2340,6 +2446,70 @@
   gap: 0.7rem;
 }
 
+/* An album's arrows, opened up: at the screen's left and right edges,
+   level with the photo. */
+.lbEdge {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-top: -1.5rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.55);
+  color: var(--fg);
+  cursor: pointer;
+  animation: lbIn 300ms 140ms ease both;
+  transition:
+    border-color 200ms,
+    color 200ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.lbEdge[data-side="prev"] {
+  left: max(1rem, 2.5vw);
+}
+
+.lbEdge[data-side="next"] {
+  right: max(1rem, 2.5vw);
+}
+
+.lbEdge svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lbEdge:is(:hover, :focus-visible) {
+  border-color: var(--kind);
+  color: var(--kind-soft);
+}
+
+.lbEdge[data-side="prev"]:hover {
+  translate: -3px 0;
+}
+
+.lbEdge[data-side="next"]:hover {
+  translate: 3px 0;
+}
+
+.lbEdge:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.lightbox[data-closing="true"] .lbEdge {
+  animation: lbOut 180ms ease both;
+}
+
 .lbSteps button {
   width: 2rem;
   height: 2rem;
@@ -2424,7 +2594,7 @@
   padding: 1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-left: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: -24px 0 48px rgb(0 0 0 / 0.5);
   background:
     radial-gradient(120% 60% at 100% 0%, rgb(60 90 160 / 0.14), transparent 60%),
     rgb(4 5 8 / 0.94);

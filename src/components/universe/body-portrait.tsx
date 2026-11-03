@@ -66,10 +66,14 @@ export function BodyPortrait({
     let mono = "monospace";
     let raf = 0;
     let visible = true;
+    let drawn = 0;
+    let last = 0;
     const glow = createGlow();
 
     const resize = () => {
-      ({ w, h, dpr } = fit(canvas, 2));
+      /* A backdrop, set in glyphs: at one and a half times the pixels it
+         is as sharp, and half the work to draw. */
+      ({ w, h, dpr } = fit(canvas, 1.5));
       mono =
         getComputedStyle(canvas).getPropertyValue("--font-mono").trim() || "monospace";
       if (calm) draw(0);
@@ -117,14 +121,19 @@ export function BodyPortrait({
         light: portrait.mapLight ?? false,
       });
       portrait.over?.(g, light);
-      /* Its own light, spilling round it (orb.ts). */
-      gatherGlow(glow, el);
+      /* Its own light, spilling round it (orb.ts), gathered every third
+         drawing: it turns slowly enough that the glow never lags. */
+      if (drawn++ % 3 === 0) gatherGlow(glow, el);
       shedGlow(g, glow, 0, 0, el.width, el.height, body === "sun" ? 0.2 : 1);
     }
 
+    /* It turns slowly: a little over twenty drawings a second reads the
+       same, and leaves the frames between free for the page. */
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (visible) draw(now / 1000);
+      if (!visible || now - last < 44) return;
+      last = now;
+      draw(now / 1000);
     };
 
     resize();
