@@ -232,7 +232,7 @@ const copy = {
           ch = cw * 1.72;
         g.save();
         g.strokeStyle = colors[2];
-        g.globalAlpha = victory ? 0.085 : 0.19;
+        g.globalAlpha = victory ? 0.13 : 0.19;
         g.lineWidth = 0.7;
         for (const [a, b, tilt] of [
           [440, 265, -0.42],
@@ -247,7 +247,7 @@ const copy = {
         const seed = layout().placed.find((p) => p.id === u.id)?.seed ?? 0.4;
         const frame = makeFrame(0, 0, 0.35, null, cw / R, ch / R, seed, true);
         frame.look = look;
-        const bodyAlpha = victory ? 0.32 : 1;
+        const bodyAlpha = victory ? 0.55 : 1;
         const light = { cx, cy, R, colors, alpha: bodyAlpha, t: 0, calm: true, look };
         const extent = look.planet
           ? look.planet.ring || look.planet.moons > 1
