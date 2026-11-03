@@ -7,6 +7,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || "playwright")
 const out = path.resolve(
   process.env.OG_OUTPUT_DIR || path.join(root, ".cache/work-og"),
 );
+// Render one card for focused revisions without rewriting the other assets.
+const requestedId = process.env.OG_UNIT_ID;
 fs.mkdirSync(out, { recursive: true });
 const modules = {};
 function bundle(file) {
@@ -59,6 +61,8 @@ const copy = {
     "Hack-Nation &\nWorld Bank Group",
     "Grand winner · Hack-Nation",
     "Health track winner · World Bank Group",
+    "Global AI & Digital Summit",
+    "Seoul, South Korea · October 2026",
   ],
   "carnegie-mellon": [
     "Carnegie Mellon\nUniversity",
@@ -152,6 +156,28 @@ const copy = {
     ]);
     await document.fonts.ready;
   });
+  const assets = Object.fromEntries(
+    [
+      ["winners", "work/hackathon-wins/seoul/track-winners.webp", "image/webp"],
+      ["logoM", "logos/wordmark/m.png", "image/png"],
+      ["logoEet", "logos/wordmark/eet.png", "image/png"],
+    ].map(([key, file, mime]) => [
+      key,
+      `data:${mime};base64,${fs.readFileSync(path.join(root, "public", file)).toString("base64")}`,
+    ]),
+  );
+  await page.evaluate(async (assets) => {
+    window.ogAssets = Object.fromEntries(
+      await Promise.all(
+        Object.entries(assets).map(async ([key, src]) => {
+          const image = new Image();
+          image.src = src;
+          await image.decode();
+          return [key, image];
+        }),
+      ),
+    );
+  }, assets);
   const cards = await page.evaluate(() =>
     req("src/content/work.ts").UNITS.map((u) => ({
       id: u.id,
@@ -160,6 +186,10 @@ const copy = {
       brief: u.brief,
     })),
   );
+  if (requestedId && !cards.some((u) => u.id === requestedId))
+    throw new Error(`Unknown work card: ${requestedId}`);
+  if (requestedId)
+    cards.splice(0, cards.length, ...cards.filter((u) => u.id === requestedId));
   for (const u of cards) {
     const details = await page.evaluate(
       ({ u, copy }) => {
@@ -171,6 +201,7 @@ const copy = {
         const g = document.querySelector("canvas").getContext("2d");
         g.fillStyle = "#000";
         g.fillRect(0, 0, 1200, 630);
+        const victory = u.id === "hackathon-wins";
         const kind = KINDS[u.kind],
           look = lookOf(u.id, u.kind),
           colors = lookColors(look),
@@ -191,9 +222,12 @@ const copy = {
         g.globalAlpha = 1;
         const portrait = PORTRAITS[kind.body],
           [rx, ry] = reachOf(look, kind.body),
-          cx = 960,
-          cy = 300,
-          R = Math.min(450 / rx, 370 / ry) * (0.8 + 0.2 * look.scale),
+          cx = victory ? 930 : 960,
+          cy = victory ? 174 : 300,
+          R =
+            Math.min(450 / rx, 370 / ry) *
+            (0.8 + 0.2 * look.scale) *
+            (victory ? 0.64 : 1),
           cw = CELL.wide,
           ch = cw * 1.72;
         g.save();
@@ -205,7 +239,8 @@ const copy = {
           [490, 205, 0.6],
         ]) {
           g.beginPath();
-          g.ellipse(cx, cy, a, b, tilt, 0, Math.PI * 2);
+          const scale = victory ? 0.64 : 1;
+          g.ellipse(cx, cy, a * scale, b * scale, tilt, 0, Math.PI * 2);
           g.stroke();
         }
         g.restore();
@@ -244,6 +279,96 @@ const copy = {
         shade.addColorStop(1, "rgba(0,0,0,0)");
         g.fillStyle = shade;
         g.fillRect(0, 0, 790, 630);
+        if (victory) {
+          // Use the site's actual wordmark masks and pale blue dot.
+          const { logoM, logoEet, winners } = window.ogAssets;
+          const logoHeight = 28;
+          g.drawImage(logoM, 60, 46, logoHeight * 1.208, logoHeight);
+          g.drawImage(
+            logoEet,
+            60 + logoHeight * 1.208,
+            46,
+            logoHeight * 2.153,
+            logoHeight,
+          );
+          g.fillStyle = "#2f9dff";
+          g.beginPath();
+          g.arc(
+            60 + logoHeight * 3.547,
+            46 + logoHeight * 0.839,
+            logoHeight * 0.161,
+            0,
+            Math.PI * 2,
+          );
+          g.fill();
+          g.fillStyle = accent;
+          g.font = '400 13px "IBM Plex Mono"';
+          g.fillText("MEET BHATT / AWARDS", 188, 70);
+          g.font = '400 15px "IBM Plex Mono"';
+          g.fillText("HACKATHON VICTORIES", 60, 140);
+          g.font = '300 58px "IBM Plex Sans"';
+          g.fillStyle = "#f4f6f8";
+          g.fillText(copy[0].split("\n")[0], 57, 214);
+          g.fillStyle = accent;
+          g.fillText(copy[0].split("\n")[1], 57, 278);
+          g.fillStyle = "#c2cbd3";
+          g.font = '400 17px "IBM Plex Mono"';
+          g.fillText(copy[1], 60, 345);
+          g.fillText(copy[2], 60, 377);
+          g.fillStyle = accent;
+          g.fillRect(60, 421, 40, 3);
+          g.fillStyle = "#f4f6f8";
+          g.font = '300 26px "IBM Plex Sans"';
+          g.fillText(copy[3], 60, 469);
+          g.fillStyle = "#b1bec8";
+          g.font = '400 15px "IBM Plex Mono"';
+          g.fillText(copy[4], 60, 499);
+
+          // A wide, unaltered photograph: keep all seven faces and the summit screen.
+          const photo = { x: 650, y: 337, w: 490, h: 226 };
+          const sourceHeight = (winners.width * photo.h) / photo.w;
+          g.drawImage(
+            winners,
+            0,
+            170,
+            winners.width,
+            sourceHeight,
+            photo.x,
+            photo.y,
+            photo.w,
+            photo.h,
+          );
+          g.strokeStyle = "rgba(165,210,140,.35)";
+          g.lineWidth = 1;
+          g.strokeRect(photo.x - 0.5, photo.y - 0.5, photo.w + 1, photo.h + 1);
+          g.strokeStyle = accent;
+          for (const [x, y, dx, dy] of [
+            [photo.x, photo.y, 1, 1],
+            [photo.x + photo.w, photo.y, -1, 1],
+            [photo.x, photo.y + photo.h, 1, -1],
+            [photo.x + photo.w, photo.y + photo.h, -1, -1],
+          ]) {
+            g.beginPath();
+            g.moveTo(x, y + dy * 12);
+            g.lineTo(x, y);
+            g.lineTo(x + dx * 12, y);
+            g.stroke();
+          }
+          g.fillStyle = "#b1bec8";
+          g.font = '400 11px "IBM Plex Mono"';
+          g.fillText("TRACK WINNERS / SEOUL", photo.x, 587);
+          g.fillStyle = accent;
+          g.font = '400 14px "IBM Plex Mono"';
+          g.fillText("meetbhatt.com/work/hackathon-wins", 60, 578);
+          return {
+            body: kind.body,
+            categoryAccent: accent,
+            bodyColors: colors,
+            look,
+            seed,
+            textBottom: 499,
+          };
+        }
         g.fillStyle = accent;
         g.font = '400 15px "IBM Plex Mono"';
         g.fillText("MEET BHATT / " + kind.label.toUpperCase(), 60, 80);
@@ -315,7 +440,10 @@ const copy = {
       image: u.id + ".jpg",
       width: 1200,
       height: 630,
-      alt: `${u.name} — Meet Bhatt. ${copy[u.id][1]}. The portfolio's ${details.body} rendered with its original colors and appearance.`,
+      alt:
+        u.id === "hackathon-wins"
+          ? `${u.name} — Meet Bhatt. Hackathon victories: ${copy[u.id][1]}; ${copy[u.id][2]}. ${copy[u.id][3]}, ${copy[u.id][4]}. Track winners with Hayley Pottle, beside the portfolio's supernova and Meet's logo.`
+          : `${u.name} — Meet Bhatt. ${copy[u.id][1]}. The portfolio's ${details.body} rendered with its original colors and appearance.`,
     });
   }
   await browser.close();
