@@ -222,24 +222,24 @@ const copy = {
         g.globalAlpha = 1;
         const portrait = PORTRAITS[kind.body],
           [rx, ry] = reachOf(look, kind.body),
-          cx = victory ? 930 : 960,
-          cy = victory ? 174 : 300,
+          cx = victory ? 1030 : 960,
+          cy = victory ? 110 : 300,
           R =
             Math.min(450 / rx, 370 / ry) *
             (0.8 + 0.2 * look.scale) *
-            (victory ? 0.64 : 1),
+            (victory ? 0.95 : 1),
           cw = CELL.wide,
           ch = cw * 1.72;
         g.save();
         g.strokeStyle = colors[2];
-        g.globalAlpha = 0.19;
+        g.globalAlpha = victory ? 0.055 : 0.19;
         g.lineWidth = 0.7;
         for (const [a, b, tilt] of [
           [440, 265, -0.42],
           [490, 205, 0.6],
         ]) {
           g.beginPath();
-          const scale = victory ? 0.64 : 1;
+          const scale = victory ? 0.95 : 1;
           g.ellipse(cx, cy, a * scale, b * scale, tilt, 0, Math.PI * 2);
           g.stroke();
         }
@@ -247,7 +247,8 @@ const copy = {
         const seed = layout().placed.find((p) => p.id === u.id)?.seed ?? 0.4;
         const frame = makeFrame(0, 0, 0.35, null, cw / R, ch / R, seed, true);
         frame.look = look;
-        const light = { cx, cy, R, colors, alpha: 1, t: 0, calm: true, look };
+        const bodyAlpha = victory ? 0.18 : 1;
+        const light = { cx, cy, R, colors, alpha: bodyAlpha, t: 0, calm: true, look };
         const extent = look.planet
           ? look.planet.ring || look.planet.moons > 1
             ? portrait.extent
@@ -266,7 +267,7 @@ const copy = {
           ch,
           frame,
           colors,
-          alpha: 1,
+          alpha: bodyAlpha,
           font: `${ch * 0.92}px "IBM Plex Mono"`,
           fn: portrait.fn,
           extent,
@@ -304,33 +305,32 @@ const copy = {
           g.fillStyle = accent;
           g.font = '400 13px "IBM Plex Mono"';
           g.fillText("MEET BHATT / AWARDS", 188, 70);
-          g.font = '400 15px "IBM Plex Mono"';
-          g.fillText("HACKATHON VICTORIES", 60, 140);
-          g.font = '300 58px "IBM Plex Sans"';
+          g.font = '400 14px "IBM Plex Mono"';
+          g.textAlign = "right";
+          g.fillText("HACKATHON VICTORIES", 1140, 70);
+          g.textAlign = "left";
+          g.font = '300 51px "IBM Plex Sans"';
           g.fillStyle = "#f4f6f8";
-          g.fillText(copy[0].split("\n")[0], 57, 214);
+          const titleLead = copy[0].split("\n")[0] + " ";
+          g.fillText(titleLead, 57, 139);
+          const titleOffset = g.measureText(titleLead).width;
           g.fillStyle = accent;
-          g.fillText(copy[0].split("\n")[1], 57, 278);
-          g.fillStyle = "#c2cbd3";
-          g.font = '400 17px "IBM Plex Mono"';
-          g.fillText(copy[1], 60, 345);
-          g.fillText(copy[2], 60, 377);
-          g.fillStyle = accent;
-          g.fillRect(60, 421, 40, 3);
+          g.fillText(copy[0].split("\n")[1], 57 + titleOffset, 139);
           g.fillStyle = "#f4f6f8";
-          g.font = '300 26px "IBM Plex Sans"';
-          g.fillText(copy[3], 60, 469);
+          g.font = '300 23px "IBM Plex Sans"';
+          g.fillText(copy[3], 60, 179);
+          const summitOffset = g.measureText(copy[3]).width;
           g.fillStyle = "#b1bec8";
           g.font = '400 15px "IBM Plex Mono"';
-          g.fillText(copy[4], 60, 499);
+          g.fillText(" / " + copy[4], 60 + summitOffset + 14, 178);
 
-          // A wide, unaltered photograph: keep all seven faces and the summit screen.
-          const photo = { x: 650, y: 337, w: 490, h: 226 };
+          // The photograph leads the card; keep all seven faces and the summit screen.
+          const photo = { x: 60, y: 203, w: 1080, h: 340 };
           const sourceHeight = (winners.width * photo.h) / photo.w;
           g.drawImage(
             winners,
             0,
-            170,
+            180,
             winners.width,
             sourceHeight,
             photo.x,
@@ -354,19 +354,29 @@ const copy = {
             g.lineTo(x + dx * 12, y);
             g.stroke();
           }
+          g.fillStyle = "#c2cbd3";
+          g.font = '400 17px "IBM Plex Mono"';
+          g.fillText(copy[1], 60, 578);
+          const awardOffset = g.measureText(copy[1]).width;
+          g.fillStyle = accent;
+          g.fillText(" / ", 60 + awardOffset + 16, 578);
+          g.fillStyle = "#c2cbd3";
+          g.fillText(copy[2], 60 + awardOffset + 63, 578);
           g.fillStyle = "#b1bec8";
           g.font = '400 11px "IBM Plex Mono"';
-          g.fillText("TRACK WINNERS / SEOUL", photo.x, 587);
+          g.textAlign = "right";
+          g.fillText("TRACK WINNERS / SEOUL", 1140, 609);
+          g.textAlign = "left";
           g.fillStyle = accent;
           g.font = '400 14px "IBM Plex Mono"';
-          g.fillText("meetbhatt.com/work/hackathon-wins", 60, 578);
+          g.fillText("meetbhatt.com/work/hackathon-wins", 60, 609);
           return {
             body: kind.body,
             categoryAccent: accent,
             bodyColors: colors,
             look,
             seed,
-            textBottom: 499,
+            textBottom: 609,
           };
         }
         g.fillStyle = accent;
