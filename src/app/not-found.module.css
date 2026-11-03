@@ -1,5 +1,6 @@
 /* The 404 (not-found.tsx), in the Terminal system's type and colours. */
 .root {
+  position: relative;
   display: grid;
   place-content: center;
   justify-items: center;
@@ -9,6 +10,12 @@
   color: #e7eaef;
   font-family: var(--plex-sans), sans-serif;
   text-align: center;
+}
+
+/* Over the sky (StarField, fixed behind it). */
+.root > * {
+  position: relative;
+  z-index: 1;
 }
 
 .kicker {

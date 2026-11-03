@@ -1073,13 +1073,6 @@
   line-height: 1.6;
 }
 
-.hint {
-  margin-top: 1.4rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--mute);
-}
-
 /* The news, in the hero: one line under the lede, after a hairline, in the
    colour of the new light above Earth. It arrives a beat after the hero has
    settled (`data-in`, universe.tsx): the hairline draws in from the left,

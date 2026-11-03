@@ -20,6 +20,7 @@ import { glyphs } from "./glyph-gl";
 import { CELL, fit, mulberry32, whenIdle } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
+import { burstAge, drawFlash, flashAt, waveCells } from "./nova-burst";
 import { createGlow, gatherGlow, shedGlow } from "./orb";
 import { bodyCache, drawBody, makeFrame } from "./render";
 
@@ -168,6 +169,8 @@ export function UniverseCanvas({
        (render.ts). */
     const cells = placed.map(() => bodyCache());
     const earthCells = bodyCache();
+    /* When each supernova came on screen, to time its bursts from. */
+    const novaFrom = placed.map(() => 0);
 
     let w = 0;
     let h = 0;
@@ -888,6 +891,20 @@ export function UniverseCanvas({
         drawShootingStar(g, backdrop, back);
       }
 
+      /* A supernova being read goes off every ten seconds or so
+         (nova-burst.ts); while it does, its layer is drawn every frame. */
+      const novaAt = placed.map(() => -1);
+      let novaLive = false;
+      for (let i = 0; i < placed.length; i++) {
+        if (calm || placed[i].twin !== undefined) continue;
+        if (KINDS[placed[i].kind].body !== "supernova") continue;
+        const near = nearBody(i);
+        if (near < 0.3) novaFrom[i] = 0;
+        else if (near > 0.6 && !novaFrom[i]) novaFrom[i] = now;
+        if (novaFrom[i]) novaAt[i] = burstAge(now - novaFrom[i]);
+        if (novaAt[i] >= 0) novaLive = true;
+      }
+
       /* Drawing them is the costly part: thousands of glyphs each. They
          turn slowly, so they are drawn offscreen and redrawn when anything
          moves (the camera, the scroll, the pointer over a body)
@@ -897,8 +914,10 @@ export function UniverseCanvas({
         wg &&
         workA > 0.01 &&
         (workKey !== work.key ||
-          /* A body being pointed at answers every frame. */
+          /* A body being pointed at answers every frame, as does a
+             supernova going off. */
           hovered !== null ||
+          novaLive ||
           now - work.at > 80)
       ) {
         const pw = Math.round(w * dpr);
@@ -992,8 +1011,11 @@ export function UniverseCanvas({
             calm,
             look,
           };
+          const age = novaAt[i];
+          const flash = flashAt(age);
           portrait.under?.(wg, light);
-          drawBody(wg, KINDS[p.kind].body, {
+          drawFlash(wg, px, py, R, flash * light.alpha);
+          const bodyOpts = {
             w,
             h,
             cx: px,
@@ -1013,8 +1035,22 @@ export function UniverseCanvas({
             now,
             /* A little apart, so no two are worked out in the same frame. */
             maxAge: 72 + (i % 5) * 5,
-          });
-          portrait.over?.(wg, light);
+          };
+          drawBody(wg, KINDS[p.kind].body, bodyOpts);
+          /* Going off, its shockwave runs over it: only the wave's own
+             cells, so the body itself is still drawn from its cache. */
+          if (age >= 0)
+            drawBody(wg, KINDS[p.kind].body, {
+              ...bodyOpts,
+              fn: waveCells([age]),
+              cache: undefined,
+              light: false,
+              shade: false,
+            });
+          portrait.over?.(
+            wg,
+            flash > 0 ? { ...light, R: R * (1 + flash * 0.25) } : light,
+          );
 
           /* The piece on screen is framed like a find on a star chart:
              corner ticks round the body's reach, and its name. */

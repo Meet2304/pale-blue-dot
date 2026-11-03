@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import type { BodyFn } from "@/components/universe/bodies";
 import { glyphs } from "@/components/universe/glyph-gl";
 import { CELL, fit } from "@/components/universe/helpers";
-import { createGlow, gatherGlow, rampAt, shedGlow } from "@/components/universe/orb";
+import {
+  drawFlash,
+  NOVA_EVERY,
+  NOVA_FIRST,
+  WAVE_LIFE,
+  withWaves,
+} from "@/components/universe/nova-burst";
+import { createGlow, gatherGlow, shedGlow } from "@/components/universe/orb";
 import { PORTRAITS } from "@/components/universe/portraits";
 import { drawBody, makeFrame } from "@/components/universe/render";
 
 import a from "./award.module.css";
 
 /**
- * The award's supernova, at the head of its page, to play with: the same
- * body the map draws for it (bodies.ts), with its glow (orb.ts), but alive
- * to the pointer.
+ * The award's supernova, small, at the side of its page's head: the same
+ * body the map draws for it (bodies.ts), with its glow (orb.ts). It goes
+ * off by itself every ten seconds or so, as it does on the home page
+ * (nova-burst.ts), and it's alive to the pointer for anyone who finds it.
+ * Nothing on the page says so.
  *
  *   - Pointed at, its shell bulges away from the pointer, as if pushed by
  *     it; sparks fly off the pointer as it moves; and as the pointer nears
@@ -32,8 +41,6 @@ import a from "./award.module.css";
  */
 
 const SPARKS = ["*", "+", "·", "x", "'"];
-const WAVE_SPEED = 1.5;
-const WAVE_LIFE = 1.15;
 
 type Spark = {
   x: number;
@@ -47,8 +54,6 @@ type Spark = {
 
 export function Nova({ colors }: { colors: string[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  /* Whether it's been played with: the hint goes once it has. */
-  const [played, setPlayed] = useState(false);
   const burstRef = useRef<() => void>(() => {});
 
   useEffect(() => {
@@ -79,6 +84,11 @@ export function Nova({ colors }: { colors: string[] }) {
     const ptr = { x: 0, y: 0, in: false, down: false, lastX: 0, lastY: 0, moved: 0 };
     const waves: number[] = [];
     const sparks: Spark[] = [];
+    /* When it next goes off by itself: a moment after it's first seen,
+       then every ten seconds or so. */
+    let nextAt = 0;
+    const later = (now: number, ms: number) =>
+      (nextAt = now + ms + (Math.random() - 0.5) * 1500);
 
     const radius = () => Math.min(w, h) * 0.34;
 
@@ -112,9 +122,18 @@ export function Nova({ colors }: { colors: string[] }) {
         ask();
         return;
       }
-      waves.push(performance.now());
-      emit(w / 2, h / 2, 70, [120, 420], [0.7, 1.6]);
-      setPlayed(true);
+      const now = performance.now();
+      waves.push(now);
+      /* As many sparks, as fast, as its size allows. */
+      const k = Math.min(1, w / 420);
+      emit(
+        w / 2,
+        h / 2,
+        Math.round(30 + 40 * k),
+        [90 * k + 40, 380 * k + 60],
+        [0.6, 1.4],
+      );
+      later(now, NOVA_EVERY);
       ask();
     };
     burstRef.current = burst;
@@ -130,18 +149,7 @@ export function Nova({ colors }: { colors: string[] }) {
       portrait.under?.(g, light);
 
       /* The core's flare, white-hot, over its glow. */
-      if (flare > 0.01) {
-        const r = R * (0.35 + flare * 0.45);
-        const core = g.createRadialGradient(cx, cy, 0, cx, cy, r);
-        core.addColorStop(0, `rgba(255,255,255,${0.75 * flare})`);
-        core.addColorStop(0.3, `rgba(255,255,255,${0.25 * flare})`);
-        core.addColorStop(1, "rgba(255,255,255,0)");
-        g.save();
-        g.globalCompositeOperation = "lighter";
-        g.fillStyle = core;
-        g.fillRect(cx - r, cy - r, r * 2, r * 2);
-        g.restore();
-      }
+      drawFlash(g, cx, cy, R, flare);
 
       /* The body, spun, pushed by the pointer, and crossed by its waves. */
       const cs = Math.cos(spin);
@@ -151,7 +159,7 @@ export function Nova({ colors }: { colors: string[] }) {
       const live = waves
         .map((at) => (now - at) / 1000)
         .filter((age) => age < WAVE_LIFE);
-      const fn: BodyFn = (nx, ny, id, f, o) => {
+      const pushed: BodyFn = (nx, ny, id, f, o) => {
         let sx = nx;
         let sy = ny;
         if (hover > 0.01) {
@@ -162,22 +170,9 @@ export function Nova({ colors }: { colors: string[] }) {
           sx -= (dx / d) * k;
           sy -= (dy / d) * k;
         }
-        const hit = base(sx * cs + sy * sn, -sx * sn + sy * cs, id, f, o);
-        if (live.length) {
-          const r = Math.hypot(nx, ny);
-          for (const age of live) {
-            const off = Math.abs(r - (0.12 + age * WAVE_SPEED));
-            if (off < 0.075) {
-              const v = (1 - off / 0.075) * (1 - age / WAVE_LIFE);
-              o.c = rampAt(0.45 + v * 0.5);
-              o.k = v > 0.5 ? 6 : 4;
-              o.a = Math.min(1, 0.4 + v);
-              return true;
-            }
-          }
-        }
-        return hit;
+        return base(sx * cs + sy * sn, -sx * sn + sy * cs, id, f, o);
       };
+      const fn = withWaves(pushed, live);
       const narrow = w < 360;
       const cw = narrow ? CELL.narrow : CELL.wide;
       const ch = cw * 1.72;
@@ -272,6 +267,8 @@ export function Nova({ colors }: { colors: string[] }) {
     function tick(now: number) {
       raf = requestAnimationFrame(tick);
       if (!visible) return;
+      if (!nextAt) later(now, NOVA_FIRST);
+      else if (now >= nextAt && !ptr.down) burst();
       /* Left alone, a little over twenty frames a second is plenty. */
       if (!busy() && now - last < 44) return;
       const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
@@ -337,7 +334,6 @@ export function Nova({ colors }: { colors: string[] }) {
       }
       ptr.lastX = x;
       ptr.lastY = y;
-      if (ptr.moved > 10) setPlayed(true);
     };
     const onDown = (e: PointerEvent) => {
       const { x, y } = local(e);
@@ -365,7 +361,10 @@ export function Nova({ colors }: { colors: string[] }) {
     const ro = new ResizeObserver(resize);
     ro.observe(el);
     const io = new IntersectionObserver((entries) => {
+      const was = visible;
       visible = entries[entries.length - 1].isIntersecting;
+      /* Back on screen, it waits a moment before going off. */
+      if (visible && !was && nextAt) later(performance.now(), NOVA_FIRST);
     });
     io.observe(el);
     if (!calm) raf = requestAnimationFrame(tick);
@@ -396,12 +395,6 @@ export function Nova({ colors }: { colors: string[] }) {
           }
         }}
       />
-      <p className={a.novaHint} data-gone={played || undefined} aria-hidden>
-        <span className={a.hintFine}>
-          Point at it · click to set it off · drag to spin
-        </span>
-        <span className={a.hintTouch}>Tap to set it off · swipe across to spin</span>
-      </p>
     </div>
   );
 }

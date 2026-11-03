@@ -253,7 +253,6 @@ export function Universe() {
                 </span>
               </button>
             )}
-            <p className={`${s.hint} ${s.reveal}`}>Scroll to zoom out</p>
           </Chapter>
 
           {/* The pull-back, first as far as Earth becoming a point of light,
@@ -266,7 +265,6 @@ export function Universe() {
               That tiny dot is Earth, seen from very far away. It&apos;s where I live,
               learn and build everything you&apos;re about to see.
             </p>
-            <p className={s.hint}>Scroll to see my work</p>
           </Chapter>
 
           <Chapter>
@@ -277,7 +275,6 @@ export function Universe() {
               project, some research, a team I led, or an award. Keep scrolling and
               I&apos;ll show you each one, newest first.
             </p>
-            <p className={s.hint}>Scroll to visit them one by one</p>
           </Chapter>
 
           {PIECES.map(({ u, col }, k) => (

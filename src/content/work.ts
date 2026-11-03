@@ -227,10 +227,10 @@ export type AwardStory = {
   }[];
   /** The work that won them. */
   project: { name: string; href: string; repo?: string };
-  /** How it works, said briefly: a line on the problem it answers, the
-      steps of a call as the page's animation tells them (call-flow.tsx),
-      and a few points to take away. */
-  how: { line: string; steps: string[]; points: string[] };
+  /** How it works, said briefly: a line on the problem it answers, and
+      the steps of a call as the page's animation tells them
+      (call-flow.tsx). */
+  how: { line: string; steps: string[] };
   /** My part: my role on the team, what I built, and who with. */
   role: { title: string; built: string[]; with: string };
   /** The people met along the way, named on the days and listed at the
@@ -422,7 +422,12 @@ const SEOUL = {
     height: 1600,
     alt: "A selfie round a long breakfast table, plates of fruit and iced coffees, everyone leaning in and smiling, two of them making peace signs.",
     caption: "Breakfast, round one table.",
-    faces: [{ who: "me", x: 0.717, y: 0.38, r: 0.04 }],
+    faces: [
+      { who: "jonathan", x: 0.593, y: 0.23, r: 0.035 },
+      { who: "mj", x: 0.66, y: 0.284, r: 0.032 },
+      { who: "me", x: 0.753, y: 0.4, r: 0.04 },
+      { who: "hayley", x: 0.867, y: 0.715, r: 0.1 },
+    ],
   },
   winners: {
     src: `${DIR}/track-winners.webp`,
@@ -636,11 +641,6 @@ export const COLLECTIONS: Collection[] = [
               "Not urgent? An appointment is booked instead.",
               "Free for patients. In their language. No internet.",
             ],
-            points: [
-              "Works on any phone, with no app and no internet.",
-              "Free for the patient, in Hindi or Gujarati.",
-              "The AI prepares the visit. A clinician makes the decision.",
-            ],
           },
           role: {
             title: "AI & Backend · LLM & Product Engineer",
@@ -724,7 +724,7 @@ export const COLLECTIONS: Collection[] = [
             },
             {
               id: "jonathan",
-              portrait: "/work/hackathon-wins/people/jonathan-mj.webp",
+              portrait: "/work/hackathon-wins/people/jonathan.webp",
               name: "Jonathan Nagao",
               role: "Director of Data and AI, World Bank Group",
               linkedin: "https://www.linkedin.com/in/jonathan-gen-nagao-445307/",
@@ -734,8 +734,7 @@ export const COLLECTIONS: Collection[] = [
               id: "mj",
               name: "MJ",
               group: "summit",
-              /* With Jonathan: which of the two is which isn't known. */
-              portrait: "/work/hackathon-wins/people/jonathan-mj.webp",
+              portrait: "/work/hackathon-wins/people/mj.webp",
             },
           ],
           days: {
@@ -895,7 +894,7 @@ export const COLLECTIONS: Collection[] = [
           width: 1280,
           height: 640,
           alt: "Carnegie Mellon's campus at sunset, with the Walking to the Sky sculpture.",
-          caption: "Carnegie Mellon, Pittsburgh. Drag to look around.",
+          caption: "Carnegie Mellon, Pittsburgh.",
         },
       },
       {
@@ -926,7 +925,7 @@ export const COLLECTIONS: Collection[] = [
           kind: "figure",
           src: "/figures/bosch-mobility.html",
           title: "One actuator, new markets",
-          caption: "Point at an application to send the actuator there.",
+          caption: "One actuator, and the markets it could move into.",
         },
       },
       {
@@ -1331,7 +1330,7 @@ export const COLLECTIONS: Collection[] = [
           kind: "figure",
           src: "/figures/icarus.html",
           title: "Icarus, inside",
-          caption: "Point at a part to see what it does.",
+          caption: "Icarus, part by part.",
         },
       },
     ],
@@ -1372,8 +1371,7 @@ export const COLLECTIONS: Collection[] = [
           width: 1280,
           height: 853,
           alt: "Pandit Deendayal Energy University at sunset.",
-          caption:
-            "Pandit Deendayal Energy University, Gandhinagar. Drag to look around.",
+          caption: "Pandit Deendayal Energy University, Gandhinagar.",
         },
       },
       {
@@ -1403,7 +1401,7 @@ export const COLLECTIONS: Collection[] = [
           kind: "figure",
           src: "/figures/mind-ripple.html",
           title: "Quiz round",
-          caption: "Point at a buzzer to make that team first.",
+          caption: "A quiz round, buzzers open.",
         },
       },
       {

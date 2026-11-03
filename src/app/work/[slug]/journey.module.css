@@ -4,8 +4,8 @@
    Hanken Grotesk, Plex Mono for when and where. Colour is the award's own,
    used sparingly: for what is now, and for what's pointed at.
 
-   The journey opens out from the page's column to nearly the screen's full
-   width, so the globe can be large: it holds on screen while the days pass
+   The journey and the people sit in the page's content column, beside its
+   index (award.module.css). The globe holds on screen while the days pass
    beside it. */
 
 /* A face's place in a photograph, registered so that the frame glides from
@@ -33,20 +33,19 @@
 .section {
   position: relative;
   z-index: 1;
-  width: 100%;
-  padding: clamp(3rem, 10vh, 6.5rem) var(--edge) 0;
+  padding: clamp(3rem, 10vh, 6.5rem) 0 0;
   /* Nothing in it, a tip or a lifted print, ever widens the page. */
   overflow-x: clip;
-  scroll-margin-top: 3rem;
+  scroll-margin-top: calc(3rem + var(--rail-h, 0px));
 }
 
-/* Where the page opens out: a hairline across, fading at its ends. */
+/* Where the journey begins: a hairline across, fading at its ends. */
 .section::before {
   content: "";
   position: absolute;
   top: 0;
-  left: var(--edge);
-  right: var(--edge);
+  left: 0;
+  right: 0;
   height: 1px;
   background: linear-gradient(
     90deg,
@@ -123,17 +122,6 @@
 
 .globeCanvas:active {
   cursor: grabbing;
-}
-
-.globeHint {
-  position: absolute;
-  left: 50%;
-  bottom: 1.2rem;
-  translate: -50% 0;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--mute);
 }
 
 .log {
@@ -648,38 +636,77 @@
 .peoplePart {
   position: relative;
   z-index: 1;
-  width: 100%;
-  padding: clamp(3rem, 10vh, 6rem) var(--edge) 1rem;
+  padding: clamp(3rem, 10vh, 6rem) 0 1rem;
   overflow-x: clip;
-  scroll-margin-top: 3rem;
+  scroll-margin-top: calc(3rem + var(--rail-h, 0px));
 }
 
+/* The groups side by side, on as few lines as they fit, each as wide as
+   its people: a group of three takes three cards' room, and they share
+   what's left over the same way, so every card on the page is about the
+   same size and no line is left half empty. */
 .people {
-  display: grid;
-  gap: 2.6rem;
+  --card: 8rem;
+  --card-gap: clamp(0.9rem, 1.6vw, 1.4rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 2.4rem clamp(1.8rem, 3vw, 3rem);
   margin-top: 2.6rem;
 }
 
+.group {
+  --n: 1;
+  flex: var(--n) 1 calc(var(--n) * var(--card) + (var(--n) - 1) * var(--card-gap));
+  min-width: 0;
+  max-width: calc(var(--n) * 17rem + (var(--n) - 1) * var(--card-gap));
+}
+
+/* Each group's own colour: the team in the award's, the other winners in
+   gold, the summit in the pale blue of the dot. */
+.group[data-group="team"] {
+  --g: var(--kind);
+}
+
+.group[data-group="winners"] {
+  --g: #f0c674;
+}
+
+.group[data-group="summit"] {
+  --g: #8ec5ff;
+}
+
+/* Its name in its colour, over a hairline of it across the group. */
 .groupLabel {
   display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--g) 45%, transparent);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 400;
-  color: var(--kind-soft);
+  color: var(--g);
+}
+
+.groupDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--g);
+  box-shadow: 0 0 8px var(--g);
 }
 
 .groupCount {
   color: var(--mute);
 }
 
-/* The cards: a portrait each, in a grid across the width. */
+/* A group's cards, a column each. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14.5rem), 1fr));
-  gap: clamp(1.2rem, 2.2vw, 2rem);
-  margin: 1rem 0 0;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: var(--card-gap);
+  margin: 1.1rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -733,7 +760,7 @@
   aspect-ratio: 4 / 5;
   margin-bottom: 0.7rem;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid color-mix(in srgb, var(--g) 22%, rgb(255 255 255 / 0.1));
   border-radius: 8px;
   background: #0b0c0e;
   box-shadow: 0 14px 34px rgb(0 0 0 / 0.5);
@@ -761,7 +788,7 @@
 
 /* The site's corner ticks, closing in round the face when pointed at. */
 .faceTicks {
-  --c: var(--kind-soft);
+  --c: var(--g);
   --l: 14px;
   position: absolute;
   inset: 12% 20% 34%;
@@ -782,6 +809,25 @@
     opacity 220ms,
     scale 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: none;
+}
+
+/* The group's name on the card: only where the groups run together, on a
+   phone. */
+.cardGroup {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--g);
+}
+
+.cardGroup::before {
+  content: "";
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: var(--g);
 }
 
 .cardName {
@@ -836,10 +882,10 @@
 
 .card:is(:hover, :focus-visible) .face {
   translate: 0 -4px;
-  border-color: color-mix(in srgb, var(--kind) 60%, transparent);
+  border-color: color-mix(in srgb, var(--g) 60%, transparent);
   box-shadow:
     0 24px 54px rgb(0 0 0 / 0.6),
-    0 0 26px -6px var(--kind);
+    0 0 26px -6px var(--g);
 }
 
 .card:is(:hover, :focus-visible) .faceImg {
@@ -862,7 +908,7 @@
 }
 
 .card:is(:hover, :focus-visible) .cardArrow {
-  color: var(--kind);
+  color: var(--g);
   translate: 2px -2px;
 }
 
@@ -871,11 +917,34 @@
   outline-offset: 4px;
 }
 
-/* On a phone, two to a row, so a screen holds four faces, not one. */
+/* Without the width for a whole group on a line, the cards a little
+   smaller. */
+@media (max-width: 1000px) {
+  .people {
+    --card: 7rem;
+  }
+}
+
+/* On a phone, everyone runs on two to a row, so a screen holds four faces
+   and none is left alone; each card says its group. */
 @media (max-width: 640px) {
-  .cards {
+  .people {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.6rem 0.9rem;
+  }
+
+  .group,
+  .cards {
+    display: contents;
+  }
+
+  .groupLabel {
+    display: none;
+  }
+
+  .cardGroup {
+    display: flex;
   }
 
   .face {
@@ -901,8 +970,9 @@
     gap: 0;
   }
 
+  /* Under the bar and the index's row. */
   .globe {
-    top: 3.5rem;
+    top: calc(3.5rem + var(--rail-h, 0px));
     z-index: 2;
     height: 40svh;
     max-height: none;
@@ -917,12 +987,8 @@
     right: 0;
     bottom: 100%;
     left: 0;
-    height: 3.5rem;
+    height: calc(3.5rem + var(--rail-h, 0px));
     background: #000;
-  }
-
-  .globeHint {
-    display: none;
   }
 
   /* Its own layer, under the globe's, so the days pass behind it. */

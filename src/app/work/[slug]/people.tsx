@@ -34,14 +34,17 @@ function whereOf(people: Person[], stops: Stop[]) {
 }
 
 /**
- * The people met along the way, face first: in three groups (the team, the
- * other track winners, and the people at the summit), each a card with
- * their portrait, cut from the photographs, their name, what they do, where
- * we met, and their LinkedIn. The cards develop in, one after another, as
- * the groups come on screen, out of a white blur into colour, as the
- * journey's prints do.
+ * The people met along the way, face first, side by side: three groups (the
+ * team, the other track winners, and the people at the summit) set next to
+ * one another on the same lines, so the width is filled, each told apart by
+ * its own colour, in its label, the rule under it and the light round its
+ * faces. Each person is a card with their portrait, cut from the
+ * photographs, their name, what they do, where we met, and their LinkedIn.
+ * On a phone the cards run on two to a row, and each carries its group's
+ * name. The cards develop in, one after another, as the people come on
+ * screen, out of a white blur into colour, as the journey's prints do.
  *
- * Pointed at, a card lifts and lights in the award's colour, the face eases
+ * Pointed at, a card lifts and lights in its group's colour, the face eases
  * in a little, the site's corner ticks close in round it, and the LinkedIn
  * mark takes its own blue. The whole card is the link.
  */
@@ -66,23 +69,32 @@ export function People({ people, stops }: { people: Person[]; stops: Stop[] }) {
     return () => io.disconnect();
   }, []);
 
+  let at = 0;
   return (
     <div ref={rootRef} className={j.people} data-in={seen || undefined}>
       {GROUPS.map(([group, label]) => {
         const list = people.filter((p) => p.group === group);
         if (!list.length) return null;
         return (
-          <section key={group} className={j.group} aria-label={label}>
+          <section
+            key={group}
+            className={j.group}
+            data-group={group}
+            aria-label={label}
+            style={{ "--n": list.length } as CSSProperties}
+          >
             <h3 className={j.groupLabel}>
+              <span className={j.groupDot} aria-hidden />
               {label}
               <span className={j.groupCount}>{list.length}</span>
             </h3>
             <ul className={j.cards}>
-              {list.map((p, i) => (
+              {list.map((p) => (
                 <Card
                   key={p.id}
                   p={p}
-                  i={i}
+                  i={at++}
+                  label={label}
                   where={group === "team" ? undefined : where[p.id]}
                 />
               ))}
@@ -94,7 +106,18 @@ export function People({ people, stops }: { people: Person[]; stops: Stop[] }) {
   );
 }
 
-function Card({ p, i, where }: { p: Person; i: number; where?: string }) {
+function Card({
+  p,
+  i,
+  label,
+  where,
+}: {
+  p: Person;
+  i: number;
+  /** The group's name, shown on the card where the groups run together. */
+  label: string;
+  where?: string;
+}) {
   const small = p.portrait?.replace(/\.webp$/, "-sm.webp");
   const body = (
     <>
@@ -104,7 +127,7 @@ function Card({ p, i, where }: { p: Person; i: number; where?: string }) {
           <img
             src={p.portrait}
             srcSet={`${small} 240w, ${p.portrait} 480w`}
-            sizes="(max-width: 640px) 45vw, 18rem"
+            sizes="(max-width: 640px) 45vw, 16rem"
             width={480}
             height={600}
             alt=""
@@ -114,6 +137,9 @@ function Card({ p, i, where }: { p: Person; i: number; where?: string }) {
           />
         )}
         <span className={j.faceTicks} aria-hidden />
+      </span>
+      <span className={j.cardGroup} aria-hidden>
+        {label}
       </span>
       <span className={j.cardName}>{p.name}</span>
       {p.role && <span className={j.cardRole}>{p.role}</span>}

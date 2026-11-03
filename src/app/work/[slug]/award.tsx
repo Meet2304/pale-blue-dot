@@ -18,16 +18,20 @@ import w from "./work.module.css";
 
 /**
  * An award's own page, across the full width of the screen, as every page
- * is: the head (a title, a paragraph and the achievement in one
- * photograph, with the award's supernova beside them, to play with:
- * nova.tsx); how it works, shown by a short animation of a
- * call (call-flow.tsx); and my part, with a rail beside them (steps.tsx).
+ * is. Beside everything, a side column: the award's supernova, small, going
+ * off now and then (nova.tsx), and under it the page's index (steps.tsx),
+ * which stays on screen through every part. Beside that, the content:
  *
- * Then the journey: the days, from the first hour of the hackathon to the
- * way home, with their photographs, the people in them, and on the day of
- * the wins, the announcements and the posts they were made in; the globe
- * beside them, quieter, as their setting (journey.tsx). Last, the people,
- * each with their face and their LinkedIn (people.tsx).
+ *   - the head: a title, a paragraph and the achievement in one
+ *     photograph;
+ *   - how it works, shown by a short animation of a call (call-flow.tsx);
+ *   - my part;
+ *   - the journey: the days, from the first hour of the hackathon to the
+ *     way home, with their photographs, the people in them, and on the day
+ *     of the wins, the posts they were announced in; the globe beside
+ *     them, quieter, as their setting (journey.tsx);
+ *   - the people, side by side, each with their face and their LinkedIn
+ *     (people.tsx).
  */
 export function AwardBody({
   u,
@@ -55,6 +59,11 @@ export function AwardBody({
   return (
     <>
       <article className={a.page}>
+        <aside className={a.side}>
+          <Nova colors={colors} />
+          <Steps parts={parts} />
+        </aside>
+
         <header className={a.head}>
           <div className={a.headText}>
             <p className={w.kicker}>
@@ -85,103 +94,98 @@ export function AwardBody({
                 </a>
               )}
             </p>
-            {story.hero && (
-              <figure className={a.hero}>
-                <Prints
-                  photos={[story.hero]}
-                  shown
-                  names={names}
-                  sizes="(max-width: 860px) 92vw, 44rem"
-                  className={j.single}
-                />
-                <figcaption className={a.heroCaption}>
-                  {talk?.at && (
-                    <span className={a.talk}>
-                      <span className={a.dot} aria-hidden />
-                      <Countdown
-                        at={talk.at}
-                        before="On stage in Seoul"
-                        after={`Spoke in Seoul, ${talk.when}`}
-                      />
-                    </span>
-                  )}
-                  <span>{story.hero.caption}</span>
-                </figcaption>
-              </figure>
-            )}
           </div>
-          <Nova colors={colors} />
+          {story.hero && (
+            <figure className={a.hero}>
+              <Prints
+                photos={[story.hero]}
+                shown
+                names={names}
+                sizes="(max-width: 1000px) 92vw, 40rem"
+                className={j.single}
+              />
+              <figcaption className={a.heroCaption}>
+                {talk?.at && (
+                  <span className={a.talk}>
+                    <span className={a.dot} aria-hidden />
+                    <Countdown
+                      at={talk.at}
+                      before="On stage in Seoul"
+                      after={`Spoke in Seoul, ${talk.when}`}
+                    />
+                  </span>
+                )}
+                <span>{story.hero.caption}</span>
+              </figcaption>
+            </figure>
+          )}
         </header>
 
-        <div className={a.body}>
-          <Steps parts={parts} />
+        <div className={a.main}>
+          <Part id="how" title="How it works">
+            <p className={a.p}>{story.how.line}</p>
+            <CallFlow steps={story.how.steps} label="Steps of a call" />
+          </Part>
 
-          <div className={a.parts}>
-            <Part id="how" title="How it works">
-              <p className={a.p}>{story.how.line}</p>
-              <CallFlow steps={story.how.steps} label="Steps of a call" />
-              <ul className={`${a.list} ${a.spread}`}>
-                {story.how.points.map((pt) => (
-                  <li key={pt}>{pt}</li>
-                ))}
-              </ul>
-            </Part>
+          <Part id="part" title="My part">
+            <p className={a.p}>
+              On the team I was <b>{story.role.title}</b>. I built:
+            </p>
+            <ul className={`${a.list} ${a.spread}`}>
+              {story.role.built.map((d) => (
+                <li key={d}>{d}</li>
+              ))}
+            </ul>
+            <ul className={w.skills} aria-label="Skills">
+              {u.skills.map((k) => (
+                <li key={k}>{k}</li>
+              ))}
+            </ul>
+            <p className={a.note}>{story.role.with}</p>
+          </Part>
 
-            <Part id="part" title="My part">
-              <p className={a.p}>
-                On the team I was <b>{story.role.title}</b>. I built:
+          {flight && (
+            <section id="journey" className={j.section} aria-labelledby="journey-title">
+              <header className={j.head}>
+                <p className={j.kicker}>
+                  <span className={j.kickerMark} aria-hidden>
+                    {kind.mark}
+                  </span>
+                  Pittsburgh → Seoul
+                </p>
+                <h2 id="journey-title" className={j.h2}>
+                  The journey
+                </h2>
+                {story.days.line && <p className={j.lede}>{story.days.line}</p>}
+              </header>
+              <Journey
+                stops={story.days.stops}
+                flight={flight}
+                colors={colors}
+                people={story.people ?? []}
+                posts={<Posts wins={story.wins} />}
+              />
+            </section>
+          )}
+
+          {story.people && (
+            <section
+              id="people"
+              className={j.peoplePart}
+              aria-labelledby="people-title"
+            >
+              <h2 id="people-title" className={j.h2}>
+                The people
+              </h2>
+              <p className={j.lede}>
+                The team I went with, the other winners, and the people I met at the
+                summit.
               </p>
-              <ul className={`${a.list} ${a.spread}`}>
-                {story.role.built.map((d) => (
-                  <li key={d}>{d}</li>
-                ))}
-              </ul>
-              <ul className={w.skills} aria-label="Skills">
-                {u.skills.map((k) => (
-                  <li key={k}>{k}</li>
-                ))}
-              </ul>
-              <p className={a.note}>{story.role.with}</p>
-            </Part>
-          </div>
+              <People people={story.people} stops={story.days.stops} />
+            </section>
+          )}
         </div>
       </article>
-
-      {flight && (
-        <section id="journey" className={j.section} aria-labelledby="journey-title">
-          <header className={j.head}>
-            <p className={j.kicker}>
-              <span className={j.kickerMark} aria-hidden>
-                {kind.mark}
-              </span>
-              Pittsburgh → Seoul
-            </p>
-            <h2 id="journey-title" className={j.h2}>
-              The journey
-            </h2>
-            {story.days.line && <p className={j.lede}>{story.days.line}</p>}
-          </header>
-          <Journey
-            stops={story.days.stops}
-            flight={flight}
-            colors={colors}
-            people={story.people ?? []}
-            posts={<Posts wins={story.wins} />}
-          />
-        </section>
-      )}
-
-      {story.people && (
-        <section id="people" className={j.peoplePart} aria-labelledby="people-title">
-          <h2 id="people-title" className={j.h2}>
-            The people
-          </h2>
-          <p className={j.lede}>
-            The team I went with, the other winners, and the people I met at the summit.
-          </p>
-          <People people={story.people} stops={story.days.stops} />
-        </section>
-      )}
 
       <div className={a.pager}>{pager}</div>
     </>

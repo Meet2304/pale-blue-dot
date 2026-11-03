@@ -722,9 +722,6 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
           role="img"
           aria-label={`A globe showing the trip: ${flight.stops.map((p) => p.code).join(", ")}.`}
         />
-        <p className={j.globeHint} aria-hidden>
-          Point to move the light · drag to turn
-        </p>
       </div>
       <ol ref={listRef} className={j.log}>
         {stops.map((st, i) => (

@@ -176,7 +176,7 @@ export function Lightbox({
   const label = site?.label ?? shot?.alt ?? "";
   const caption = site
     ? live
-      ? "Live. Scroll and click inside the frame."
+      ? `${site.label}, live.`
       : site.screens[at].alt
     : (shot?.caption ?? shot?.alt);
 
