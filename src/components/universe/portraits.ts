@@ -378,15 +378,9 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
   }
 
   const d2 = nx * nx + ny * ny;
-  if (d2 > 1) {
-    if (ringAt(pl, er)) return ringGlyph(o, er, rx, ry);
-    /* A thin atmosphere on the lit limb; a rocky world has almost none. */
-    if (d2 < 1.1 && nx - ny < 0.3)
-      return hash(id, 3) < (pl.type === "rocky" ? 0.15 : 0.55)
-        ? set(o, "·", 3, 0.5)
-        : false;
-    return false;
-  }
+  /* Beyond the limb, only the rings: the glow over the canvas (orb.ts) is
+     its atmosphere. */
+  if (d2 > 1) return ringAt(pl, er) ? ringGlyph(o, er, rx, ry) : false;
   /* The near half of the rings crosses in front of the disc. */
   if (ry > 0 && ringAt(pl, er)) return ringGlyph(o, er, rx, ry);
 
@@ -399,9 +393,10 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
     const q = lat * 11;
     if (Math.abs(q - Math.round(q)) < 0.14) return set(o, "-", 2, 1);
   }
-  if (lambert < 0.02) return hash(id, 4) < 0.1 ? set(o, "·", 0, 0.8) : false;
+  /* A soft terminator, as on Earth; the night side all but empty. */
+  let b = smooth(-0.14, 0.68, lambert);
+  if (b < 0.04) return hash(id, 4) < 0.06 ? set(o, "·", 0, 0.7) : false;
   const ringShadow = ringAt(pl, Math.hypot(rx, (ry - 0.12) / FLAT)) && ry < 0.2;
-  let b = Math.min(1, lambert * 1.1 + 0.05);
   if (ringShadow) b *= 0.4;
 
   if (pl.type === "rocky") {
@@ -448,8 +443,10 @@ const planet: BodyFn = (nx, ny, id, f, o) => {
       return set(o, storm > 0.7 ? "o" : storm > 0.35 ? "~" : ":", 5, 0.55 + b * 0.45);
     }
   }
+  /* Banded: its characters run along the bands, densest where the light
+     is strongest. */
   const v = b * (0.5 + zone * 0.5);
-  const ch = v > 0.72 ? "=" : v > 0.5 ? "≈" : v > 0.3 ? "~" : v > 0.15 ? "-" : "·";
+  const ch = v > 0.72 ? "≈" : v > 0.5 ? "=" : v > 0.3 ? "~" : v > 0.15 ? "-" : "·";
   const k = zone > 0.66 ? (v > 0.6 ? 4 : 3) : zone > 0.33 ? 2 : v > 0.3 ? 2 : 1;
   return set(o, ch, k, 0.45 + v * 0.55);
 };

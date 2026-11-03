@@ -20,6 +20,8 @@ import { glyphs } from "./glyph-gl";
 import { CELL, fit, mulberry32, whenIdle } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
+import { burstAge, drawFlash, flashAt, waveCells } from "./nova-burst";
+import { createGlow, gatherGlow, shedGlow } from "./orb";
 import { bodyCache, drawBody, makeFrame } from "./render";
 
 /**
@@ -158,10 +160,17 @@ export function UniverseCanvas({
       box: [0, 0, 0, 0] as [number, number, number, number],
     };
     const eg = earth.canvas.getContext("2d");
+    /* Each layer's light, spilling round what it holds (orb.ts): gathered
+       and baked into the layer when it's drawn. Earth's is gathered from a
+       box wider than Earth, so its glow has room. */
+    const workGlow = createGlow();
+    const earthGlow = createGlow();
     /* Each body's characters, carried along while the camera moves
        (render.ts). */
     const cells = placed.map(() => bodyCache());
     const earthCells = bodyCache();
+    /* When each supernova came on screen, to time its bursts from. */
+    const novaFrom = placed.map(() => 0);
 
     let w = 0;
     let h = 0;
@@ -496,7 +505,9 @@ export function UniverseCanvas({
       raf = requestAnimationFrame(frame);
       if (now < settleUntil && now - drawnAt < 80) return;
       drawnAt = now;
-      if (!visible) return;
+      /* Off screen, or under an opened picture, the sky holds still, and
+         the picture has the main thread to itself. */
+      if (!visible || document.documentElement.dataset.lightbox) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const t = now / 1000;
@@ -880,6 +891,20 @@ export function UniverseCanvas({
         drawShootingStar(g, backdrop, back);
       }
 
+      /* A supernova being read goes off every twenty seconds or so
+         (nova-burst.ts); while it does, its layer is drawn every frame. */
+      const novaAt = placed.map(() => -1);
+      let novaLive = false;
+      for (let i = 0; i < placed.length; i++) {
+        if (calm || placed[i].twin !== undefined) continue;
+        if (KINDS[placed[i].kind].body !== "supernova") continue;
+        const near = nearBody(i);
+        if (near < 0.3) novaFrom[i] = 0;
+        else if (near > 0.6 && !novaFrom[i]) novaFrom[i] = now;
+        if (novaFrom[i]) novaAt[i] = burstAge(now - novaFrom[i]);
+        if (novaAt[i] >= 0) novaLive = true;
+      }
+
       /* Drawing them is the costly part: thousands of glyphs each. They
          turn slowly, so they are drawn offscreen and redrawn when anything
          moves (the camera, the scroll, the pointer over a body)
@@ -889,8 +914,10 @@ export function UniverseCanvas({
         wg &&
         workA > 0.01 &&
         (workKey !== work.key ||
-          /* A body being pointed at answers every frame. */
+          /* A body being pointed at answers every frame, as does a
+             supernova going off. */
           hovered !== null ||
+          novaLive ||
           now - work.at > 80)
       ) {
         const pw = Math.round(w * dpr);
@@ -984,8 +1011,11 @@ export function UniverseCanvas({
             calm,
             look,
           };
+          const age = novaAt[i];
+          const flash = flashAt(age);
           portrait.under?.(wg, light);
-          drawBody(wg, KINDS[p.kind].body, {
+          drawFlash(wg, px, py, R, flash * light.alpha);
+          const bodyOpts = {
             w,
             h,
             cx: px,
@@ -1005,8 +1035,22 @@ export function UniverseCanvas({
             now,
             /* A little apart, so no two are worked out in the same frame. */
             maxAge: 72 + (i % 5) * 5,
-          });
-          portrait.over?.(wg, light);
+          };
+          drawBody(wg, KINDS[p.kind].body, bodyOpts);
+          /* Going off, its shockwave runs over it: only the wave's own
+             cells, so the body itself is still drawn from its cache. */
+          if (age >= 0)
+            drawBody(wg, KINDS[p.kind].body, {
+              ...bodyOpts,
+              fn: waveCells([age]),
+              cache: undefined,
+              light: false,
+              shade: false,
+            });
+          portrait.over?.(
+            wg,
+            flash > 0 ? { ...light, R: R * (1 + flash * 0.25) } : light,
+          );
 
           /* The piece on screen is framed like a find on a star chart:
              corner ticks round the body's reach, and its name. */
@@ -1058,6 +1102,20 @@ export function UniverseCanvas({
             wg.stroke();
           }
         }
+        /* The layer's glow, baked into it as it's drawn, so a frame only
+           ever copies the layer. A star already gives its own light: its
+           glow is kept low, so it burns rather than blows out. */
+        const star = KINDS[placed[focusI].kind].body === "sun";
+        gatherGlow(workGlow, work.canvas);
+        shedGlow(
+          wg,
+          workGlow,
+          0,
+          0,
+          work.canvas.width,
+          work.canvas.height,
+          star ? 0.18 : 0.7,
+        );
       }
       if (workA > 0.01) {
         g.save();
@@ -1137,6 +1195,22 @@ export function UniverseCanvas({
             });
             earth.key = earthKey;
             earth.at = now;
+            const gr = earthR * 1.5 + ech;
+            const gx0 = Math.max(0, Math.floor((ex - gr) * dpr));
+            const gy0 = Math.max(0, Math.floor((ey - gr) * dpr));
+            const gx1 = Math.min(pw, Math.ceil((ex + gr) * dpr));
+            const gy1 = Math.min(ph, Math.ceil((ey + gr) * dpr));
+            /* Its glow, baked into the layer round it; the box copied (and
+               cleared next time) is the glow's. */
+            const glowBox: [number, number, number, number] = [
+              gx0,
+              gy0,
+              gx1 - gx0,
+              gy1 - gy0,
+            ];
+            gatherGlow(earthGlow, earth.canvas, ...glowBox);
+            shedGlow(eg, earthGlow, ...glowBox);
+            earth.box = [gx0, gy0, gx1, gy1];
           }
           const [x0, y0, x1, y1] = earth.box;
           if (x1 > x0 && y1 > y0) {
@@ -1158,37 +1232,40 @@ export function UniverseCanvas({
         }
       }
 
-      /* Earth's orbits, while it is big enough to have them. */
+      /* Earth's orbits, while it is big enough to have them: each a ring of
+         particles, points of light rather than a drawn line, brighter and
+         larger on the near side, hidden behind Earth on the far. */
       const orbitAlpha = Math.min(1, Math.max(0, (earthR - 40) / 120));
       if (orbitAlpha > 0) {
-        g.lineWidth = 1;
+        const base = orbitAlpha * (1 - workA);
         for (const o of orbits) {
           const ci = Math.cos(o.inc);
           const si = Math.sin(o.inc);
           const cn = Math.cos(o.node);
           const sn = Math.sin(o.node);
-          g.beginPath();
+          /* Three depths: far, middle, near. */
+          const depth = [new Path2D(), new Path2D(), new Path2D()];
           for (let j = 0; j < o.a.length; j++) {
             if (!calm) o.a[j] += o.speed * dt * (0.8 + (j % 7) * 0.05);
-            const proj = (a: number) => {
-              const x0 = Math.cos(a) * o.r;
-              const z0 = Math.sin(a) * o.r;
-              const y1 = -z0 * si;
-              const z1 = z0 * ci;
-              return [
-                ex + (x0 * cn - y1 * sn) * earthR,
-                ey + (x0 * sn + y1 * cn) * earthR,
-                z1,
-              ] as const;
-            };
-            const [x1, y1, z1] = proj(o.a[j]);
-            if (z1 < 0 && Math.hypot(x1 - ex, y1 - ey) < earthR) continue;
-            const [x0, y0] = proj(o.a[j] - 0.05 * Math.sign(o.speed));
-            g.moveTo(x0, y0);
-            g.lineTo(x1, y1);
+            const a = o.a[j];
+            const x0 = Math.cos(a) * o.r;
+            const z0 = Math.sin(a) * o.r;
+            const y1 = -z0 * si;
+            const z1 = z0 * ci;
+            const x = ex + (x0 * cn - y1 * sn) * earthR;
+            const y = ey + (x0 * sn + y1 * cn) * earthR;
+            if (z1 < 0 && Math.hypot(x - ex, y - ey) < earthR) continue;
+            const d = Math.min(2, Math.floor(((z1 / o.r) * 0.5 + 0.5) * 3));
+            const size = 1 + d * 0.45;
+            depth[d].rect(x - size / 2, y - size / 2, size, size);
           }
-          g.strokeStyle = hexA(EARTH_COLORS[3], 0.35 * orbitAlpha * (1 - workA));
-          g.stroke();
+          depth.forEach((path, d) => {
+            g.fillStyle = hexA(
+              EARTH_COLORS[d === 2 ? 4 : 3],
+              [0.22, 0.42, 0.75][d] * base,
+            );
+            g.fill(path);
+          });
         }
       }
 

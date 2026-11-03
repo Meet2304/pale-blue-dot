@@ -357,12 +357,10 @@
   flex: 1;
 }
 
-/* Between the pages and the ways to get in touch: a short hairline. */
+/* Between the pages and the ways to get in touch: a little space, never a
+   rule (no line runs down anything on the site). */
 .barRule {
-  width: 1px;
-  height: 1rem;
-  margin: 0 0.35rem;
-  background: var(--hair);
+  width: 0.35rem;
 }
 
 /* Contact's mark, in the bar's monochrome: it reads as an address before
@@ -474,7 +472,6 @@
 
 .viewer {
   position: relative;
-  border-right: 1px solid var(--hair);
 }
 
 /* The viewer's cell: the kind's body, and over it the still of whichever
@@ -482,11 +479,9 @@
 .viewerCell {
   position: relative;
   display: grid;
-  border-right: 1px solid var(--hair);
 }
 
 .viewerCell > .viewer {
-  border-right: 0;
   transition: opacity 180ms ease-out;
 }
 
@@ -875,7 +870,28 @@
 
 .period {
   color: var(--earth);
-  text-shadow: 0 0 0.5em rgb(146 203 251 / 0.55);
+}
+
+/* Its glow, a light of its own behind it, centred on the dot's ink (IBM
+   Plex Sans, at the greeting's line height of 1.1) rather than a text
+   shadow: a shadow widens the text's painted box, and the browser then
+   counted the dot, lit last, as the page's largest paint, at ~3.8 s. */
+.period::after {
+  content: "";
+  position: absolute;
+  top: 0.883em;
+  left: 0.13em;
+  width: 1.2em;
+  height: 1.2em;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(146 203 251 / 0.16),
+    rgb(146 203 251 / 0.05) 45%,
+    transparent
+  );
+  pointer-events: none;
 }
 
 /* The full stop is the pale blue dot, and the last thing said: it glows in
@@ -1055,13 +1071,6 @@
   margin-top: 0.9rem;
   color: var(--soft);
   line-height: 1.6;
-}
-
-.hint {
-  margin-top: 1.4rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--mute);
 }
 
 /* The news, in the hero: one line under the lede, after a hairline, in the
@@ -1280,6 +1289,37 @@
   color: var(--mute);
 }
 
+/* The stage it led to, marked by a small light, like a lamp on air: it
+   flares once as the chapter comes on. */
+.stageDot {
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin: 0 0.1rem 0 0.05rem;
+  translate: 0 -0.1rem;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 8px var(--kind);
+}
+
+.chapter[data-on="true"] .stageDot {
+  animation: onAir 1400ms ease-out 500ms both;
+}
+
+@keyframes onAir {
+  0% {
+    box-shadow: 0 0 0 var(--kind);
+    scale: 0.6;
+  }
+
+  35% {
+    box-shadow:
+      0 0 14px var(--kind),
+      0 0 0 6px color-mix(in srgb, var(--kind) 25%, transparent);
+    scale: 1.3;
+  }
+}
+
 /* What it took, for a recruiter scanning: quiet tags under the brief. */
 .skills {
   display: flex;
@@ -1379,6 +1419,188 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* An album: a small stack of prints, in the shape of the first, each print
+   whole and centred in it. The ones under the top print peek out, turned a
+   little; pointed at, they fan out to either side. When the top print
+   turns, it slides off to the right and is tucked under the rest. */
+.stack {
+  position: relative;
+  display: block;
+  aspect-ratio: var(--aspect, 1.33);
+  /* Room for the prints underneath, which hang a little lower. */
+  margin-bottom: 2.4rem;
+}
+
+.print {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition:
+    translate 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    rotate 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 500ms;
+}
+
+.printImg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 6px;
+  background: #0b0c0e;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+.print[data-depth="1"] {
+  translate: -3% 2.5%;
+  rotate: -3.5deg;
+  scale: 0.96;
+}
+
+.print[data-depth="2"] {
+  translate: 3.5% 3%;
+  rotate: 4deg;
+  scale: 0.93;
+}
+
+.print[data-depth="3"] {
+  opacity: 0;
+  scale: 0.9;
+}
+
+.tilt[data-lean="true"] .print[data-depth="0"] {
+  translate: 0 -2%;
+}
+
+.tilt[data-lean="true"] .print[data-depth="1"] {
+  translate: -15% 3%;
+  rotate: -8deg;
+}
+
+.tilt[data-lean="true"] .print[data-depth="2"] {
+  translate: 15% 4%;
+  rotate: 8deg;
+}
+
+.print[data-tuck] {
+  animation: tuck 950ms cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+/* What a picture and its arrows sit in. */
+.frameBox {
+  position: relative;
+}
+
+/* An album's arrows, at its left and right edges, half outside it, level
+   with its middle: round, dark, a hairline, a chevron. Brighter when the
+   album is pointed at; pointed at themselves, they light in the piece's
+   colour and nudge the way they go. */
+.edge {
+  position: absolute;
+  top: 50%;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  margin-top: -1.3rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.62);
+  backdrop-filter: blur(6px);
+  color: var(--fg);
+  cursor: pointer;
+  opacity: 0.72;
+  transition:
+    opacity 200ms,
+    border-color 200ms,
+    color 200ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 200ms;
+}
+
+.edge[data-side="prev"] {
+  left: -1.3rem;
+}
+
+.edge[data-side="next"] {
+  right: -1.3rem;
+}
+
+.edge svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.frameBox:hover .edge {
+  opacity: 1;
+}
+
+.edge:is(:hover, :focus-visible) {
+  opacity: 1;
+  border-color: var(--kind);
+  color: var(--kind-soft);
+}
+
+.edge[data-side="prev"]:hover {
+  translate: -2px 0;
+}
+
+.edge[data-side="next"]:hover {
+  translate: 2px 0;
+}
+
+.edge:active {
+  scale: 0.92;
+}
+
+.edge:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* On a phone, inside the album's edges. */
+@media (max-width: 640px) {
+  .edge[data-side="prev"] {
+    left: 0.4rem;
+  }
+
+  .edge[data-side="next"] {
+    right: 0.4rem;
+  }
+}
+
+@keyframes tuck {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+    scale: 1;
+    z-index: 9;
+  }
+
+  45% {
+    translate: 62% -3%;
+    rotate: 9deg;
+    scale: 0.98;
+    z-index: 9;
+  }
+
+  55%,
+  100% {
+    z-index: 0;
+  }
 }
 
 /* A photograph rebuilt in depth (splat.ts): it can be dragged round, so it
@@ -2161,6 +2383,18 @@
   box-shadow: 0 30px 90px rgb(0 0 0 / 0.8);
 }
 
+/* An album's next photo comes in softly, in place. */
+.lbSwap {
+  animation: lbSwap 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes lbSwap {
+  from {
+    opacity: 0;
+    scale: 0.985;
+  }
+}
+
 .lbSite {
   width: min(92vw, 1280px, calc((100svh - 12rem) * 1.6));
   overflow: hidden;
@@ -2205,6 +2439,70 @@
   gap: 0.7rem;
 }
 
+/* An album's arrows, opened up: at the screen's left and right edges,
+   level with the photo. */
+.lbEdge {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-top: -1.5rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.55);
+  color: var(--fg);
+  cursor: pointer;
+  animation: lbIn 300ms 140ms ease both;
+  transition:
+    border-color 200ms,
+    color 200ms,
+    translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.lbEdge[data-side="prev"] {
+  left: max(1rem, 2.5vw);
+}
+
+.lbEdge[data-side="next"] {
+  right: max(1rem, 2.5vw);
+}
+
+.lbEdge svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lbEdge:is(:hover, :focus-visible) {
+  border-color: var(--kind);
+  color: var(--kind-soft);
+}
+
+.lbEdge[data-side="prev"]:hover {
+  translate: -3px 0;
+}
+
+.lbEdge[data-side="next"]:hover {
+  translate: 3px 0;
+}
+
+.lbEdge:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.lightbox[data-closing="true"] .lbEdge {
+  animation: lbOut 180ms ease both;
+}
+
 .lbSteps button {
   width: 2rem;
   height: 2rem;
@@ -2229,6 +2527,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tilt,
+  .print,
+  .lbSwap,
+  .chapter[data-on="true"] .stageDot,
   .lightbox::before,
   .lbClose,
   .lbFoot {
@@ -2286,7 +2587,7 @@
   padding: 1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-left: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: -24px 0 48px rgb(0 0 0 / 0.5);
   background:
     radial-gradient(120% 60% at 100% 0%, rgb(60 90 160 / 0.14), transparent 60%),
     rgb(4 5 8 / 0.94);
@@ -2500,33 +2801,171 @@
 
 /* ------------------------------------------------------------ The music switch
 
-   A small round button in the bottom-left corner. Four bars that move
-   while the music is on and lie flat when it is muted. */
+   A pill in the bottom-left corner that says what it is: a note, four
+   bars, and on a wide screen a word. While the music plays the bars move,
+   the note sways, and now and then a note drifts up off it. Off, the bars
+   lie flat and the note is struck through. Before the browser lets it
+   play, a ring breathes round it, asking to be pressed. */
 
 .sound {
   position: fixed;
   left: max(1rem, env(safe-area-inset-left));
   bottom: max(1rem, env(safe-area-inset-bottom));
   z-index: 45;
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   height: 2.5rem;
-  padding: 0;
-  border: 1px solid rgb(255 255 255 / 0.18);
-  border-radius: 50%;
-  background: rgb(0 0 0 / 0.5);
+  padding: 0 0.95rem 0 0.8rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.55);
   backdrop-filter: blur(8px);
-  color: var(--soft);
+  color: var(--soft, #a3a9b4);
+  font-family: var(--font-mono);
   cursor: pointer;
   transition:
     color 160ms ease,
-    border-color 160ms ease;
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
 .sound:is(:hover, :focus-visible) {
   color: #fff;
-  border-color: rgb(255 255 255 / 0.45);
+  border-color: rgb(255 255 255 / 0.5);
+  background: rgb(0 0 0 / 0.75);
+}
+
+.sound:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 3px;
+}
+
+.sound[data-state="on"] {
+  color: var(--fg, #e7eaef);
+  border-color: color-mix(in srgb, var(--accent, #0d7bff) 55%, transparent);
+  box-shadow: 0 0 18px -6px var(--accent, #0d7bff);
+}
+
+/* Waiting for a first press: a ring breathes out from it. */
+.sound[data-state="waiting"]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--accent, #0d7bff);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: soundAsk 2.4s ease-out infinite;
+}
+
+@keyframes soundAsk {
+  0% {
+    opacity: 0.8;
+    scale: 1;
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    scale: 1.25 1.5;
+  }
+}
+
+.soundNote {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.soundNote svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+  transform-origin: 40% 80%;
+}
+
+.sound[data-state="on"] .soundNote svg {
+  animation: soundSway 2.2s ease-in-out infinite;
+}
+
+@keyframes soundSway {
+  0%,
+  100% {
+    rotate: -8deg;
+    translate: 0 0;
+  }
+
+  50% {
+    rotate: 8deg;
+    translate: 0 -1.5px;
+  }
+}
+
+/* The stroke through the note, drawn in when the music is off. */
+.soundSlash {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  transition: stroke-dashoffset 300ms ease;
+}
+
+.sound[data-state="off"] .soundSlash {
+  stroke-dashoffset: 0;
+}
+
+.soundDrift {
+  position: absolute;
+  left: 50%;
+  bottom: 60%;
+  pointer-events: none;
+}
+
+.soundDrift i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--accent-hover, #3f9bff);
+  opacity: 0;
+}
+
+.sound[data-state="on"] .soundDrift i {
+  animation: soundDrift 3.6s ease-out infinite;
+}
+
+.sound[data-state="on"] .soundDrift i:nth-child(2) {
+  animation-delay: 1.2s;
+  font-size: 12px;
+}
+
+.sound[data-state="on"] .soundDrift i:nth-child(3) {
+  animation-delay: 2.4s;
+}
+
+@keyframes soundDrift {
+  0% {
+    opacity: 0;
+    translate: -3px 0;
+    rotate: -10deg;
+  }
+
+  15% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+    translate: 7px -26px;
+    rotate: 14deg;
+  }
 }
 
 /* The bars of the old 20-unit icon at 18 px: 1.8 px wide, 10.8 px tall,
@@ -2536,7 +2975,7 @@
   align-items: center;
   justify-content: center;
   gap: 1.8px;
-  width: 18px;
+  width: 14px;
   height: 18px;
 }
 
@@ -2548,8 +2987,18 @@
   animation: soundBar 1.1s ease-in-out infinite;
 }
 
+.soundLabel {
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .sound[data-muted="true"] {
-  color: var(--mute);
+  color: var(--mute, #6a717d);
+}
+
+.sound[data-muted="true"]:is(:hover, :focus-visible) {
+  color: var(--fg, #e7eaef);
 }
 
 .sound[data-muted="true"] .soundBar {
@@ -2568,8 +3017,23 @@
   }
 }
 
+/* On a phone, the note and the bars say it: no word. */
+@media (max-width: 640px) {
+  .sound {
+    gap: 0.45rem;
+    padding: 0 0.75rem;
+  }
+
+  .soundLabel {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .soundBar {
+  .soundBar,
+  .sound[data-state="on"] .soundNote svg,
+  .sound[data-state="on"] .soundDrift i,
+  .sound[data-state="waiting"]::after {
     animation: none;
   }
 }

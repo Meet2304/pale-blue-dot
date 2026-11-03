@@ -8,9 +8,10 @@ const ALPHA_CEIL = 0.75;
 const AREA_PER_STAR = 7_000;
 const MIN_STARS = 60;
 const MAX_STARS = 260;
-/* Twinkle rates, rad/s: one twinkle every 3.7s to 14.3s. */
-const SPEED_MIN = 0.22;
-const SPEED_SPAN = 0.62;
+/* Twinkle rates, rad/s: one twinkle every 2.3s to 7s, so the sky is seen
+   to be alive without anything in it calling for a look. */
+const SPEED_MIN = 0.45;
+const SPEED_SPAN = 0.92;
 /* At twinkles that slow, 30fps reads the same as 60 at half the cost. */
 const FRAME_MS = 1000 / 30;
 /* Under reduced motion, every star holds at this brightness. */
@@ -26,7 +27,7 @@ type Star = {
   r: number;
   phase: number;
   speed: number;
-  /* How hard it twinkles, 0..1. Most barely do. */
+  /* How hard it twinkles, 0..1. Most gently; a few, fully. */
   amp: number;
   cold: boolean;
 };
@@ -38,13 +39,14 @@ const star = (): Star => ({
   r: Math.random() < 0.06 ? 1.2 + Math.random() * 0.8 : 0.42 + Math.random() * 0.6,
   phase: Math.random() * Math.PI * 2,
   speed: SPEED_MIN + Math.random() * SPEED_SPAN,
-  amp: 0.1 + Math.pow(Math.random(), 2.4) * 0.45,
+  amp: 0.28 + Math.pow(Math.random(), 1.6) * 0.5,
   cold: Math.random() < 0.14,
 });
 
 /**
- * A quiet, slowly twinkling sky, fixed behind the page (the story and
- * contact pages). It lifts out of black as it arrives, sleeps while the tab
+ * A quiet, gently twinkling sky, fixed behind every page but the home
+ * page, which has its own (the work pages and lists, the story, contact,
+ * the resume, the changelog and the page that isn't there). It lifts out of black as it arrives, sleeps while the tab
  * is hidden, and under reduced motion is drawn once and holds still.
  */
 export function StarField() {

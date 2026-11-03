@@ -9,7 +9,7 @@
   position: relative;
   min-height: 100svh;
   /* Clear of the bar, docked at the top (page-nav.tsx). */
-  padding: 4.5rem 6vw 7rem;
+  padding: 4.5rem var(--edge) 7rem;
   overflow: hidden;
   background: #000;
   color: var(--fg);
@@ -58,7 +58,7 @@
   border-radius: 50%;
   background: radial-gradient(circle at 50% 0, #07111d, #010204 12%);
   box-shadow:
-    0 -1px 0 rgb(201 226 248 / 0.75),
+    0 -2px 8px rgb(201 226 248 / 0.32),
     0 -10px 36px rgb(146 203 251 / 0.24),
     0 -60px 160px rgb(47 157 255 / 0.2),
     0 -180px 360px rgb(47 157 255 / 0.09);

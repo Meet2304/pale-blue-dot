@@ -8,13 +8,15 @@ import { KINDS, layout } from "./encoding";
 import { CELL, fit } from "./helpers";
 import { lookColors, lookOf, reachOf } from "./looks";
 import { PORTRAITS, type PortraitId } from "./portraits";
+import { createGlow, gatherGlow, shedGlow } from "./orb";
 import { drawBody, makeFrame } from "./render";
 
 /* How bright the body is drawn: present, but quieter than the words. */
 const ALPHA = { wide: 0.62, narrow: 0.42 };
 
 /**
- * A piece of work's body, behind the top of its own page: the same body
+ * A piece of work's body, behind the top of its own page, as a lit orb
+ * with its own glow (orb.ts): the same body
  * the map draws for it (its look, its colours, its seed), turning slowly,
  * off to the side of the column on a wide screen, and on a narrow one half
  * risen past the right edge, behind the end of the title. It sits back: drawn at part strength on a clear canvas over
@@ -41,6 +43,7 @@ export function BodyPortrait({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     const g = ctx;
+    const el: HTMLCanvasElement = canvas;
 
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const seed = layout().placed.find((p) => p.id === id)?.seed ?? 0.4;
@@ -63,9 +66,14 @@ export function BodyPortrait({
     let mono = "monospace";
     let raf = 0;
     let visible = true;
+    let drawn = 0;
+    let last = 0;
+    const glow = createGlow();
 
     const resize = () => {
-      ({ w, h, dpr } = fit(canvas, 2));
+      /* A backdrop, set in glyphs: at one and a half times the pixels it
+         is as sharp, and half the work to draw. */
+      ({ w, h, dpr } = fit(canvas, 1.5));
       mono =
         getComputedStyle(canvas).getPropertyValue("--font-mono").trim() || "monospace";
       if (calm) draw(0);
@@ -113,11 +121,19 @@ export function BodyPortrait({
         light: portrait.mapLight ?? false,
       });
       portrait.over?.(g, light);
+      /* Its own light, spilling round it (orb.ts), gathered every third
+         drawing: it turns slowly enough that the glow never lags. */
+      if (drawn++ % 3 === 0) gatherGlow(glow, el);
+      shedGlow(g, glow, 0, 0, el.width, el.height, body === "sun" ? 0.2 : 1);
     }
 
+    /* It turns slowly: a little over twenty drawings a second reads the
+       same, and leaves the frames between free for the page. */
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (visible) draw(now / 1000);
+      if (!visible || now - last < 44) return;
+      last = now;
+      draw(now / 1000);
     };
 
     resize();

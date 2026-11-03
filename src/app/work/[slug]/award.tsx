@@ -5,20 +5,35 @@ import { WayMark } from "@/components/universe/way-mark";
 import type { AwardStory, Unit } from "@/content/work";
 
 import { CallFlow } from "./call-flow";
-import { Countdown, Until } from "./clock";
+import { Countdown } from "./clock";
 import { Journey } from "./journey";
+import { Nova } from "./nova";
+import { People } from "./people";
 import { PlatformLinks } from "./platforms";
+import { Prints } from "./prints";
 import { Steps } from "./steps";
 import a from "./award.module.css";
+import j from "./journey.module.css";
 import w from "./work.module.css";
 
 /**
- * An award's own page, written to be read like a short article: a title, a
- * paragraph, then each win side by side with its announcement. Below them,
- * how it works, shown by a short animation of a call (call-flow.tsx) with a
- * line above it and a few bullets under it; my part; and the journey to
- * Seoul on the globe. A rail beside the column (steps.tsx) jumps between
- * the parts.
+ * An award's own page, across the full width of the screen, as every page
+ * is. Behind it, the award's supernova, large and faded, held in the
+ * screen's top corner as the page scrolls over it, part of the sky, going
+ * off now and then (nova.tsx). Beside everything, a side column
+ * with the page's index (steps.tsx), which stays on screen through every
+ * part. Beside that, the content:
+ *
+ *   - the head: a title, a paragraph and the achievement in one
+ *     photograph;
+ *   - how it works, shown by a short animation of a call (call-flow.tsx);
+ *   - my part;
+ *   - the journey: the days, from the first hour of the hackathon to the
+ *     way home, with their photographs, the people in them, and on the day
+ *     of the wins, the posts they were announced in; the globe beside
+ *     them, quieter, as their setting (journey.tsx);
+ *   - the people, side by side, each with their face and their LinkedIn
+ *     (people.tsx).
  */
 export function AwardBody({
   u,
@@ -33,100 +48,94 @@ export function AwardBody({
   pager: ReactNode;
 }) {
   const kind = KINDS[u.kind];
+  const flight = story.days.flight;
   const parts = [
-    { id: "wins", label: "The wins" },
     { id: "how", label: "How it works" },
     { id: "part", label: "My part" },
-    { id: "journey", label: "The journey" },
+    ...(flight ? [{ id: "journey", label: "The journey" }] : []),
+    ...(story.people ? [{ id: "people", label: "The people" }] : []),
   ];
   const talk = story.days.stops.find((st) => st.title === "On stage");
+  const names = Object.fromEntries((story.people ?? []).map((p) => [p.id, p.name]));
 
   return (
-    <article className={a.page}>
-      <header className={a.head}>
-        <p className={w.kicker}>
-          <span className={w.mark} aria-hidden>
-            {kind.mark}
-          </span>{" "}
-          Awards
-          <span className={w.sep} aria-hidden>
-            ·
-          </span>
-          October 2026
-        </p>
-        <h1 className={a.title}>{story.title}</h1>
-        <p className={a.intro}>{story.intro}</p>
-        <p className={a.links}>
-          <a href={story.project.href} target="_blank" rel="noreferrer">
-            {story.project.name} ↗
-          </a>
-          {story.project.repo && (
-            <a
-              href={story.project.repo}
-              target="_blank"
-              rel="noreferrer"
-              data-icon="github"
-            >
-              <WayMark icon="github" className={w.codeMark} />
-              Code
-            </a>
-          )}
-        </p>
-      </header>
+    <>
+      {/* Fixed behind the page, so outside the article, whose arrival
+          animation would otherwise carry it along. */}
+      <Nova colors={colors} />
+      <article className={a.page}>
+        <aside className={a.side}>
+          <Steps parts={parts} />
+        </aside>
 
-      <div className={a.body}>
-        <Steps parts={parts} />
-
-        <div className={a.parts}>
-          <Part id="wins" title="The wins">
-            <div className={a.wins}>
-              {story.wins.map((win) => (
-                <div key={win.by} className={a.win}>
-                  <a
-                    href={win.links[0].href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={a.winImage}
-                    tabIndex={-1}
-                    aria-hidden
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element -- served as is, as every picture on the site is (picture.tsx) */}
-                    <img
-                      src={win.image.src}
-                      width={win.image.width}
-                      height={win.image.height}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
+        <header className={a.head}>
+          <div className={a.headText}>
+            <p className={w.kicker}>
+              <span className={w.mark} aria-hidden>
+                {kind.mark}
+              </span>{" "}
+              Awards
+              <span className={w.sep} aria-hidden>
+                ·
+              </span>
+              October 2026
+            </p>
+            <h1 className={a.title}>{story.title}</h1>
+            <p className={a.intro}>{story.intro}</p>
+            <p className={a.links}>
+              <a href={story.project.href} target="_blank" rel="noreferrer">
+                {story.project.name} ↗
+              </a>
+              {story.project.repo && (
+                <a
+                  href={story.project.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-icon="github"
+                >
+                  <WayMark icon="github" className={w.codeMark} />
+                  Code
+                </a>
+              )}
+            </p>
+          </div>
+          {story.hero && (
+            <figure className={a.hero}>
+              <Prints
+                photos={[story.hero]}
+                shown
+                names={names}
+                sizes="(max-width: 1000px) 92vw, 40rem"
+                className={j.single}
+              />
+              <figcaption className={a.heroCaption}>
+                {talk?.at && (
+                  <span className={a.talk}>
+                    <span className={a.dot} aria-hidden />
+                    <Countdown
+                      at={talk.at}
+                      before="On stage in Seoul"
+                      after={`Spoke in Seoul, ${talk.when}`}
                     />
-                  </a>
-                  <span className={a.winBy}>
-                    {win.by} · {win.date}
                   </span>
-                  <span className={a.winTitle}>{win.title}</span>
-                  <span className={a.winEvent}>{win.event}</span>
-                  <span className={a.winLine}>{win.line}</span>
-                  <PlatformLinks links={win.links} by={win.by} />
-                </div>
-              ))}
-            </div>
-          </Part>
+                )}
+                <span>{story.hero.caption}</span>
+              </figcaption>
+            </figure>
+          )}
+        </header>
 
+        <div className={a.main}>
           <Part id="how" title="How it works">
             <p className={a.p}>{story.how.line}</p>
             <CallFlow steps={story.how.steps} label="Steps of a call" />
-            <ul className={a.list}>
-              {story.how.points.map((pt) => (
-                <li key={pt}>{pt}</li>
-              ))}
-            </ul>
           </Part>
 
           <Part id="part" title="My part">
             <p className={a.p}>
               On the team I was <b>{story.role.title}</b>. I built:
             </p>
-            <ul className={a.list}>
+            <ul className={`${a.list} ${a.spread}`}>
               {story.role.built.map((d) => (
                 <li key={d}>{d}</li>
               ))}
@@ -139,53 +148,92 @@ export function AwardBody({
             <p className={a.note}>{story.role.with}</p>
           </Part>
 
-          <Part id="journey" title="The journey" wide={!!story.days.flight}>
-            {talk && (
-              <p className={a.talk}>
-                <span className={a.dot} aria-hidden />
-                <Countdown
-                  at={talk.at}
-                  before="On stage in Seoul"
-                  after={`Spoke in Seoul, ${talk.when}`}
-                />
-              </p>
-            )}
-            {story.days.flight && (
+          {flight && (
+            <section id="journey" className={j.section} aria-labelledby="journey-title">
+              <header className={j.head}>
+                <p className={j.kicker}>
+                  <span className={j.kickerMark} aria-hidden>
+                    {kind.mark}
+                  </span>
+                  Pittsburgh → Seoul
+                </p>
+                <h2 id="journey-title" className={j.h2}>
+                  The journey
+                </h2>
+                {story.days.line && <p className={j.lede}>{story.days.line}</p>}
+              </header>
               <Journey
                 stops={story.days.stops}
-                flight={story.days.flight}
+                flight={flight}
                 colors={colors}
+                people={story.people ?? []}
+                posts={<Posts wins={story.wins} />}
               />
-            )}
-            {story.photo && (
-              <figure className={a.photo}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- served as is, as every picture on the site is (picture.tsx) */}
-                <img
-                  src={story.photo.src}
-                  srcSet={`${story.photo.src.replace(/\.webp$/, "-sm.webp")} ${story.photo.width / 2}w, ${story.photo.src} ${story.photo.width}w`}
-                  sizes="(max-width: 860px) 100vw, 42rem"
-                  width={story.photo.width}
-                  height={story.photo.height}
-                  alt={story.photo.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
-                <figcaption>{story.photo.caption}</figcaption>
-              </figure>
-            )}
-            {story.soon && (
-              <Until until={story.soon.until}>
-                <p className={a.note}>
-                  <span aria-hidden>◌</span> Pictures from {story.soon.label} to come.
-                </p>
-              </Until>
-            )}
-          </Part>
+            </section>
+          )}
 
-          <div className={a.pager}>{pager}</div>
+          {story.people && (
+            <section
+              id="people"
+              className={j.peoplePart}
+              aria-labelledby="people-title"
+            >
+              <h2 id="people-title" className={j.h2}>
+                The people
+              </h2>
+              <p className={j.lede}>
+                The team I went with, the other winners, and the people I met at the
+                summit.
+              </p>
+              <People people={story.people} stops={story.days.stops} />
+            </section>
+          )}
         </div>
-      </div>
-    </article>
+      </article>
+
+      <div className={a.pager}>{pager}</div>
+    </>
+  );
+}
+
+/**
+ * The wins as they were announced: each announcement's own card, who gave
+ * it and when, what it is, a line on it, and the post on each platform it
+ * was made on (platforms.tsx). Shown with the day of the wins.
+ */
+function Posts({ wins }: { wins: AwardStory["wins"] }) {
+  return (
+    <div className={a.wins}>
+      {wins.map((win) => (
+        <div key={win.by} className={a.win}>
+          <a
+            href={win.links[0].href}
+            target="_blank"
+            rel="noreferrer"
+            className={a.winImage}
+            tabIndex={-1}
+            aria-hidden
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- served as is, as every picture on the site is (picture.tsx) */}
+            <img
+              src={win.image.src}
+              width={win.image.width}
+              height={win.image.height}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+          <span className={a.winBy}>
+            {win.by} · {win.date}
+          </span>
+          <span className={a.winTitle}>{win.title}</span>
+          <span className={a.winEvent}>{win.event}</span>
+          <span className={a.winLine}>{win.line}</span>
+          <PlatformLinks links={win.links} by={win.by} />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -193,22 +241,14 @@ export function AwardBody({
 function Part({
   id,
   title,
-  wide,
   children,
 }: {
   id: string;
   title: string;
-  /** Runs past the column, for the globe. */
-  wide?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section
-      id={id}
-      className={a.part}
-      data-wide={wide || undefined}
-      aria-labelledby={`${id}-title`}
-    >
+    <section id={id} className={a.part} aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`} className={a.h2}>
         {title}
       </h2>

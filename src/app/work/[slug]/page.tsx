@@ -67,8 +67,10 @@ export async function generateMetadata({
 }
 
 /**
- * One piece of work, told plainly, as the story page tells the photograph:
- * a quiet sky, a way back, and one column to read down. It is ordered for
+ * One piece of work, told plainly, across the full width of the screen as
+ * every page is: a quiet sky, a way back, the head with the piece's body
+ * beside it, then the rows to read down with the picture of the work held
+ * beside them. It is ordered for
  * a recruiter with a minute to spare, most important first: what it is, my
  * role, where it stands, where to see it (the site, the code) and what it
  * took, all before the first row; then what came of it and what I did.
@@ -96,7 +98,8 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
           style={{ "--kind": c[2], "--kind-soft": c[3] } as CSSProperties}
         >
           <StarField />
-          <BodyPortrait id={u.id} kind={u.kind} high={!!u.story} className={s.body} />
+          {/* An award draws its body at its head, to play with (nova.tsx). */}
+          {!u.story && <BodyPortrait id={u.id} kind={u.kind} className={s.body} />}
           <header className={s.top}>
             <BackLink className={s.back} />
           </header>
@@ -170,31 +173,33 @@ export default async function WorkUnitPage({ params }: PageProps<"/work/[slug]">
                 </ul>
               </header>
 
-              {u.stats && (
-                <Row label="Impact">
-                  <dl className={s.stats}>
-                    {u.stats.map((st) => (
-                      <div key={st.label}>
-                        <dt>{st.label}</dt>
-                        <dd>{st.value}</dd>
-                      </div>
+              <div className={s.rows}>
+                {u.stats && (
+                  <Row label="Impact">
+                    <dl className={s.stats}>
+                      {u.stats.map((st) => (
+                        <div key={st.label}>
+                          <dt>{st.label}</dt>
+                          <dd>{st.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <p className={s.result}>{u.result}</p>
+                  </Row>
+                )}
+
+                <Row label="What I did">
+                  <ul className={s.did}>
+                    {u.did.map((d) => (
+                      <li key={d}>{d}</li>
                     ))}
-                  </dl>
-                  <p className={s.result}>{u.result}</p>
+                  </ul>
                 </Row>
-              )}
 
-              <Row label="What I did">
-                <ul className={s.did}>
-                  {u.did.map((d) => (
-                    <li key={d}>{d}</li>
-                  ))}
-                </ul>
-              </Row>
-
-              <Row label="The aim">
-                <p className={s.copy}>{u.aim}</p>
-              </Row>
+                <Row label="The aim">
+                  <p className={s.copy}>{u.aim}</p>
+                </Row>
+              </div>
 
               {u.media && (
                 <div className={s.media}>
