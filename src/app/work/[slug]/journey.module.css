@@ -565,6 +565,28 @@
   rotate: 0deg;
 }
 
+/* Over the head's words, without the width for them side by side: as wide
+   as the words. */
+@media (max-width: 1000px) {
+  .single .row {
+    max-width: none;
+  }
+}
+
+/* On a phone, the head's photograph runs edge to edge, a band of the
+   screen's height, fading into the sky at its foot (award.module.css). */
+@media (max-width: 640px) {
+  .single .print {
+    aspect-ratio: auto;
+    height: min(36svh, 20rem);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    mask-image: linear-gradient(#000 52%, rgb(0 0 0 / 0.35) 82%, transparent);
+  }
+}
+
 /* ------------------------------------------------------- A face, framed
 
    As the sky frames a body: the photograph dims a little round the face,

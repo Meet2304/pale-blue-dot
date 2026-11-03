@@ -10,13 +10,14 @@
 .page {
   --side: 11rem;
   --side-gap: clamp(1.5rem, 3vw, 3rem);
+  --page-top: clamp(1.5rem, 5vh, 3.5rem);
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: var(--side) minmax(0, 1fr);
   column-gap: var(--side-gap);
   width: 100%;
-  padding: clamp(1.5rem, 5vh, 3.5rem) var(--edge) 0;
+  padding: var(--page-top) var(--edge) 0;
   /* Nothing that reaches past its edges (the journey's globe, a lifted
      print) ever widens the page. (A clip makes no scroll box, so the index
      still sticks.) */
@@ -85,14 +86,18 @@
 
 /* ----------------------------------------------------------------- The head */
 
-/* The words beside the photograph that shows what they say. */
+/* The introduction, a screen of its own: the words beside the photograph
+   that shows what they say, centred in the first screen and filling it, so
+   the page's parts begin below the fold. (Above it: the bar and the way
+   back, 5.75rem, and the page's own top padding.) */
 .head {
   grid-column: 2;
   grid-row: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: clamp(2rem, 4vw, 4rem);
   align-items: center;
+  min-height: calc(100svh - 5.6rem - var(--page-top));
   padding-bottom: clamp(2.5rem, 6vh, 4rem);
 }
 
@@ -104,7 +109,8 @@
   margin-top: 0.9rem;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  /* Growing with a wide screen, so the introduction holds its screen. */
+  font-size: clamp(2.6rem, 1.6rem + 3.2vw, 6rem);
   line-height: 1.04;
   letter-spacing: var(--tracking-display);
   text-wrap: balance;
@@ -566,6 +572,14 @@
 
 /* -------------------------------------------------------------- Narrower */
 
+/* A small desktop: the words have a narrow column beside the photograph,
+   so the title keeps to a size that breaks into whole phrases. */
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .title {
+    font-size: clamp(2.6rem, 4.6vw, 3.4rem);
+  }
+}
+
 /* Without room for the side column, the index becomes a row under the bar,
    held there through every part: it shares a cell with the content, so it
    can stay to the end. */
@@ -592,11 +606,17 @@
     --o: 0.45;
   }
 
+  /* The photograph first, then the words. */
   .head {
     grid-row: 1;
     grid-column: 1;
     grid-template-columns: minmax(0, 1fr);
+    align-content: center;
     gap: 1.8rem;
+  }
+
+  .hero {
+    order: -1;
   }
 
   .steps {
@@ -621,11 +641,20 @@
     padding-top: var(--rail-h);
   }
 
+  /* Its ends fade, so a part scrolled half out of the row reads as more
+     to come, not as cut off. */
   .steps ol {
     display: flex;
     gap: 0.4rem;
     overflow-x: auto;
     scrollbar-width: none;
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 1rem,
+      #000 calc(100% - 1.5rem),
+      transparent
+    );
   }
 
   .steps a {
@@ -645,6 +674,46 @@
 
   .part {
     scroll-margin-top: calc(4rem + var(--rail-h));
+  }
+}
+
+/* On a phone the introduction is one screen: the photograph across the
+   whole width, fading into the sky at its foot, the day and its caption set
+   over the fade; then the title, the paragraph and the links. */
+@media (max-width: 640px) {
+  .page {
+    --page-top: 0.5rem;
+  }
+
+  .head {
+    align-content: start;
+    gap: 1.3rem;
+  }
+
+  .hero {
+    position: relative;
+    margin: 0 calc(-1 * var(--edge));
+  }
+
+  .heroCaption {
+    position: absolute;
+    z-index: 1;
+    right: var(--edge);
+    bottom: 0.6rem;
+    left: var(--edge);
+    gap: 0.25rem 0.8rem;
+    margin: 0;
+    color: var(--soft);
+    text-shadow: 0 0 8px #000;
+  }
+
+  .title {
+    margin-top: 0.6rem;
+  }
+
+  .intro {
+    margin-top: 0.9rem;
+    font-size: 1.0625rem;
   }
 }
 
