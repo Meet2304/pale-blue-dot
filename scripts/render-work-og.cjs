@@ -7,6 +7,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || "playwright")
 const out = path.resolve(
   process.env.OG_OUTPUT_DIR || path.join(root, ".cache/work-og"),
 );
+// Render one card for focused revisions without rewriting the other assets.
+const requestedId = process.env.OG_UNIT_ID;
 fs.mkdirSync(out, { recursive: true });
 const modules = {};
 function bundle(file) {
@@ -59,6 +61,8 @@ const copy = {
     "Hack-Nation &\nWorld Bank Group",
     "Grand winner · Hack-Nation",
     "Health track winner · World Bank Group",
+    "Global AI & Digital Summit",
+    "Seoul, South Korea · October 2026",
   ],
   "carnegie-mellon": [
     "Carnegie Mellon\nUniversity",
@@ -152,6 +156,28 @@ const copy = {
     ]);
     await document.fonts.ready;
   });
+  const assets = Object.fromEntries(
+    [
+      ["winners", "work/hackathon-wins/seoul/track-winners.webp", "image/webp"],
+      ["logoM", "logos/wordmark/m.png", "image/png"],
+      ["logoEet", "logos/wordmark/eet.png", "image/png"],
+    ].map(([key, file, mime]) => [
+      key,
+      `data:${mime};base64,${fs.readFileSync(path.join(root, "public", file)).toString("base64")}`,
+    ]),
+  );
+  await page.evaluate(async (assets) => {
+    window.ogAssets = Object.fromEntries(
+      await Promise.all(
+        Object.entries(assets).map(async ([key, src]) => {
+          const image = new Image();
+          image.src = src;
+          await image.decode();
+          return [key, image];
+        }),
+      ),
+    );
+  }, assets);
   const cards = await page.evaluate(() =>
     req("src/content/work.ts").UNITS.map((u) => ({
       id: u.id,
@@ -160,6 +186,10 @@ const copy = {
       brief: u.brief,
     })),
   );
+  if (requestedId && !cards.some((u) => u.id === requestedId))
+    throw new Error(`Unknown work card: ${requestedId}`);
+  if (requestedId)
+    cards.splice(0, cards.length, ...cards.filter((u) => u.id === requestedId));
   for (const u of cards) {
     const details = await page.evaluate(
       ({ u, copy }) => {
@@ -171,6 +201,7 @@ const copy = {
         const g = document.querySelector("canvas").getContext("2d");
         g.fillStyle = "#000";
         g.fillRect(0, 0, 1200, 630);
+        const victory = u.id === "hackathon-wins";
         const kind = KINDS[u.kind],
           look = lookOf(u.id, u.kind),
           colors = lookColors(look),
@@ -191,28 +222,33 @@ const copy = {
         g.globalAlpha = 1;
         const portrait = PORTRAITS[kind.body],
           [rx, ry] = reachOf(look, kind.body),
-          cx = 960,
-          cy = 300,
-          R = Math.min(450 / rx, 370 / ry) * (0.8 + 0.2 * look.scale),
+          cx = victory ? 1030 : 960,
+          cy = victory ? 110 : 300,
+          R =
+            Math.min(450 / rx, 370 / ry) *
+            (0.8 + 0.2 * look.scale) *
+            (victory ? 0.95 : 1),
           cw = CELL.wide,
           ch = cw * 1.72;
         g.save();
         g.strokeStyle = colors[2];
-        g.globalAlpha = 0.19;
+        g.globalAlpha = victory ? 0.13 : 0.19;
         g.lineWidth = 0.7;
         for (const [a, b, tilt] of [
           [440, 265, -0.42],
           [490, 205, 0.6],
         ]) {
           g.beginPath();
-          g.ellipse(cx, cy, a, b, tilt, 0, Math.PI * 2);
+          const scale = victory ? 0.95 : 1;
+          g.ellipse(cx, cy, a * scale, b * scale, tilt, 0, Math.PI * 2);
           g.stroke();
         }
         g.restore();
         const seed = layout().placed.find((p) => p.id === u.id)?.seed ?? 0.4;
         const frame = makeFrame(0, 0, 0.35, null, cw / R, ch / R, seed, true);
         frame.look = look;
-        const light = { cx, cy, R, colors, alpha: 1, t: 0, calm: true, look };
+        const bodyAlpha = victory ? 0.55 : 1;
+        const light = { cx, cy, R, colors, alpha: bodyAlpha, t: 0, calm: true, look };
         const extent = look.planet
           ? look.planet.ring || look.planet.moons > 1
             ? portrait.extent
@@ -231,7 +267,7 @@ const copy = {
           ch,
           frame,
           colors,
-          alpha: 1,
+          alpha: bodyAlpha,
           font: `${ch * 0.92}px "IBM Plex Mono"`,
           fn: portrait.fn,
           extent,
@@ -244,6 +280,101 @@ const copy = {
         shade.addColorStop(1, "rgba(0,0,0,0)");
         g.fillStyle = shade;
         g.fillRect(0, 0, 790, 630);
+        if (victory) {
+          // Use the site's actual wordmark masks and pale blue dot.
+          const { logoM, logoEet, winners } = window.ogAssets;
+          const logoHeight = 28;
+          g.drawImage(logoM, 60, 46, logoHeight * 1.208, logoHeight);
+          g.drawImage(
+            logoEet,
+            60 + logoHeight * 1.208,
+            46,
+            logoHeight * 2.153,
+            logoHeight,
+          );
+          g.fillStyle = "#2f9dff";
+          g.beginPath();
+          g.arc(
+            60 + logoHeight * 3.547,
+            46 + logoHeight * 0.839,
+            logoHeight * 0.161,
+            0,
+            Math.PI * 2,
+          );
+          g.fill();
+          g.fillStyle = accent;
+          g.font = '400 13px "IBM Plex Mono"';
+          g.fillText("MEET BHATT / AWARDS", 188, 70);
+          g.font = '300 51px "IBM Plex Sans"';
+          g.fillStyle = "#f4f6f8";
+          const titleLead = copy[0].split("\n")[0] + " ";
+          g.fillText(titleLead, 57, 139);
+          const titleOffset = g.measureText(titleLead).width;
+          g.fillStyle = accent;
+          g.fillText(copy[0].split("\n")[1], 57 + titleOffset, 139);
+          g.fillStyle = "#f4f6f8";
+          g.font = '300 23px "IBM Plex Sans"';
+          g.fillText(copy[3], 60, 179);
+          const summitOffset = g.measureText(copy[3]).width;
+          g.fillStyle = "#b1bec8";
+          g.font = '400 15px "IBM Plex Mono"';
+          g.fillText(" / " + copy[4], 60 + summitOffset + 14, 178);
+
+          // The photograph leads the card; keep all seven faces and the summit screen.
+          const photo = { x: 60, y: 203, w: 1080, h: 340 };
+          const sourceHeight = (winners.width * photo.h) / photo.w;
+          g.drawImage(
+            winners,
+            0,
+            180,
+            winners.width,
+            sourceHeight,
+            photo.x,
+            photo.y,
+            photo.w,
+            photo.h,
+          );
+          g.strokeStyle = "rgba(165,210,140,.35)";
+          g.lineWidth = 1;
+          g.strokeRect(photo.x - 0.5, photo.y - 0.5, photo.w + 1, photo.h + 1);
+          g.strokeStyle = accent;
+          for (const [x, y, dx, dy] of [
+            [photo.x, photo.y, 1, 1],
+            [photo.x + photo.w, photo.y, -1, 1],
+            [photo.x, photo.y + photo.h, 1, -1],
+            [photo.x + photo.w, photo.y + photo.h, -1, -1],
+          ]) {
+            g.beginPath();
+            g.moveTo(x, y + dy * 12);
+            g.lineTo(x, y);
+            g.lineTo(x + dx * 12, y);
+            g.stroke();
+          }
+          g.fillStyle = "#c2cbd3";
+          g.font = '400 17px "IBM Plex Mono"';
+          g.fillText(copy[1], 60, 578);
+          const awardOffset = g.measureText(copy[1]).width;
+          g.fillStyle = accent;
+          g.fillText(" / ", 60 + awardOffset + 16, 578);
+          g.fillStyle = "#c2cbd3";
+          g.fillText(copy[2], 60 + awardOffset + 63, 578);
+          g.fillStyle = "#b1bec8";
+          g.font = '400 11px "IBM Plex Mono"';
+          g.textAlign = "right";
+          g.fillText("TRACK WINNERS / SEOUL", 1140, 609);
+          g.textAlign = "left";
+          g.fillStyle = accent;
+          g.font = '400 14px "IBM Plex Mono"';
+          g.fillText("meetbhatt.com/work/hackathon-wins", 60, 609);
+          return {
+            body: kind.body,
+            categoryAccent: accent,
+            bodyColors: colors,
+            look,
+            seed,
+            textBottom: 609,
+          };
+        }
         g.fillStyle = accent;
         g.font = '400 15px "IBM Plex Mono"';
         g.fillText("MEET BHATT / " + kind.label.toUpperCase(), 60, 80);
@@ -315,7 +446,10 @@ const copy = {
       image: u.id + ".jpg",
       width: 1200,
       height: 630,
-      alt: `${u.name} — Meet Bhatt. ${copy[u.id][1]}. The portfolio's ${details.body} rendered with its original colors and appearance.`,
+      alt:
+        u.id === "hackathon-wins"
+          ? `${u.name} — Meet Bhatt. Hackathon victories: ${copy[u.id][1]}; ${copy[u.id][2]}. ${copy[u.id][3]}, ${copy[u.id][4]}. Track winners with Hayley Pottle, beside the portfolio's supernova and Meet's logo.`
+          : `${u.name} — Meet Bhatt. ${copy[u.id][1]}. The portfolio's ${details.body} rendered with its original colors and appearance.`,
     });
   }
   await browser.close();
