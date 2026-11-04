@@ -46,7 +46,10 @@ export async function generateMetadata({
     width: 1200,
     height: 630,
     type: "image/jpeg",
-    alt: `${u.name} — Meet Bhatt. ${u.line}`,
+    alt:
+      u.id === "hackathon-wins"
+        ? "Hackathon victories: Grand winner at Hack-Nation and Health track winner at the World Bank Group. Global AI & Digital Summit, Seoul, October 2026. Track winners with Hayley Pottle, beside Meet Bhatt's supernova and logo."
+        : `${u.name} — Meet Bhatt. ${u.line}`,
   };
   return {
     ...metadata,
