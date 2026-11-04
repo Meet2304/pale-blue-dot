@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import type { BodyFn } from "@/components/universe/bodies";
 import { glyphs } from "@/components/universe/glyph-gl";
-import { CELL, fit } from "@/components/universe/helpers";
+import { CELL, fit, whenIdle } from "@/components/universe/helpers";
 import {
   drawFlash,
   NOVA_EVERY,
@@ -61,6 +61,25 @@ type Spark = {
 
 export function Nova({ colors }: { colors: string[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  /* Whether the journey is on screen: on a phone, where its globe is the
+     sky, this all but sets meanwhile (award.module.css). */
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const journey = document.getElementById("journey");
+    if (!wrap || !journey) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const on = entries[entries.length - 1].isIntersecting;
+        if (on) wrap.dataset.set = "";
+        else delete wrap.dataset.set;
+      },
+      { rootMargin: "-30% 0px -30% 0px" },
+    );
+    io.observe(journey);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -69,6 +88,7 @@ export function Nova({ colors }: { colors: string[] }) {
     const g = ctx;
     const el: HTMLCanvasElement = canvas;
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const phone = window.matchMedia("(max-width: 860px)").matches;
     const portrait = PORTRAITS.supernova;
     const base = portrait.fn;
     const glow = createGlow();
@@ -276,7 +296,7 @@ export function Nova({ colors }: { colors: string[] }) {
 
       /* Its own light, spilling round it: gathered every other frame, or
          every third at rest. */
-      if (frames++ % (busy() ? 2 : 3) === 0) gatherGlow(glow, el);
+      if (frames++ % (busy() && !phone ? 2 : 3) === 0) gatherGlow(glow, el);
       shedGlow(g, glow, 0, 0, el.width, el.height, 0.75);
     }
 
@@ -286,10 +306,17 @@ export function Nova({ colors }: { colors: string[] }) {
     function tick(now: number) {
       raf = requestAnimationFrame(tick);
       if (!visible || document.documentElement.dataset.lightbox) return;
+      /* On a phone, while the journey's globe is the sky, it waits. */
+      const set = phone && wrapRef.current?.dataset.set !== undefined;
       if (!nextAt) later(now, FIRST);
-      else if (now >= nextAt) burst();
-      /* Left alone, it draws only when its layer is due. */
+      else if (now >= nextAt) {
+        if (set) later(now, 3000);
+        else burst();
+      }
+      /* Left alone, it draws only when its layer is due; going off on a
+         phone, thirty frames a second is plenty. */
       if (!busy() && !layerDue(now)) return;
+      if (phone && now - last < 32) return;
       const dt = Math.min(0.1, (now - last) / 1000 || 0.016);
       last = now;
       hover += ((ptr.in ? 1 : 0) - hover) * Math.min(1, dt * 8);
@@ -365,6 +392,46 @@ export function Nova({ colors }: { colors: string[] }) {
     const onLeave = () => {
       ptr.in = false;
     };
+    /* On a phone, the body is drawn once, in a quiet moment, and holds
+       still; going off is a flash and a ring of light in the page's styles
+       (award.module.css), which the screen's compositor runs on its own,
+       costing the page nothing. The phone's main thread stays the
+       reader's. */
+    if (phone) {
+      const paint = () =>
+        whenIdle(() => {
+          resize();
+          draw(performance.now());
+        }, 1500);
+      let cancel = paint();
+      const ro = new ResizeObserver(() => {
+        cancel();
+        cancel = paint();
+      });
+      ro.observe(el);
+      let timer = 0;
+      let flip = false;
+      const go = () => {
+        const wrap = wrapRef.current;
+        const quiet =
+          !wrap ||
+          wrap.dataset.set !== undefined ||
+          document.hidden ||
+          !!document.documentElement.dataset.lightbox;
+        if (wrap && !quiet && !calm) {
+          flip = !flip;
+          wrap.dataset.burst = flip ? "a" : "b";
+        }
+        timer = window.setTimeout(go, NOVA_EVERY + (Math.random() - 0.5) * 4000);
+      };
+      timer = window.setTimeout(go, FIRST);
+      return () => {
+        cancel();
+        ro.disconnect();
+        window.clearTimeout(timer);
+      };
+    }
+
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("click", onClick);
     document.documentElement.addEventListener("pointerleave", onLeave);
@@ -391,8 +458,10 @@ export function Nova({ colors }: { colors: string[] }) {
   }, [colors]);
 
   return (
-    <div className={a.nova} aria-hidden>
+    <div ref={wrapRef} className={a.nova} aria-hidden>
       <canvas ref={ref} className={a.novaCanvas} />
+      <span className={a.novaFlash} />
+      <span className={a.novaRing} />
     </div>
   );
 }

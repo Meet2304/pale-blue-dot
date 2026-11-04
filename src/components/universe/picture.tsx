@@ -17,6 +17,7 @@ export function Picture({
   height,
   sizes,
   load,
+  first = false,
   className,
 }: {
   src: string;
@@ -27,6 +28,9 @@ export function Picture({
   sizes: string;
   /** Whether to fetch it yet. Until then it keeps its shape, empty. */
   load: boolean;
+  /** On the first screen, the page's largest picture: fetched ahead of
+      everything else, and drawn as soon as it arrives. */
+  first?: boolean;
   className?: string;
 }) {
   const small = src.replace(/\.webp$/, "-sm.webp");
@@ -39,7 +43,8 @@ export function Picture({
       width={width}
       height={height}
       alt={alt}
-      decoding="async"
+      decoding={first ? "sync" : "async"}
+      fetchPriority={first ? "high" : undefined}
       className={className}
     />
   );

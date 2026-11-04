@@ -104,8 +104,9 @@ export function AwardBody({
               <Prints
                 photos={[story.hero]}
                 shown
+                first
                 names={names}
-                sizes="(max-width: 1000px) 92vw, 40rem"
+                sizes="(max-width: 640px) 100vw, (max-width: 1000px) 92vw, 40rem"
                 className={j.single}
               />
               <figcaption className={a.heroCaption}>

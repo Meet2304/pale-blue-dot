@@ -37,7 +37,7 @@
   position: relative;
   z-index: 1;
   padding: clamp(3rem, 10vh, 6.5rem) 0 0;
-  scroll-margin-top: calc(3rem + var(--rail-h, 0px));
+  scroll-margin-top: calc(var(--bar-h, 3rem) + var(--rail-h, 0px));
 }
 
 /* Where the journey begins: a hairline across, fading at its ends. */
@@ -133,6 +133,18 @@
 
 .globeCanvas:active {
   cursor: grabbing;
+}
+
+/* The view before, laid over the globe on a phone while the new one comes
+   (journey.tsx); nothing elsewhere. */
+.globeGhost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 700ms ease;
 }
 
 /* Over the globe where its limb passes under them. */
@@ -674,7 +686,7 @@
   z-index: 1;
   padding: clamp(3rem, 10vh, 6rem) 0 1rem;
   overflow-x: clip;
-  scroll-margin-top: calc(3rem + var(--rail-h, 0px));
+  scroll-margin-top: calc(var(--bar-h, 3rem) + var(--rail-h, 0px));
 }
 
 /* The groups side by side, on as few lines as they fit, each as wide as
@@ -999,48 +1011,58 @@
 /* -------------------------------------------------------------- Narrower */
 
 @media (max-width: 860px) {
-  /* On a phone the globe stays at the top of the screen, under the bar,
-     and the days pass behind it. */
+  /* On a phone the globe is the journey's sky: large, wider than the screen,
+     faded, held behind the days as they're read, turning to each; the days
+     run over it, their words lifted off it by a soft shadow. Taps go
+     through it to them. It shares the days' cell, so it holds for exactly
+     as long as they last. */
   .journey {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
 
-  /* Under the bar and the index's row. */
-  .globe {
-    top: calc(3.5rem + var(--rail-h, 0px));
-    z-index: 2;
-    width: auto;
-    height: 40svh;
-    max-height: none;
-    margin-inline: calc(-1 * var(--edge));
-    background: linear-gradient(#000 84%, transparent);
-  }
-
-  /* Between it and the bar, black too, so the days pass out of sight. */
-  .globe::before {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    left: 0;
-    height: calc(3.5rem + var(--rail-h, 0px));
-    background: #000;
-  }
-
-  /* Its own layer, under the globe's, so the days pass behind it. */
+  .globe,
   .log {
-    position: relative;
-    z-index: 0;
-    padding: 6vh 0 30vh;
+    grid-area: 1 / 1;
   }
 
+  /* In the upper part of the screen, so the place it turns to is pinned
+     above the day being read (journey.tsx reads lower on a phone), not
+     over its words. */
+  .globe {
+    top: calc(var(--bar-h, 2.25rem) + var(--rail-h, 0px));
+    z-index: 0;
+    align-self: start;
+    width: auto;
+    height: 60svh;
+    max-height: none;
+    margin: 0 calc(-1 * var(--edge) - 14vw);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .log {
+    padding: 26svh 0 40svh;
+  }
+
+  /* Each day a moment of its own, with the sky round it. */
   .stop {
-    min-height: 36svh;
+    min-height: 62svh;
+    padding: 5svh 0;
   }
 
   .stop[data-photos] {
-    padding: 4vh 0;
+    padding: 6svh 0;
+  }
+
+  .stop :is(.when, .title, .line, .with, .soon) {
+    text-shadow: 0 0 6px #000;
+  }
+
+  /* A day not being read only fades: a filter over its photographs would
+     cost a repaint on every frame of a phone's scroll. */
+  .stop:not([data-active]) :is(.dayPrints, .dayExtra) {
+    filter: none;
   }
 
   .prints {
