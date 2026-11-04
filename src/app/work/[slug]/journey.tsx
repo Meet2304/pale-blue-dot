@@ -6,7 +6,7 @@ import type { AwardStory, LonLat, Person } from "@/content/work";
 import { hash } from "@/components/universe/bodies";
 import { EARTH_COLORS } from "@/components/universe/encoding";
 import { fillGlyphs, glyphs } from "@/components/universe/glyph-gl";
-import { CELL, fit } from "@/components/universe/helpers";
+import { CELL, fit, whenIdle } from "@/components/universe/helpers";
 import {
   createGlow,
   gatherGlow,
@@ -148,6 +148,7 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
   const [active, setActive] = useState(0);
   const [now, setNow] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ghostRef = useRef<HTMLCanvasElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   /* Where the globe should turn to: set by the day being read. */
   const goal = useRef<(v: View, ping: LonLat | null) => void>(() => {});
@@ -181,11 +182,12 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
           if (e.isIntersecting) setActive(items.indexOf(e.target as HTMLElement));
         }
       },
-      /* On a phone the globe covers the top of the screen, so the day being
-         read is the one across the middle of what is left under it. */
+      /* On a phone the globe is the days' backdrop, in the upper part of
+         the screen, so the day being read is a little lower, under the
+         place it pins. */
       {
         rootMargin: window.matchMedia("(max-width: 860px)").matches
-          ? "-62% 0px -34% 0px"
+          ? "-56% 0px -40% 0px"
           : "-46% 0px -50% 0px",
       },
     );
@@ -237,6 +239,11 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
     const g = ctx;
     const el: HTMLCanvasElement = canvas;
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* On a phone it's a faded backdrop: it turns at thirty frames a
+       second, and gathers its glow every other frame while it does. */
+    const backdrop = window.matchMedia("(max-width: 860px)").matches;
+    let lastDraw = -1e9;
+    let draws = 0;
 
     let w = 0;
     let h = 0;
@@ -322,7 +329,9 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
       /* Earth, in characters, and the northern lights where they're out. */
       for (let b = 0; b < BUCKETS; b++) bx[b].length = by[b].length = bc[b].length = 0;
       ax.length = ay.length = aa.length = ac.length = 0;
-      const cw = narrow ? CELL.narrow : CELL.wide;
+      /* As a phone's faded backdrop, a coarser grain: two in five fewer
+         characters to draw, and no less a globe at that strength. */
+      const cw = backdrop ? CELL.wide * 1.3 : narrow ? CELL.narrow : CELL.wide;
       const chh = cw * 1.72;
       const put = (X: number, Y: number, c: string, k: number, a: number) => {
         const b =
@@ -449,7 +458,7 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
           lights.put1(ac[k], ax[k], ay[k], aa[k] > 0.6 ? colors[3] : colors[2], aa[k]);
         lights.end();
       }
-      gatherGlow(glowBuf, el);
+      if (!(backdrop && turning) || draws++ % 2 === 0) gatherGlow(glowBuf, el);
       shedGlow(g, glowBuf, 0, 0, el.width, el.height, 0.6);
 
       /* Places on the globe: on screen, and whether on the near side. */
@@ -589,6 +598,11 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
     };
     function tick(t: number) {
       raf = 0;
+      if (backdrop && turning && t - lastDraw < 30) {
+        ask();
+        return;
+      }
+      lastDraw = t;
       if (turning) {
         const k = calm ? 1 : Math.min(1, (t - turning.at) / TURN);
         const e = ease(k);
@@ -622,13 +636,44 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
 
     goal.current = (to, at) => {
       const t = performance.now();
+      /* On a phone, a crossfade rather than a turn: the globe as it was is
+         laid over it, the new view is drawn once beneath, and the old fades
+         away on the screen's own compositor, so a day's change costs one
+         drawing, not a second's worth. */
+      const ghost = ghostRef.current;
+      if (backdrop && !calm && ghost && awake && el.width > 0) {
+        if (ghost.width !== el.width || ghost.height !== el.height) {
+          ghost.width = el.width;
+          ghost.height = el.height;
+        }
+        const gg = ghost.getContext("2d");
+        gg?.clearRect(0, 0, ghost.width, ghost.height);
+        gg?.drawImage(el, 0, 0);
+        ghost.style.transition = "none";
+        ghost.style.opacity = "1";
+        view = to;
+        turning = null;
+        ping = null;
+        ask();
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            ghost.style.transition = "";
+            ghost.style.opacity = "0";
+          }),
+        );
+        return;
+      }
       turning = { from: view, to, at: t };
       ping = at && !calm ? { ll: at, at: t + TURN * 0.55 } : null;
       ask();
     };
 
     const resize = () => {
-      ({ w, h, dpr } = fit(canvas, 2));
+      /* On a phone it's a faded backdrop: fewer pixels do. */
+      ({ w, h, dpr } = fit(
+        canvas,
+        window.matchMedia("(max-width: 860px)").matches ? 1.25 : 2,
+      ));
       mono =
         getComputedStyle(canvas).getPropertyValue("--font-mono").trim() || "monospace";
       ask();
@@ -639,9 +684,13 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         wake.disconnect();
-        awake = true;
-        img.src = "/earth-land.png";
-        ask();
+        /* Its first drawing, the costliest, in a quiet moment: not in the
+           middle of a tap or a scroll. */
+        whenIdle(() => {
+          awake = true;
+          img.src = "/earth-land.png";
+          ask();
+        }, 600);
       },
       { rootMargin: "100% 0px 100% 0px" },
     );
@@ -722,6 +771,8 @@ export function Journey({ stops, flight, colors, people, posts }: Props) {
           role="img"
           aria-label={`A globe showing the trip: ${flight.stops.map((p) => p.code).join(", ")}.`}
         />
+        {/* On a phone, the view before, fading as the new one comes. */}
+        <canvas ref={ghostRef} className={j.globeGhost} aria-hidden />
       </div>
       <ol ref={listRef} className={j.log}>
         {stops.map((st, i) => (

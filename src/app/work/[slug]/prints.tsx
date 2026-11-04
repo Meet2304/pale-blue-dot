@@ -23,12 +23,13 @@ const TILT = [-1.4, 0.9, -0.6, 1.2, -1, 0.5];
 export type Names = Record<string, string>;
 type Face = NonNullable<Snapshot["faces"]>[number];
 
-/** Near: within two screens. From then on its pictures are fetched. */
-export function useNear(ref: RefObject<HTMLElement | null>) {
-  const [near, setNear] = useState(false);
+/** Near: within two screens. From then on its pictures are fetched.
+    (`from` starts it near: what's on the first screen.) */
+export function useNear(ref: RefObject<HTMLElement | null>, from = false) {
+  const [near, setNear] = useState(from);
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || near) return;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
@@ -40,7 +41,7 @@ export function useNear(ref: RefObject<HTMLElement | null>) {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [ref]);
+  }, [ref, near]);
   return near;
 }
 
@@ -64,12 +65,15 @@ export function Prints({
   focus = null,
   names,
   sizes,
+  first = false,
   className,
 }: {
   photos: Snapshot[];
   rows?: number[];
   /** Whether they've developed: their day has been read. */
   shown: boolean;
+  /** On the first screen: fetched with the page, ahead of everything. */
+  first?: boolean;
   /** Someone pointed at elsewhere, framed where they appear. */
   focus?: string | null;
   names: Names;
@@ -78,7 +82,7 @@ export function Prints({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const near = useNear(ref);
+  const near = useNear(ref, first);
   const [open, setOpen] = useState<{ at: number; from: DOMRect | null } | null>(null);
   /* The zoom view, fetched once the prints are near (lightbox-lazy.ts). */
   const Lightbox = useLightbox(near);
@@ -120,6 +124,7 @@ export function Prints({
                 focus={focus}
                 names={names}
                 near={near}
+                first={first}
                 sizes={sizes}
                 hidden={open?.at === i}
                 onOpen={(el) => {
@@ -151,6 +156,7 @@ function Print({
   focus,
   names,
   near,
+  first,
   sizes,
   hidden,
   onOpen,
@@ -160,6 +166,7 @@ function Print({
   focus: string | null;
   names: Names;
   near: boolean;
+  first: boolean;
   sizes: string;
   hidden: boolean;
   onOpen: (el: HTMLElement) => void;
@@ -237,6 +244,7 @@ function Print({
         height={photo.height}
         sizes={sizes}
         load={near}
+        first={first}
         className={j.printImg}
       />
       {faces && <Frame face={face} name={who ? (names[who] ?? "") : ""} />}

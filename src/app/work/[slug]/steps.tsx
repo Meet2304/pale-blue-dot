@@ -8,7 +8,8 @@ import s from "./award.module.css";
  * The award page's rail: its parts, the one being read
  * marked. Beside the column on a wide screen; on a narrow one, a row under
  * the bar. Each is a plain link to its part, so it works before any script
- * has run; the script only marks which is on screen.
+ * has run; the script marks which is on screen, and makes a press glide to
+ * its part (or jump, under reduced motion), lit at once.
  */
 export function Steps({ parts }: { parts: { id: string; label: string }[] }) {
   const [on, setOn] = useState(parts[0].id);
@@ -43,7 +44,21 @@ export function Steps({ parts }: { parts: { id: string; label: string }[] }) {
       <ol ref={listRef}>
         {parts.map((p) => (
           <li key={p.id}>
-            <a href={`#${p.id}`} aria-current={on === p.id ? "step" : undefined}>
+            <a
+              href={`#${p.id}`}
+              aria-current={on === p.id ? "step" : undefined}
+              onClick={(e) => {
+                const to = document.getElementById(p.id);
+                if (!to) return;
+                e.preventDefault();
+                const calm = window.matchMedia(
+                  "(prefers-reduced-motion: reduce)",
+                ).matches;
+                to.scrollIntoView({ behavior: calm ? "auto" : "smooth" });
+                history.replaceState(null, "", `#${p.id}`);
+                setOn(p.id);
+              }}
+            >
               {p.label}
             </a>
           </li>

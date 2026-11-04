@@ -11,6 +11,8 @@
   --side: 11rem;
   --side-gap: clamp(1.5rem, 3vw, 3rem);
   --page-top: clamp(1.5rem, 5vh, 3.5rem);
+  /* The site's bar, docked at the top (universe.module.css, .bar). */
+  --bar-h: 2.25rem;
   position: relative;
   z-index: 1;
   display: grid;
@@ -76,6 +78,13 @@
   to {
     opacity: calc(var(--o) * 1.08);
   }
+}
+
+/* Its burst on a phone (nova.tsx): a flash at its heart and a ring of
+   light running out, in the compositor's hands. Nothing elsewhere. */
+.novaFlash,
+.novaRing {
+  display: none;
 }
 
 .novaCanvas {
@@ -598,12 +607,26 @@
   }
 
   /* On a narrow screen, its heart in the top right corner, under the bar
-     and the index's row. */
+     and the index's row; and while the journey's globe is the sky, it all
+     but sets, so one body holds the background at a time. */
   .nova {
     --nova: min(38rem, 125vw);
     top: calc(8rem - var(--nova) / 2);
     left: calc(100% - var(--edge) - var(--nova) / 2);
     --o: 0.45;
+  }
+
+  /* Still, on a phone: its breathing would cost a frame every frame. */
+  .nova {
+    animation: none;
+  }
+
+  .novaCanvas {
+    transition: opacity 900ms ease;
+  }
+
+  .nova[data-set] .novaCanvas {
+    opacity: 0.15;
   }
 
   /* The photograph first, then the words. */
@@ -619,19 +642,20 @@
     order: -1;
   }
 
+  /* Flush under the bar, so the two read as one; all four parts across it
+     on a phone, spread to its width. */
   .steps {
     grid-row: 2;
     grid-column: 1;
     align-self: start;
-    top: 3.5rem;
+    top: var(--bar-h);
     z-index: 3;
     display: flex;
     align-items: center;
     height: var(--rail-h);
     margin: 0 calc(-1 * var(--edge));
-    padding: 0 var(--edge);
-    background: rgb(0 0 0 / 0.97);
-    backdrop-filter: blur(6px);
+    padding: 0 0.5rem;
+    background: #000;
     border-bottom: 1px solid var(--hair);
   }
 
@@ -645,21 +669,32 @@
      to come, not as cut off. */
   .steps ol {
     display: flex;
-    gap: 0.4rem;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0;
     overflow-x: auto;
     scrollbar-width: none;
     mask-image: linear-gradient(
       90deg,
       transparent,
-      #000 1rem,
-      #000 calc(100% - 1.5rem),
+      #000 0.4rem,
+      #000 calc(100% - 0.4rem),
       transparent
     );
   }
 
+  /* Each a full row high to the thumb. */
+  .steps li {
+    display: flex;
+  }
+
   .steps a {
-    padding: 0.3rem 0.6rem;
+    display: flex;
+    align-items: center;
+    min-height: calc(var(--rail-h) - 0.5rem);
+    padding: 0 0.5rem;
     border-bottom: 1px solid transparent;
+    font-size: 0.6875rem;
     white-space: nowrap;
   }
 
@@ -673,7 +708,132 @@
   }
 
   .part {
-    scroll-margin-top: calc(4rem + var(--rail-h));
+    scroll-margin-top: calc(var(--bar-h) + var(--rail-h) + 0.5rem);
+  }
+}
+
+@media (max-width: 860px) {
+  .novaFlash,
+  .novaRing {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    opacity: 0;
+    translate: -50% -50%;
+    pointer-events: none;
+  }
+
+  /* Bright enough to read through the supernova's own fading. */
+  .novaFlash {
+    width: 58%;
+    background: radial-gradient(
+      closest-side,
+      #fff,
+      rgb(255 255 255 / 0.45) 34%,
+      transparent
+    );
+  }
+
+  .novaRing {
+    width: 92%;
+    border: 2.5px solid rgb(232 255 222 / 0.95);
+    box-shadow:
+      0 0 24px var(--kind),
+      inset 0 0 24px var(--kind);
+  }
+
+  /* Two names for one burst, so each new one starts afresh. */
+  .nova[data-burst="a"] .novaFlash {
+    animation: novaFlashA 1.5s ease-out;
+  }
+
+  .nova[data-burst="b"] .novaFlash {
+    animation: novaFlashB 1.5s ease-out;
+  }
+
+  .nova[data-burst="a"] .novaRing {
+    animation: novaRingA 1.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .nova[data-burst="b"] .novaRing {
+    animation: novaRingB 1.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+}
+
+@keyframes novaFlashA {
+  0% {
+    opacity: 0;
+    scale: 0.4;
+  }
+
+  12% {
+    opacity: 1;
+    scale: 1;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1.3;
+  }
+}
+
+@keyframes novaFlashB {
+  0% {
+    opacity: 0;
+    scale: 0.4;
+  }
+
+  12% {
+    opacity: 1;
+    scale: 1;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1.3;
+  }
+}
+
+@keyframes novaRingA {
+  0% {
+    opacity: 0;
+    scale: 0.12;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  55% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1;
+  }
+}
+
+@keyframes novaRingB {
+  0% {
+    opacity: 0;
+    scale: 0.12;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  55% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1;
   }
 }
 
